@@ -1,8 +1,10 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireRole } from "./auth";
 
 export const importTransactions = mutation({
   args: {
+    sessionToken: v.string(),
     transactions: v.array(v.object({
       date: v.string(),
       time: v.string(),
@@ -14,7 +16,10 @@ export const importTransactions = mutation({
       transactionKey: v.string(),
     })),
   },
-  handler: async (ctx, { transactions }) => {
+  handler: async (ctx, { sessionToken, transactions }) => {
+    // Apenas diretoria ou sysadmin podem importar transações
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
     let inserted = 0;
     let updated = 0;
     let skipped = 0;
@@ -138,6 +143,6 @@ export const getDefaulters = query({
     return activeAssociates.filter((a) => !paidThisMonth.has(a.name.toLowerCase())).map((a) => {
       const lastPayment = allReceived.filter((t) => t.name.toLowerCase().includes(a.name.toLowerCase())).sort((x, y) => y.date.localeCompare(x.date))[0];
       return { id: a._id, name: a.name, unit: a.unit, status: a.status, lastPaymentDate: lastPayment?.date ?? null };
-    }).sort((a, b) => a.unit.localeCompare(b.unit));
+    }).sort((a, b) => (a.unit ?? "").localeCompare(b.unit ?? ""));
   },
 });

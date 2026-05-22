@@ -1,0 +1,32 @@
+import type { Metadata } from "next";
+import { Geist } from "next/font/google";
+import "./globals.css";
+import { ConvexClientProvider } from "@/components/convex-provider";
+import { AuthProvider } from "@/lib/auth";
+
+const geist = Geist({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "AMRTS Santorini — Gestão Residencial",
+  description: "Sistema de Gestão Financeira e Societária — Residencial Santorini",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="pt-BR" className="h-full">
+      <body className={`${geist.className} bg-gray-950 text-gray-100 min-h-screen antialiased`}>
+        {/* ConvexClientProvider: conecta ao banco Convex em tempo real */}
+        <ConvexClientProvider>
+          {/* AuthProvider: gerencia sessão do usuário logado */}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ConvexClientProvider>
+      </body>
+    </html>
+  );
+}

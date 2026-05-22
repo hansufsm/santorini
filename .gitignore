@@ -8,4 +8,8 @@ node_modules/
 *.code-workspace
 .DS_Store
 Thumbs.db
-node_modules/
+
+# Next.js (subprojeto em nextjs/)
+nextjs/node_modules/
+nextjs/.next/
+nextjs/.env.local

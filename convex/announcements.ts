@@ -1,14 +1,16 @@
 /**
  * announcements.ts — Comunicados do condomínio
  *
- * Política: comunicados nunca são deletados permanentemente.
- * deleteAnnouncement faz soft delete (preenche deletedAt + active=false).
+ * Política de exclusão: comunicados nunca são deletados permanentemente.
+ * A função "deleteAnnouncement" agora faz soft delete (preenche deletedAt).
+ * Mutations que alteram dados exigem papel mínimo "diretoria".
  */
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireRole } from "./auth";
 
-// Retorna todos os comunicados não inativados (painel admin)
+// Retorna todos os comunicados não inativados (visão do painel admin)
 export const getAllAnnouncements = query({
   args: {},
   handler: async (ctx) => {
@@ -18,7 +20,7 @@ export const getAllAnnouncements = query({
   },
 });
 
-// Retorna apenas os comunicados ativos e não inativados (portal + público)
+// Retorna apenas comunicados ativos e não inativados (portal + público)
 export const getActiveAnnouncements = query({
   args: {},
   handler: async (ctx) => {
@@ -33,6 +35,7 @@ export const getActiveAnnouncements = query({
 
 export const createAnnouncement = mutation({
   args: {
+    sessionToken: v.string(),
     title: v.string(),
     content: v.string(),
     type: v.union(
@@ -41,14 +44,16 @@ export const createAnnouncement = mutation({
       v.literal("manutencao"),
       v.literal("evento")
     ),
-    active: v.optional(v.boolean()), // padrão true
+    active: v.boolean(),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { sessionToken, ...args }) => {
+    // Apenas diretoria ou sysadmin podem criar comunicados
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
     if (!args.title) throw new Error("Título é obrigatório");
     const now = Date.now();
     return await ctx.db.insert("announcements", {
       ...args,
-      active: args.active ?? true,
       createdAt: now,
       updatedAt: now,
     });
@@ -57,6 +62,7 @@ export const createAnnouncement = mutation({
 
 export const updateAnnouncement = mutation({
   args: {
+    sessionToken: v.string(),
     id: v.id("announcements"),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
@@ -70,15 +76,26 @@ export const updateAnnouncement = mutation({
     ),
     active: v.optional(v.boolean()),
   },
-  handler: async (ctx, { id, ...fields }) => {
+  handler: async (ctx, { sessionToken, id, ...fields }) => {
+    // Apenas diretoria ou sysadmin podem editar comunicados
+    await requireRole(ctx.db, sessionToken, "diretoria");
     await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
   },
 });
 
-// Soft delete — o registro fica no banco, apenas some das listagens normais
+/**
+ * "Exclui" um comunicado — soft delete.
+ * O registro permanece no banco com deletedAt preenchido para histórico.
+ */
 export const deleteAnnouncement = mutation({
-  args: { id: v.id("announcements") },
-  handler: async (ctx, { id }) => {
+  args: {
+    sessionToken: v.string(),
+    id: v.id("announcements"),
+  },
+  handler: async (ctx, { sessionToken, id }) => {
+    // Apenas diretoria ou sysadmin podem inativar comunicados
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
     await ctx.db.patch(id, {
       active: false,
       deletedAt: Date.now(),
