@@ -749,15 +749,23 @@ const adminPassInput   = document.getElementById('admin-password');
 const adminLoginError  = document.getElementById('admin-login-error');
 
 function setAdminMode(isAdmin) {
+    const adminControlsMob = document.getElementById('admin-controls-mob');
+    const adminLoginBtnMob = document.getElementById('admin-login-btn-mob');
     if (isAdmin) {
         adminControls?.classList.remove('hidden');
         adminControls?.classList.add('flex');
         adminLoginBtn?.classList.add('hidden');
+        adminControlsMob?.classList.remove('hidden');
+        adminControlsMob?.classList.add('flex');
+        adminLoginBtnMob?.classList.add('hidden');
         sessionStorage.setItem('adminSession', '1');
     } else {
         adminControls?.classList.add('hidden');
         adminControls?.classList.remove('flex');
         adminLoginBtn?.classList.remove('hidden');
+        adminControlsMob?.classList.add('hidden');
+        adminControlsMob?.classList.remove('flex');
+        adminLoginBtnMob?.classList.remove('hidden');
         sessionStorage.removeItem('adminSession');
     }
 }
@@ -803,6 +811,50 @@ adminLogoutBtn?.addEventListener('click', () => setAdminMode(false));
 if (sessionStorage.getItem('adminSession') === '1') {
     setAdminMode(true);
 }
+
+// ─── MENU MOBILE ─────────────────────────────────────────────────────────────
+
+(function initMobileMenu() {
+    const menuBtn  = document.getElementById('mobile-menu-btn');
+    const menu     = document.getElementById('mobile-menu');
+    if (!menuBtn || !menu) return;
+
+    // Abrir / fechar ao clicar no ☰
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('hidden');
+    });
+
+    // Fechar ao clicar fora do menu
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== menuBtn) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    // Delegação: botões mobile → botões desktop (mantém a lógica centralizada)
+    const delegates = [
+        ['contributor-portal-btn-mob', 'contributor-portal-btn'],
+        ['theme-toggle-mob',           'theme-toggle'],
+        ['layout-boxed-mob',           'layout-boxed'],
+        ['layout-wide-mob',            'layout-wide'],
+        ['print-btn-mob',              'print-btn'],
+        ['refresh-btn-mob',            'refresh-btn'],
+        ['admin-login-btn-mob',        'admin-login-btn'],
+        ['import-csv-btn-mob',         'import-csv-btn'],
+        ['admin-logout-btn-mob',       'admin-logout-btn'],
+    ];
+
+    delegates.forEach(([mobId, desktopId]) => {
+        const mobEl     = document.getElementById(mobId);
+        const desktopEl = document.getElementById(desktopId);
+        if (!mobEl || !desktopEl) return;
+        mobEl.addEventListener('click', () => {
+            menu.classList.add('hidden'); // fecha o menu
+            desktopEl.click();           // dispara a ação original
+        });
+    });
+})();
 
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
