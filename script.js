@@ -436,19 +436,19 @@ function renderTable() {
         const row = document.createElement('tr');
         row.className = 'hover:bg-slate-800/50 transition-colors';
         row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                ${formatDateBR(t.date)}<div class="text-xs opacity-50">${t.time}</div>
+            <td class="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs sm:text-sm text-slate-400">
+                ${formatDateBR(t.date)}<div class="text-[10px] opacity-50">${t.time}</div>
             </td>
-            <td class="px-6 py-4">
-                <div class="text-sm font-medium text-slate-200">${t.name}</div>
-                <div class="text-xs text-slate-500">${t.type}</div>
+            <td class="px-3 md:px-6 py-3 md:py-4">
+                <div class="text-xs sm:text-sm font-medium text-slate-200">${t.name}</div>
+                <div class="text-[10px] text-slate-500 sm:hidden">${t.detail}</div>
             </td>
-            <td class="px-6 py-4">
+            <td class="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
                 <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${t.value > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}">
                     ${t.detail}
                 </span>
             </td>
-            <td class="px-6 py-4 text-right whitespace-nowrap text-sm font-mono ${t.value > 0 ? 'text-emerald-400' : 'text-red-400'}">
+            <td class="px-3 md:px-6 py-3 md:py-4 text-right whitespace-nowrap text-xs sm:text-sm font-mono ${t.value > 0 ? 'text-emerald-400' : 'text-red-400'}">
                 ${t.value > 0 ? '+' : ''}${formatCurrency(t.value)}
             </td>
         `;
@@ -462,12 +462,12 @@ function renderTable() {
         const subtotalRow = document.createElement('tr');
         subtotalRow.className = 'bg-emerald-950/50 border-t-2 border-emerald-700/60';
         subtotalRow.innerHTML = `
-            <td class="px-6 py-4 text-sm font-bold text-emerald-300" colspan="2">Subtotais do mês</td>
-            <td class="px-6 py-4 text-xs text-emerald-500/90 space-y-1">
+            <td class="px-3 md:px-6 py-3 md:py-4 text-xs sm:text-sm font-bold text-emerald-300" colspan="2">Subtotais do mês</td>
+            <td class="px-3 md:px-6 py-3 md:py-4 text-[10px] sm:text-xs text-emerald-500/90 space-y-1 hidden sm:table-cell">
                 <div>Recebidos (${cntR})</div><div>Enviados (${cntS})</div>
                 <div class="font-semibold text-emerald-300 pt-1 border-t border-emerald-800/40">Saldo</div>
             </td>
-            <td class="px-6 py-4 text-right text-sm font-mono font-semibold space-y-1">
+            <td class="px-3 md:px-6 py-3 md:py-4 text-right text-xs sm:text-sm font-mono font-semibold space-y-1">
                 <div class="text-emerald-400">+${formatCurrency(totalR)}</div>
                 <div class="text-red-400">−${formatCurrency(totalS)}</div>
                 <div class="pt-1 border-t border-emerald-800/40 ${net >= 0 ? 'text-emerald-300' : 'text-red-400'}">${net >= 0 ? '+' : ''}${formatCurrency(net)}</div>
@@ -548,9 +548,9 @@ function renderUserPortal(transactions) {
         const row = document.createElement('tr');
         row.className = 'text-emerald-100/80';
         row.innerHTML = `
-            <td class="px-6 py-4">${formatDateBR(t.date)}</td>
-            <td class="px-6 py-4">${t.type}</td>
-            <td class="px-6 py-4 text-right font-mono text-emerald-400">+${formatCurrency(t.value)}</td>`;
+            <td class="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">${formatDateBR(t.date)}</td>
+            <td class="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">${t.type}</td>
+            <td class="px-3 sm:px-6 py-2 sm:py-4 text-right font-mono text-xs sm:text-sm text-emerald-400">+${formatCurrency(t.value)}</td>`;
         tbody.appendChild(row);
     });
 

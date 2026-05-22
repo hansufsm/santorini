@@ -64,6 +64,14 @@
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
+        /* Responsividade dos gráficos */
+        canvas { max-width: 100%; }
+        /* Suaviza padding em telas muito pequenas */
+        @media (max-width: 360px) {
+            .rounded-2xl { border-radius: 0.75rem; }
+            .rounded-3xl { border-radius: 1rem; }
+        }
+
         /* Light Mode Overrides */
         body.light { background-color: #f8fafc; color: #0f172a; }
         body.light .bg-emerald-950\/30, body.light .bg-emerald-900\/30, body.light .bg-emerald-900\/20, body.light .bg-emerald-900\/10 { background-color: #ffffff; }
@@ -95,7 +103,7 @@
                     <div class="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20">
                         <img src="img/santorini.png" alt="Logo" class="w-full h-full object-cover scale-150">
                     </div>
-                    <span class="text-xl font-bold tracking-tight text-white">AMRTS <span class="text-emerald-400 italic">Santorini</span></span>
+                    <span class="text-base md:text-xl font-bold tracking-tight text-white">AMRTS <span class="text-emerald-400 italic">Santorini</span></span>
                 </div>
                 <!-- Desktop nav items (oculto no mobile) -->
                 <div class="hidden md:flex items-center gap-4">
@@ -267,18 +275,18 @@
         </div>
 
         <!-- Hero Section with Image -->
-        <div class="relative h-64 md:h-80 rounded-3xl overflow-hidden mb-10 shadow-2xl group border border-emerald-800/30 hero-section">
+        <div class="relative h-44 sm:h-52 md:h-64 lg:h-80 rounded-3xl overflow-hidden mb-6 md:mb-10 shadow-2xl group border border-emerald-800/30 hero-section">
             <img src="img/santorini.png" alt="Residencial Santorini" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
             <div class="absolute inset-0 bg-gradient-to-t from-[#022c22] via-[#022c22]/40 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 p-8 w-full">
-                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div class="absolute bottom-0 left-0 p-4 sm:p-6 md:p-8 w-full">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-2 md:gap-4">
                     <div>
-                        <span class="bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3 inline-block">Demonstração</span>
-                        <h2 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Residencial Santorini</h2>
-                        <p class="text-emerald-100/80 mt-2 max-w-xl text-sm md:text-base leading-relaxed">Gestão de contribuições e acompanhamento financeiro para o desenvolvimento do residencial.</p>
+                        <span class="bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-2 md:mb-3 inline-block">Demonstração</span>
+                        <h2 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">Residencial Santorini</h2>
+                        <p class="text-emerald-100/80 mt-1 md:mt-2 max-w-none md:max-w-xl text-sm leading-relaxed hidden sm:block">Gestão de contribuições e acompanhamento financeiro para o desenvolvimento do residencial.</p>
                     </div>
                     <div class="flex gap-3">
-                        <div class="bg-emerald-900/40 backdrop-blur-md border border-emerald-700/30 rounded-2xl px-5 py-3 text-center">
+                        <div class="bg-emerald-900/40 backdrop-blur-md border border-emerald-700/30 rounded-2xl px-3 py-2 sm:px-5 sm:py-3 text-center">
                             <span class="block text-xs text-emerald-400 uppercase font-semibold">Status</span>
                             <span class="text-emerald-300 font-bold text-sm">Em Dia</span>
                         </div>
@@ -288,8 +296,8 @@
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="card-gradient-received rounded-2xl p-6 shadow-xl shadow-emerald-950/40 cursor-pointer" onclick="scrollToSection('arrecadacao-section')">
+        <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+            <div class="card-gradient-received rounded-2xl p-4 md:p-6 shadow-xl shadow-emerald-950/40 cursor-pointer" onclick="scrollToSection('arrecadacao-section')">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-emerald-100 text-sm font-medium">Total Contribuições</p>
                     <div class="tooltip">
@@ -299,12 +307,12 @@
                         <span class="tooltiptext">Soma de todas as taxas comunitárias pagas no período selecionado.</span>
                     </div>
                 </div>
-                <h3 id="total-received" class="text-3xl font-bold text-white">R$ 0,00</h3>
+                <h3 id="total-received" class="text-xl md:text-3xl font-bold text-white">R$ 0,00</h3>
                 <p class="text-emerald-200 text-xs mt-2 flex items-center gap-1">
                     <span id="received-count">0</span> contribuições
                 </p>
             </div>
-            <div class="card-gradient-sent rounded-2xl p-6 shadow-xl shadow-red-950/40 cursor-pointer" onclick="scrollToSection('despesas-section')">
+            <div class="card-gradient-sent rounded-2xl p-4 md:p-6 shadow-xl shadow-red-950/40 cursor-pointer" onclick="scrollToSection('despesas-section')">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-red-100 text-sm font-medium">Despesas Pagas</p>
                     <div class="tooltip">
@@ -314,12 +322,12 @@
                         <span class="tooltiptext">Total gasto com segurança, monitoramento, taxas e manutenção.</span>
                     </div>
                 </div>
-                <h3 id="total-sent" class="text-3xl font-bold text-white">R$ 0,00</h3>
+                <h3 id="total-sent" class="text-xl md:text-3xl font-bold text-white">R$ 0,00</h3>
                 <p class="text-red-200 text-xs mt-2 flex items-center gap-1">
                     <span id="sent-count">0</span> pagamentos
                 </p>
             </div>
-            <div class="card-gradient-balance rounded-2xl p-6 shadow-xl shadow-emerald-950/40 cursor-pointer" onclick="scrollToSection('fluxo-section')">
+            <div class="card-gradient-balance rounded-2xl p-4 md:p-6 shadow-xl shadow-emerald-950/40 cursor-pointer" onclick="scrollToSection('fluxo-section')">
                 <div class="flex items-center justify-between mb-1">
                     <p class="text-emerald-100 text-sm font-medium">Saldo em Caixa</p>
                     <div class="tooltip">
@@ -329,34 +337,34 @@
                         <span class="tooltiptext">Recurso disponível para despesas futuras ou emergenciais (Fundo de Reserva).</span>
                     </div>
                 </div>
-                <h3 id="net-balance" class="text-3xl font-bold text-white">R$ 0,00</h3>
+                <h3 id="net-balance" class="text-xl md:text-3xl font-bold text-white">R$ 0,00</h3>
                 <p class="text-emerald-200 text-xs mt-2">Disponível para imprevistos</p>
             </div>
-            <div class="bg-emerald-900/30 rounded-2xl p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
+            <div class="bg-emerald-900/30 rounded-2xl p-4 md:p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
                 <p class="text-emerald-400 text-sm font-medium mb-1">Associados</p>
-                <h3 id="total-contributors" class="text-3xl font-bold text-white">0</h3>
+                <h3 id="total-contributors" class="text-xl md:text-3xl font-bold text-white">0</h3>
                 <p class="text-emerald-500/80 text-xs mt-2">Membros ativos</p>
             </div>
         </div>
 
         <!-- Charts Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div id="fluxo-section" class="bg-emerald-900/20 rounded-2xl p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
-                <div class="flex items-center justify-between mb-6">
-                    <h4 class="text-lg font-semibold text-emerald-100">Fluxo Mensal (Evolução de Caixa)</h4>
-                    <select id="chart-period" class="bg-emerald-950/50 border border-emerald-800/50 rounded-lg text-sm px-3 py-1 text-emerald-300">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8">
+            <div id="fluxo-section" class="bg-emerald-900/20 rounded-2xl p-4 md:p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 md:mb-6">
+                    <h4 class="text-base md:text-lg font-semibold text-emerald-100">Fluxo Mensal</h4>
+                    <select id="chart-period" class="bg-emerald-950/50 border border-emerald-800/50 rounded-lg text-xs sm:text-sm px-2 sm:px-3 py-1 text-emerald-300 self-start sm:self-auto">
                         <option value="6">Últimos 6 meses</option>
                         <option value="12">Últimos 12 meses</option>
                         <option value="all">Todo o período</option>
                     </select>
                 </div>
-                <div class="h-64">
+                <div class="h-48 md:h-64">
                     <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
-            <div id="despesas-section" class="bg-emerald-900/20 rounded-2xl p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
-                <div class="flex items-center justify-between mb-6">
-                    <h4 class="text-lg font-semibold text-emerald-100">Distribuição de Despesas</h4>
+            <div id="despesas-section" class="bg-emerald-900/20 rounded-2xl p-4 md:p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 md:mb-6">
+                    <h4 class="text-base md:text-lg font-semibold text-emerald-100">Distribuição de Despesas</h4>
                     <div class="tooltip">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -364,43 +372,42 @@
                         <span class="tooltiptext">Categorização automática baseada no histórico de pagamentos.</span>
                     </div>
                 </div>
-                <div class="h-64">
+                <div class="h-48 md:h-64">
                     <canvas id="expensesDonutChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <div id="arrecadacao-section" class="mb-8">
-            <!-- Top Associados moved here inside Arrecadação context if needed, or kept separate -->
-            <div class="bg-emerald-900/20 rounded-2xl p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
-                <div class="flex items-center justify-between mb-6">
-                    <h4 class="text-lg font-semibold text-emerald-100">Contribuintes Assíduos</h4>
-                    <button class="text-emerald-400 text-sm hover:underline">Ver todos</button>
+        <div id="arrecadacao-section" class="mb-6 md:mb-8">
+            <div class="bg-emerald-900/20 rounded-2xl p-4 md:p-6 border border-emerald-800/50 shadow-xl backdrop-blur-sm">
+                <div class="flex items-center justify-between mb-4 md:mb-6">
+                    <h4 class="text-base md:text-lg font-semibold text-emerald-100">Contribuintes Assíduos</h4>
+                    <button class="text-emerald-400 text-xs sm:text-sm hover:underline">Ver todos</button>
                 </div>
-                <div class="h-64">
+                <div class="h-48 md:h-64">
                     <canvas id="topContributorsChart"></canvas>
                 </div>
             </div>
         </div>
 
         <!-- Filters & Search -->
-        <div class="bg-emerald-900/10 rounded-2xl p-4 border border-emerald-800/50 mb-8 flex flex-wrap items-center gap-4 backdrop-blur-sm">
-            <div class="flex-1 min-w-[200px] relative">
-                <input type="text" id="search-input" placeholder="Buscar por nome ou tipo..." 
-                       class="bg-emerald-950/50 border-emerald-800/50 text-emerald-100 rounded-xl px-10 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 outline-none w-full transition-all placeholder:text-emerald-700">
+        <div class="bg-emerald-900/10 rounded-2xl p-3 md:p-4 border border-emerald-800/50 mb-6 md:mb-8 flex flex-wrap items-center gap-2 md:gap-4 backdrop-blur-sm">
+            <div class="flex-1 min-w-0 relative">
+                <input type="text" id="search-input" placeholder="Buscar por nome ou tipo..."
+                       class="bg-emerald-950/50 border-emerald-800/50 text-emerald-100 rounded-xl pl-8 pr-3 sm:px-10 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none w-full transition-all placeholder:text-emerald-700">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </div>
-            <select id="filter-type" class="bg-emerald-950/50 border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-emerald-300 outline-none focus:ring-2 focus:ring-emerald-500">
+            <select id="filter-type" class="bg-emerald-950/50 border-emerald-800/50 rounded-xl px-3 py-2 text-xs sm:text-sm text-emerald-300 outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="all">Todos os tipos</option>
                 <option value="Recebido">Recebidos</option>
                 <option value="Enviado">Enviados</option>
             </select>
-            <select id="filter-month" class="bg-emerald-950/50 border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-emerald-300 outline-none focus:ring-2 focus:ring-emerald-500" title="Ir para um mês">
+            <select id="filter-month" class="bg-emerald-950/50 border-emerald-800/50 rounded-xl px-3 py-2 text-xs sm:text-sm text-emerald-300 outline-none focus:ring-2 focus:ring-emerald-500" title="Ir para um mês">
                 <!-- Meses preenchidos via JS; paginação Anterior/Próximo navega entre meses -->
             </select>
-            <div class="flex items-center gap-2 text-sm text-emerald-400 bg-emerald-950/50 px-4 py-2.5 rounded-xl border border-emerald-800/50">
+            <div class="flex items-center gap-2 text-xs sm:text-sm text-emerald-400 bg-emerald-950/50 px-3 py-2 rounded-xl border border-emerald-800/50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
@@ -410,10 +417,10 @@
 
         <!-- Transactions Table -->
         <div class="bg-emerald-900/20 rounded-2xl border border-emerald-800/50 shadow-xl overflow-hidden backdrop-blur-sm">
-            <div class="p-6 border-b border-emerald-800/50 flex items-center justify-between">
-                <h4 class="text-lg font-semibold text-emerald-100">Histórico de Transações</h4>
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex items-center justify-between">
+                <h4 class="text-base md:text-lg font-semibold text-emerald-100">Histórico de Transações</h4>
                 <div class="flex gap-2">
-                    <button id="export-btn" class="text-xs bg-emerald-950/50 hover:bg-emerald-900/50 border border-emerald-800/50 text-emerald-300 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-2">
+                    <button id="export-btn" class="text-xs bg-emerald-950/50 hover:bg-emerald-900/50 border border-emerald-800/50 text-emerald-300 px-3 py-2 rounded-lg transition-colors flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
@@ -425,10 +432,10 @@
                 <table class="w-full text-left">
                     <thead class="bg-emerald-950/50 text-emerald-500 text-xs uppercase tracking-wider">
                         <tr>
-                            <th class="px-6 py-4 font-medium border-b border-emerald-800/50">Data</th>
-                            <th class="px-6 py-4 font-medium border-b border-emerald-800/50">Nome</th>
-                            <th class="px-6 py-4 font-medium border-b border-emerald-800/50">Tipo</th>
-                            <th class="px-6 py-4 font-medium border-b border-emerald-800/50 text-right">Valor</th>
+                            <th class="px-3 md:px-6 py-3 md:py-4 font-medium border-b border-emerald-800/50">Data</th>
+                            <th class="px-3 md:px-6 py-3 md:py-4 font-medium border-b border-emerald-800/50">Nome</th>
+                            <th class="px-3 md:px-6 py-3 md:py-4 font-medium border-b border-emerald-800/50 hidden sm:table-cell">Tipo</th>
+                            <th class="px-3 md:px-6 py-3 md:py-4 font-medium border-b border-emerald-800/50 text-right">Valor</th>
                         </tr>
                     </thead>
                     <tbody id="transactions-body" class="divide-y divide-emerald-800/30">
@@ -436,17 +443,17 @@
                     </tbody>
                 </table>
             </div>
-            <div class="p-4 bg-emerald-950/30 border-t border-emerald-800/50 flex justify-between items-center">
-                <span id="showing-entries" class="text-sm text-emerald-600">Mostrando 0 entradas</span>
-                <div class="flex gap-2">
-                    <button id="prev-page" class="px-3 py-1 rounded bg-emerald-950/50 border border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/50 disabled:opacity-30 text-sm transition-colors" title="Mês anterior">Mês anterior</button>
-                    <button id="next-page" class="px-3 py-1 rounded bg-emerald-950/50 border border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/50 disabled:opacity-30 text-sm transition-colors" title="Próximo mês">Próximo mês</button>
+            <div class="p-3 md:p-4 bg-emerald-950/30 border-t border-emerald-800/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+                <span id="showing-entries" class="text-xs sm:text-sm text-emerald-600">Mostrando 0 entradas</span>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button id="prev-page" class="flex-1 sm:flex-none px-3 py-2 rounded bg-emerald-950/50 border border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/50 disabled:opacity-30 text-xs sm:text-sm transition-colors text-center" title="Mês anterior">← Anterior</button>
+                    <button id="next-page" class="flex-1 sm:flex-none px-3 py-2 rounded bg-emerald-950/50 border border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/50 disabled:opacity-30 text-xs sm:text-sm transition-colors text-center" title="Próximo mês">Próximo →</button>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 border-t border-emerald-900/50 mt-8 text-center text-emerald-700 text-sm">
+    <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 border-t border-emerald-900/50 mt-4 md:mt-8 text-center text-emerald-700 text-xs sm:text-sm">
         AMRTS Santorini Dashboard &copy; 2026 - Gestão Residencial
     </footer>
     </div> <!-- Fim do container max-w-1440px -->
@@ -456,8 +463,8 @@
         <div class="absolute inset-0 bg-emerald-950/90 backdrop-blur-sm"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4">
             <div class="bg-[#022c22] border border-emerald-800/50 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-                <div class="p-6 border-b border-emerald-800/50 flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center">
+                    <h3 class="text-lg md:text-xl font-bold text-white flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -470,13 +477,13 @@
                     </button>
                 </div>
                 
-                <div class="p-8 overflow-y-auto flex-1">
+                <div class="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1">
                     <div id="portal-search-step">
                         <p class="text-emerald-100/70 mb-6">Para visualizar seu extrato individual, digite os 4 primeiros dígitos do seu CPF ou seu nome completo.</p>
-                        <div class="flex gap-4">
-                            <input type="text" id="portal-search-input" placeholder="Ex: 1234 ou Nome Completo" 
-                                   class="flex-1 bg-emerald-950/50 border border-emerald-800/50 text-white rounded-xl px-6 py-3 outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
-                            <button id="portal-search-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40">
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                            <input type="text" id="portal-search-input" placeholder="Ex: 1234 ou Nome Completo"
+                                   class="flex-1 bg-emerald-950/50 border border-emerald-800/50 text-white rounded-xl px-4 py-2.5 sm:px-6 sm:py-3 outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                            <button id="portal-search-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 sm:px-8 sm:py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 sm:w-auto">
                                 Consultar
                             </button>
                         </div>
@@ -492,7 +499,7 @@
                             <button id="back-to-search" class="text-emerald-500 hover:underline text-sm">Nova consulta</button>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
                             <div class="bg-emerald-900/20 p-4 rounded-2xl border border-emerald-800/30">
                                 <span class="text-xs text-emerald-500 uppercase font-bold">Total Contribuído</span>
                                 <h5 id="portal-user-total" class="text-2xl font-bold text-white">R$ 0,00</h5>
@@ -507,7 +514,7 @@
                             </div>
                         </div>
 
-                        <div class="bg-emerald-900/10 rounded-2xl p-6 border border-emerald-800/30 mb-8 h-64">
+                        <div class="bg-emerald-900/10 rounded-2xl p-4 md:p-6 border border-emerald-800/30 mb-4 md:mb-8 h-48 md:h-64">
                             <canvas id="userMonthlyChart"></canvas>
                         </div>
 
@@ -515,9 +522,9 @@
                             <table class="w-full text-left">
                                 <thead class="bg-emerald-950/50 text-emerald-500 text-[10px] uppercase font-bold">
                                     <tr>
-                                        <th class="px-6 py-3">Data</th>
-                                        <th class="px-6 py-3">Tipo</th>
-                                        <th class="px-6 py-3 text-right">Valor</th>
+                                        <th class="px-3 sm:px-6 py-2 sm:py-3">Data</th>
+                                        <th class="px-3 sm:px-6 py-2 sm:py-3">Tipo</th>
+                                        <th class="px-3 sm:px-6 py-2 sm:py-3 text-right">Valor</th>
                                     </tr>
                                 </thead>
                                 <tbody id="portal-user-table" class="divide-y divide-emerald-800/20 text-sm">
@@ -533,7 +540,7 @@
 
     <!-- Modal Login Admin -->
     <div id="admin-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div class="bg-[#022c22] border border-emerald-800/50 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-8">
+        <div class="bg-[#022c22] border border-emerald-800/50 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-5 md:p-8">
             <div class="flex items-center gap-3 mb-6">
                 <div class="p-2 bg-emerald-900/50 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
