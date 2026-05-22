@@ -1015,7 +1015,7 @@ document.getElementById('drawer-import-csv-btn')?.addEventListener('click', () =
 // ─── NAVEGAÇÃO DE MÓDULOS ─────────────────────────────────────────────────────
 
 let currentModule = 'financeiro';
-const moduleLoaded = { financeiro: true, comunicados: false, documentos: false, assembleias: false };
+const moduleLoaded = { financeiro: true, comunicados: false, documentos: false, assembleias: false, fornecedores: false, patrimonio: false, reservas: false, manutencao: false, visitantes: false };
 
 function switchModule(name) {
     if (name === currentModule) { closeDrawer(); return; }
@@ -1043,6 +1043,11 @@ function switchModule(name) {
         if (name === 'comunicados')  loadAnnouncements();
         if (name === 'documentos')   loadDocuments();
         if (name === 'assembleias')  loadAssemblies();
+        if (name === 'fornecedores') loadSuppliers();
+        if (name === 'patrimonio')   loadAssets();
+        if (name === 'reservas')     loadReservations();
+        if (name === 'manutencao')   loadMaintenances();
+        if (name === 'visitantes')   loadVisitors();
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1540,6 +1545,818 @@ document.getElementById('vote-delete-btn')?.addEventListener('click', async () =
     await loadAssemblies();
 });
 
+// ─── MÓDULO: FORNECEDORES ────────────────────────────────────────────────────
+
+let allSuppliers = [];
+let supFilter = 'all';
+
+const catLabelSup = { limpeza:'Limpeza', manutencao:'Manutenção', seguranca:'Segurança', jardinagem:'Jardinagem', outro:'Outro' };
+const catEmojiSup = { limpeza:'🧹', manutencao:'🔧', seguranca:'🔒', jardinagem:'🌿', outro:'📦' };
+const fmtBRL = (v) => v != null ? new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(v) : '—';
+
+async function loadSuppliers() {
+    const list = document.getElementById('suppliers-list');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allSuppliers = await convexQuery('suppliers:getAllSuppliers') || [];
+        renderSuppliers();
+    } catch(e) { console.error('Erro ao carregar fornecedores:', e); }
+}
+
+function renderSuppliers() {
+    const list  = document.getElementById('suppliers-list');
+    const empty = document.getElementById('suppliers-empty');
+    if (!list) return;
+    const filtered = supFilter === 'all' ? allSuppliers : allSuppliers.filter(s => s.status === supFilter);
+    if (!filtered.length) { list.innerHTML = ''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    list.innerHTML = filtered.map(s => {
+        const statusBadge = s.status === 'ativo'
+            ? 'bg-emerald-500/20 text-emerald-400'
+            : 'bg-slate-500/20 text-slate-400';
+        return `
+        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4 md:p-5 flex items-center justify-between gap-4">
+            <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <span class="text-sm font-semibold text-white">${s.name}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusBadge}">${s.status === 'ativo' ? '✅ Ativo' : '⛔ Inativo'}</span>
+                </div>
+                <div class="flex flex-wrap gap-3 text-xs text-emerald-600">
+                    <span>${catEmojiSup[s.category] || '📦'} ${catLabelSup[s.category] || s.category}</span>
+                    ${s.contact ? `<span>👤 ${s.contact}</span>` : ''}
+                    ${s.phone ? `<span>📞 ${s.phone}</span>` : ''}
+                    ${s.monthlyValue != null ? `<span class="text-emerald-400 font-medium">💰 ${fmtBRL(s.monthlyValue)}/mês</span>` : ''}
+                </div>
+            </div>
+            ${isAdmin ? `<button onclick="editSupplier('${s._id}')" class="shrink-0 p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.sup-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        supFilter = btn.dataset.spfilter;
+        document.querySelectorAll('.sup-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderSuppliers();
+    });
+});
+
+document.getElementById('new-supplier-btn')?.addEventListener('click', () => {
+    document.getElementById('supplier-edit-id').value = '';
+    document.getElementById('sup-name').value = '';
+    document.getElementById('sup-category').value = 'limpeza';
+    document.getElementById('sup-status').value = 'ativo';
+    document.getElementById('sup-cnpj').value = '';
+    document.getElementById('sup-contact').value = '';
+    document.getElementById('sup-phone').value = '';
+    document.getElementById('sup-email').value = '';
+    document.getElementById('sup-contract-start').value = '';
+    document.getElementById('sup-contract-end').value = '';
+    document.getElementById('sup-monthly-value').value = '';
+    document.getElementById('sup-notes').value = '';
+    document.getElementById('sup-delete-btn')?.classList.add('hidden');
+    document.getElementById('supplier-modal-title').textContent = 'Novo Fornecedor';
+    openModal('supplier-modal');
+});
+document.getElementById('supplier-modal-close')?.addEventListener('click', () => closeModal('supplier-modal'));
+document.getElementById('supplier-modal-backdrop')?.addEventListener('click', () => closeModal('supplier-modal'));
+
+function editSupplier(id) {
+    const s = allSuppliers.find(x => x._id === id);
+    if (!s) return;
+    document.getElementById('supplier-edit-id').value = id;
+    document.getElementById('sup-name').value = s.name;
+    document.getElementById('sup-category').value = s.category;
+    document.getElementById('sup-status').value = s.status;
+    document.getElementById('sup-cnpj').value = s.cnpj || '';
+    document.getElementById('sup-contact').value = s.contact || '';
+    document.getElementById('sup-phone').value = s.phone || '';
+    document.getElementById('sup-email').value = s.email || '';
+    document.getElementById('sup-contract-start').value = s.contractStart || '';
+    document.getElementById('sup-contract-end').value = s.contractEnd || '';
+    document.getElementById('sup-monthly-value').value = s.monthlyValue != null ? s.monthlyValue : '';
+    document.getElementById('sup-notes').value = s.notes || '';
+    document.getElementById('sup-delete-btn')?.classList.remove('hidden');
+    document.getElementById('supplier-modal-title').textContent = 'Editar Fornecedor';
+    openModal('supplier-modal');
+}
+
+document.getElementById('sup-save-btn')?.addEventListener('click', async () => {
+    const id  = document.getElementById('supplier-edit-id').value;
+    const mv  = document.getElementById('sup-monthly-value').value;
+    const data = {
+        name:          document.getElementById('sup-name').value.trim(),
+        category:      document.getElementById('sup-category').value,
+        status:        document.getElementById('sup-status').value,
+        cnpj:          document.getElementById('sup-cnpj').value.trim() || undefined,
+        contact:       document.getElementById('sup-contact').value.trim() || undefined,
+        phone:         document.getElementById('sup-phone').value.trim() || undefined,
+        email:         document.getElementById('sup-email').value.trim() || undefined,
+        contractStart: document.getElementById('sup-contract-start').value || undefined,
+        contractEnd:   document.getElementById('sup-contract-end').value || undefined,
+        monthlyValue:  mv ? parseFloat(mv) : undefined,
+        notes:         document.getElementById('sup-notes').value.trim() || undefined,
+    };
+    if (!data.name) { alert('Preencha o nome do fornecedor.'); return; }
+    try {
+        if (id) await convexMutation('suppliers:updateSupplier', { id, ...data });
+        else    await convexMutation('suppliers:createSupplier', data);
+        closeModal('supplier-modal');
+        showToast('Fornecedor salvo com sucesso', 'success');
+        await loadSuppliers();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('sup-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('supplier-edit-id').value;
+    if (!id || !confirm('Excluir este fornecedor?')) return;
+    await convexMutation('suppliers:deleteSupplier', { id });
+    closeModal('supplier-modal');
+    showToast('Fornecedor excluído', 'info');
+    await loadSuppliers();
+});
+
+// ─── MÓDULO: PATRIMÔNIO ──────────────────────────────────────────────────────
+
+let allAssets = [];
+let astFilter = 'all';
+
+const catLabelAst = { equipamento:'Equipamento', veiculo:'Veículo', mobiliario:'Mobiliário', eletronico:'Eletrônico', outro:'Outro' };
+const catEmojiAst = { equipamento:'⚙️', veiculo:'🚗', mobiliario:'🪑', eletronico:'💻', outro:'📦' };
+
+async function loadAssets() {
+    const list = document.getElementById('assets-list');
+    if (list) list.innerHTML = '<p class="col-span-3 text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allAssets = await convexQuery('assets:getAllAssets') || [];
+        renderAssets();
+    } catch(e) { console.error('Erro ao carregar patrimônio:', e); }
+}
+
+function renderAssets() {
+    const list  = document.getElementById('assets-list');
+    const empty = document.getElementById('assets-empty');
+    if (!list) return;
+    const filtered = astFilter === 'all' ? allAssets : allAssets.filter(a => a.status === astFilter);
+    if (!filtered.length) { list.innerHTML = ''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    const statusBadgeCfg = {
+        ativo:       'bg-emerald-500/20 text-emerald-400',
+        manutencao:  'bg-yellow-500/20 text-yellow-400',
+        inativo:     'bg-slate-500/20 text-slate-400',
+    };
+    const statusLabelCfg = { ativo:'✅ Ativo', manutencao:'🔧 Manutenção', inativo:'⛔ Inativo' };
+    list.innerHTML = filtered.map(a => {
+        const badge = statusBadgeCfg[a.status] || statusBadgeCfg.inativo;
+        return `
+        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4 md:p-5 flex flex-col gap-2">
+            <div class="flex items-start justify-between gap-2">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${badge}">${statusLabelCfg[a.status] || a.status}</span>
+                ${isAdmin ? `<button onclick="editAsset('${a._id}')" class="shrink-0 p-1 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+            </div>
+            <h4 class="font-semibold text-white text-sm">${a.name}</h4>
+            <div class="flex flex-wrap gap-2 text-xs text-emerald-600">
+                <span>${catEmojiAst[a.category] || '📦'} ${catLabelAst[a.category] || a.category}</span>
+                ${a.location ? `<span>📍 ${a.location}</span>` : ''}
+                ${a.acquisitionValue != null ? `<span class="text-emerald-500">${fmtBRL(a.acquisitionValue)}</span>` : ''}
+            </div>
+            ${a.description ? `<p class="text-emerald-700 text-xs line-clamp-2">${a.description}</p>` : ''}
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.ast-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        astFilter = btn.dataset.atfilter;
+        document.querySelectorAll('.ast-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderAssets();
+    });
+});
+
+document.getElementById('new-asset-btn')?.addEventListener('click', () => {
+    document.getElementById('asset-edit-id').value = '';
+    document.getElementById('ast-name').value = '';
+    document.getElementById('ast-category').value = 'equipamento';
+    document.getElementById('ast-status').value = 'ativo';
+    document.getElementById('ast-description').value = '';
+    document.getElementById('ast-acquisition-date').value = '';
+    document.getElementById('ast-acquisition-value').value = '';
+    document.getElementById('ast-location').value = '';
+    document.getElementById('ast-notes').value = '';
+    document.getElementById('ast-delete-btn')?.classList.add('hidden');
+    document.getElementById('asset-modal-title').textContent = 'Novo Bem';
+    openModal('asset-modal');
+});
+document.getElementById('asset-modal-close')?.addEventListener('click', () => closeModal('asset-modal'));
+document.getElementById('asset-modal-backdrop')?.addEventListener('click', () => closeModal('asset-modal'));
+
+function editAsset(id) {
+    const a = allAssets.find(x => x._id === id);
+    if (!a) return;
+    document.getElementById('asset-edit-id').value = id;
+    document.getElementById('ast-name').value = a.name;
+    document.getElementById('ast-category').value = a.category;
+    document.getElementById('ast-status').value = a.status;
+    document.getElementById('ast-description').value = a.description || '';
+    document.getElementById('ast-acquisition-date').value = a.acquisitionDate || '';
+    document.getElementById('ast-acquisition-value').value = a.acquisitionValue != null ? a.acquisitionValue : '';
+    document.getElementById('ast-location').value = a.location || '';
+    document.getElementById('ast-notes').value = a.notes || '';
+    document.getElementById('ast-delete-btn')?.classList.remove('hidden');
+    document.getElementById('asset-modal-title').textContent = 'Editar Bem';
+    openModal('asset-modal');
+}
+
+document.getElementById('ast-save-btn')?.addEventListener('click', async () => {
+    const id  = document.getElementById('asset-edit-id').value;
+    const av  = document.getElementById('ast-acquisition-value').value;
+    const data = {
+        name:             document.getElementById('ast-name').value.trim(),
+        category:         document.getElementById('ast-category').value,
+        status:           document.getElementById('ast-status').value,
+        description:      document.getElementById('ast-description').value.trim() || undefined,
+        acquisitionDate:  document.getElementById('ast-acquisition-date').value || undefined,
+        acquisitionValue: av ? parseFloat(av) : undefined,
+        location:         document.getElementById('ast-location').value.trim() || undefined,
+        notes:            document.getElementById('ast-notes').value.trim() || undefined,
+    };
+    if (!data.name) { alert('Preencha o nome do bem.'); return; }
+    try {
+        if (id) await convexMutation('assets:updateAsset', { id, ...data });
+        else    await convexMutation('assets:createAsset', data);
+        closeModal('asset-modal');
+        showToast('Bem salvo com sucesso', 'success');
+        await loadAssets();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('ast-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('asset-edit-id').value;
+    if (!id || !confirm('Excluir este bem?')) return;
+    await convexMutation('assets:deleteAsset', { id });
+    closeModal('asset-modal');
+    showToast('Bem excluído', 'info');
+    await loadAssets();
+});
+
+// ─── MÓDULO: RESERVAS ────────────────────────────────────────────────────────
+
+let allReservations = [];
+let rsvFilter = 'all';
+
+const areaLabelRsv = { salao:'Salão de Festas', piscina:'Piscina', churrasqueira:'Churrasqueira', quadra:'Quadra', outro:'Outro' };
+const areaEmojiRsv = { salao:'🎉', piscina:'🏊', churrasqueira:'🔥', quadra:'🏀', outro:'📍' };
+
+async function loadReservations() {
+    const list = document.getElementById('reservations-list');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allReservations = await convexQuery('reservations:getAllReservations') || [];
+        renderReservations();
+    } catch(e) { console.error('Erro ao carregar reservas:', e); }
+}
+
+function renderReservations() {
+    const list  = document.getElementById('reservations-list');
+    const empty = document.getElementById('reservations-empty');
+    if (!list) return;
+    const filtered = rsvFilter === 'all' ? allReservations : allReservations.filter(r => r.status === rsvFilter);
+    if (!filtered.length) { list.innerHTML = ''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    const statusCfgRsv = {
+        pendente:   { cls:'bg-yellow-500/20 text-yellow-400', label:'⏳ Pendente' },
+        confirmada: { cls:'bg-emerald-500/20 text-emerald-400', label:'✅ Confirmada' },
+        cancelada:  { cls:'bg-red-500/20 text-red-400', label:'❌ Cancelada' },
+    };
+    list.innerHTML = filtered.map(r => {
+        const scfg = statusCfgRsv[r.status] || statusCfgRsv.pendente;
+        return `
+        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4 md:p-5">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sm font-semibold text-white">${areaEmojiRsv[r.area] || '📍'} ${areaLabelRsv[r.area] || r.area}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${scfg.cls}">${scfg.label}</span>
+                </div>
+                ${isAdmin ? `<button onclick="editReservation('${r._id}')" class="shrink-0 p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+            </div>
+            <div class="flex flex-wrap gap-3 text-xs text-emerald-600">
+                <span>📅 ${fmtDateBR(r.date)}</span>
+                <span>🕐 ${r.startTime} – ${r.endTime}</span>
+                <span>🏠 Unid. ${r.unit}</span>
+                <span>👤 ${r.residentName}</span>
+            </div>
+            ${r.notes ? `<p class="text-emerald-700 text-xs mt-2">${r.notes}</p>` : ''}
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.rsv-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        rsvFilter = btn.dataset.rvfilter;
+        document.querySelectorAll('.rsv-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderReservations();
+    });
+});
+
+document.getElementById('new-reservation-btn')?.addEventListener('click', () => {
+    document.getElementById('reservation-edit-id').value = '';
+    document.getElementById('rsv-area').value = 'salao';
+    document.getElementById('rsv-status').value = 'pendente';
+    document.getElementById('rsv-unit').value = '';
+    document.getElementById('rsv-resident').value = '';
+    document.getElementById('rsv-date').value = '';
+    document.getElementById('rsv-start-time').value = '';
+    document.getElementById('rsv-end-time').value = '';
+    document.getElementById('rsv-notes').value = '';
+    document.getElementById('rsv-delete-btn')?.classList.add('hidden');
+    document.getElementById('reservation-modal-title').textContent = 'Nova Reserva';
+    openModal('reservation-modal');
+});
+document.getElementById('reservation-modal-close')?.addEventListener('click', () => closeModal('reservation-modal'));
+document.getElementById('reservation-modal-backdrop')?.addEventListener('click', () => closeModal('reservation-modal'));
+
+function editReservation(id) {
+    const r = allReservations.find(x => x._id === id);
+    if (!r) return;
+    document.getElementById('reservation-edit-id').value = id;
+    document.getElementById('rsv-area').value = r.area;
+    document.getElementById('rsv-status').value = r.status;
+    document.getElementById('rsv-unit').value = r.unit;
+    document.getElementById('rsv-resident').value = r.residentName;
+    document.getElementById('rsv-date').value = r.date;
+    document.getElementById('rsv-start-time').value = r.startTime;
+    document.getElementById('rsv-end-time').value = r.endTime;
+    document.getElementById('rsv-notes').value = r.notes || '';
+    document.getElementById('rsv-delete-btn')?.classList.remove('hidden');
+    document.getElementById('reservation-modal-title').textContent = 'Editar Reserva';
+    openModal('reservation-modal');
+}
+
+document.getElementById('rsv-save-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('reservation-edit-id').value;
+    const data = {
+        area:         document.getElementById('rsv-area').value,
+        status:       document.getElementById('rsv-status').value,
+        unit:         document.getElementById('rsv-unit').value.trim(),
+        residentName: document.getElementById('rsv-resident').value.trim(),
+        date:         document.getElementById('rsv-date').value,
+        startTime:    document.getElementById('rsv-start-time').value,
+        endTime:      document.getElementById('rsv-end-time').value,
+        notes:        document.getElementById('rsv-notes').value.trim() || undefined,
+    };
+    if (!data.unit || !data.residentName || !data.date || !data.startTime || !data.endTime) {
+        alert('Preencha unidade, morador, data e horários.'); return;
+    }
+    try {
+        if (id) await convexMutation('reservations:updateReservation', { id, ...data });
+        else    await convexMutation('reservations:createReservation', data);
+        closeModal('reservation-modal');
+        showToast('Reserva salva com sucesso', 'success');
+        await loadReservations();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('rsv-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('reservation-edit-id').value;
+    if (!id || !confirm('Excluir esta reserva?')) return;
+    await convexMutation('reservations:deleteReservation', { id });
+    closeModal('reservation-modal');
+    showToast('Reserva excluída', 'info');
+    await loadReservations();
+});
+
+// ─── MÓDULO: MANUTENÇÃO ──────────────────────────────────────────────────────
+
+let allMaintenances = [];
+let mntFilter = 'all';
+
+async function loadMaintenances() {
+    const list = document.getElementById('maintenances-list');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allMaintenances = await convexQuery('maintenances:getAllMaintenances') || [];
+        renderMaintenances();
+    } catch(e) { console.error('Erro ao carregar manutenções:', e); }
+}
+
+function renderMaintenances() {
+    const list  = document.getElementById('maintenances-list');
+    const empty = document.getElementById('maintenances-empty');
+    if (!list) return;
+    const filtered = mntFilter === 'all' ? allMaintenances : allMaintenances.filter(m => m.status === mntFilter);
+    if (!filtered.length) { list.innerHTML = ''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    const priorityCfg = {
+        baixa:   { cls:'bg-slate-500/20 text-slate-400',   label:'🔵 Baixa' },
+        media:   { cls:'bg-yellow-500/20 text-yellow-400', label:'🟡 Média' },
+        alta:    { cls:'bg-orange-500/20 text-orange-400', label:'🟠 Alta' },
+        urgente: { cls:'bg-red-500/20 text-red-400',       label:'🔴 Urgente' },
+    };
+    const statusCfgMnt = {
+        aberto:       { cls:'bg-blue-500/20 text-blue-400',    label:'🔓 Aberto' },
+        em_andamento: { cls:'bg-yellow-500/20 text-yellow-400',label:'⚙️ Em Andamento' },
+        concluido:    { cls:'bg-emerald-500/20 text-emerald-400',label:'✅ Concluído' },
+        cancelado:    { cls:'bg-red-500/20 text-red-400',      label:'❌ Cancelado' },
+    };
+    list.innerHTML = filtered.map(m => {
+        const pcfg = priorityCfg[m.priority] || priorityCfg.media;
+        const scfg = statusCfgMnt[m.status] || statusCfgMnt.aberto;
+        return `
+        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4 md:p-5">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${pcfg.cls}">${pcfg.label}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${scfg.cls}">${scfg.label}</span>
+                </div>
+                ${isAdmin ? `<button onclick="editMaintenance('${m._id}')" class="shrink-0 p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+            </div>
+            <h4 class="font-semibold text-white text-sm mb-1">${m.title}</h4>
+            <div class="flex flex-wrap gap-3 text-xs text-emerald-600">
+                ${m.area ? `<span>📍 ${m.area}</span>` : ''}
+                ${m.scheduledDate ? `<span>📅 ${fmtDateBR(m.scheduledDate)}</span>` : ''}
+                ${m.cost != null ? `<span class="text-emerald-500">💰 ${fmtBRL(m.cost)}</span>` : ''}
+            </div>
+            ${m.description ? `<p class="text-emerald-700 text-xs mt-2 line-clamp-2">${m.description}</p>` : ''}
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.mnt-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        mntFilter = btn.dataset.mtfilter;
+        document.querySelectorAll('.mnt-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderMaintenances();
+    });
+});
+
+document.getElementById('new-maintenance-btn')?.addEventListener('click', () => {
+    document.getElementById('maintenance-edit-id').value = '';
+    document.getElementById('mnt-title').value = '';
+    document.getElementById('mnt-priority').value = 'media';
+    document.getElementById('mnt-status').value = 'aberto';
+    document.getElementById('mnt-area').value = '';
+    document.getElementById('mnt-description').value = '';
+    document.getElementById('mnt-scheduled-date').value = '';
+    document.getElementById('mnt-cost').value = '';
+    document.getElementById('mnt-notes').value = '';
+    document.getElementById('mnt-delete-btn')?.classList.add('hidden');
+    document.getElementById('maintenance-modal-title').textContent = 'Novo Chamado';
+    openModal('maintenance-modal');
+});
+document.getElementById('maintenance-modal-close')?.addEventListener('click', () => closeModal('maintenance-modal'));
+document.getElementById('maintenance-modal-backdrop')?.addEventListener('click', () => closeModal('maintenance-modal'));
+
+function editMaintenance(id) {
+    const m = allMaintenances.find(x => x._id === id);
+    if (!m) return;
+    document.getElementById('maintenance-edit-id').value = id;
+    document.getElementById('mnt-title').value = m.title;
+    document.getElementById('mnt-priority').value = m.priority;
+    document.getElementById('mnt-status').value = m.status;
+    document.getElementById('mnt-area').value = m.area || '';
+    document.getElementById('mnt-description').value = m.description || '';
+    document.getElementById('mnt-scheduled-date').value = m.scheduledDate || '';
+    document.getElementById('mnt-cost').value = m.cost != null ? m.cost : '';
+    document.getElementById('mnt-notes').value = m.notes || '';
+    document.getElementById('mnt-delete-btn')?.classList.remove('hidden');
+    document.getElementById('maintenance-modal-title').textContent = 'Editar Chamado';
+    openModal('maintenance-modal');
+}
+
+document.getElementById('mnt-save-btn')?.addEventListener('click', async () => {
+    const id  = document.getElementById('maintenance-edit-id').value;
+    const cv  = document.getElementById('mnt-cost').value;
+    const data = {
+        title:         document.getElementById('mnt-title').value.trim(),
+        priority:      document.getElementById('mnt-priority').value,
+        status:        document.getElementById('mnt-status').value,
+        area:          document.getElementById('mnt-area').value.trim() || undefined,
+        description:   document.getElementById('mnt-description').value.trim() || undefined,
+        scheduledDate: document.getElementById('mnt-scheduled-date').value || undefined,
+        cost:          cv ? parseFloat(cv) : undefined,
+        notes:         document.getElementById('mnt-notes').value.trim() || undefined,
+    };
+    if (!data.title) { alert('Preencha o título do chamado.'); return; }
+    try {
+        if (id) await convexMutation('maintenances:updateMaintenance', { id, ...data });
+        else    await convexMutation('maintenances:createMaintenance', data);
+        closeModal('maintenance-modal');
+        showToast('Chamado salvo com sucesso', 'success');
+        await loadMaintenances();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('mnt-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('maintenance-edit-id').value;
+    if (!id || !confirm('Excluir este chamado?')) return;
+    await convexMutation('maintenances:deleteMaintenance', { id });
+    closeModal('maintenance-modal');
+    showToast('Chamado excluído', 'info');
+    await loadMaintenances();
+});
+
+// ─── MÓDULO: VISITANTES ──────────────────────────────────────────────────────
+
+let allVisitors = [];
+let visFilter = 'all';
+
+async function loadVisitors() {
+    const list = document.getElementById('visitors-list');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allVisitors = await convexQuery('visitors:getAllVisitors') || [];
+        renderVisitors();
+    } catch(e) { console.error('Erro ao carregar visitantes:', e); }
+}
+
+function renderVisitors() {
+    const list  = document.getElementById('visitors-list');
+    const empty = document.getElementById('visitors-empty');
+    if (!list) return;
+    const filtered = visFilter === 'all' ? allVisitors : allVisitors.filter(v => v.status === visFilter);
+    if (!filtered.length) { list.innerHTML = ''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    list.innerHTML = filtered.map(v => {
+        const statusBadge = v.status === 'presente'
+            ? 'bg-emerald-500/20 text-emerald-400'
+            : 'bg-slate-500/20 text-slate-400';
+        const statusLabel = v.status === 'presente' ? '🟢 Presente' : '⚫ Saiu';
+        return `
+        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4 md:p-5">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sm font-semibold text-white">${v.name}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusBadge}">${statusLabel}</span>
+                </div>
+                <div class="flex gap-1 shrink-0">
+                    ${isAdmin && v.status === 'presente' ? `<button onclick="registerVisitorExit('${v._id}')" class="px-2 py-1 text-[10px] font-bold bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 rounded-lg transition-colors">Registrar Saída</button>` : ''}
+                    ${isAdmin ? `<button onclick="editVisitor('${v._id}')" class="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-3 text-xs text-emerald-600">
+                <span>🏠 Unid. ${v.unit}</span>
+                ${v.residentName ? `<span>👤 ${v.residentName}</span>` : ''}
+                <span>📅 ${fmtDateBR(v.date)}</span>
+                <span>🕐 Entrada: ${v.entryTime}</span>
+                ${v.exitTime ? `<span>🕑 Saída: ${v.exitTime}</span>` : ''}
+                ${v.vehicle ? `<span>🚗 ${v.vehicle}</span>` : ''}
+            </div>
+            ${v.purpose ? `<p class="text-emerald-700 text-xs mt-1">Motivo: ${v.purpose}</p>` : ''}
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.vis-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        visFilter = btn.dataset.vsfilter;
+        document.querySelectorAll('.vis-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderVisitors();
+    });
+});
+
+function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function nowHHMM() {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+document.getElementById('new-visitor-btn')?.addEventListener('click', () => {
+    document.getElementById('visitor-edit-id').value = '';
+    document.getElementById('vis-name').value = '';
+    document.getElementById('vis-document').value = '';
+    document.getElementById('vis-unit').value = '';
+    document.getElementById('vis-resident').value = '';
+    document.getElementById('vis-date').value = todayISO();
+    document.getElementById('vis-entry-time').value = nowHHMM();
+    document.getElementById('vis-exit-time').value = '';
+    document.getElementById('vis-status').value = 'presente';
+    document.getElementById('vis-purpose').value = '';
+    document.getElementById('vis-vehicle').value = '';
+    document.getElementById('vis-delete-btn')?.classList.add('hidden');
+    document.getElementById('visitor-modal-title').textContent = 'Registrar Visitante';
+    openModal('visitor-modal');
+});
+document.getElementById('visitor-modal-close')?.addEventListener('click', () => closeModal('visitor-modal'));
+document.getElementById('visitor-modal-backdrop')?.addEventListener('click', () => closeModal('visitor-modal'));
+
+function editVisitor(id) {
+    const v = allVisitors.find(x => x._id === id);
+    if (!v) return;
+    document.getElementById('visitor-edit-id').value = id;
+    document.getElementById('vis-name').value = v.name;
+    document.getElementById('vis-document').value = v.document || '';
+    document.getElementById('vis-unit').value = v.unit;
+    document.getElementById('vis-resident').value = v.residentName || '';
+    document.getElementById('vis-date').value = v.date;
+    document.getElementById('vis-entry-time').value = v.entryTime;
+    document.getElementById('vis-exit-time').value = v.exitTime || '';
+    document.getElementById('vis-status').value = v.status;
+    document.getElementById('vis-purpose').value = v.purpose || '';
+    document.getElementById('vis-vehicle').value = v.vehicle || '';
+    document.getElementById('vis-delete-btn')?.classList.remove('hidden');
+    document.getElementById('visitor-modal-title').textContent = 'Editar Visitante';
+    openModal('visitor-modal');
+}
+
+async function registerVisitorExit(id) {
+    const exitTime = nowHHMM();
+    try {
+        await convexMutation('visitors:updateVisitor', { id, exitTime, status: 'saiu' });
+        showToast('Saída registrada', 'success');
+        await loadVisitors();
+    } catch(e) { alert('Erro ao registrar saída: ' + e.message); }
+}
+
+document.getElementById('vis-save-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('visitor-edit-id').value;
+    const data = {
+        name:        document.getElementById('vis-name').value.trim(),
+        document:    document.getElementById('vis-document').value.trim() || undefined,
+        unit:        document.getElementById('vis-unit').value.trim(),
+        residentName:document.getElementById('vis-resident').value.trim() || undefined,
+        date:        document.getElementById('vis-date').value,
+        entryTime:   document.getElementById('vis-entry-time').value,
+        exitTime:    document.getElementById('vis-exit-time').value || undefined,
+        status:      document.getElementById('vis-status').value,
+        purpose:     document.getElementById('vis-purpose').value.trim() || undefined,
+        vehicle:     document.getElementById('vis-vehicle').value.trim() || undefined,
+    };
+    if (!data.name || !data.unit || !data.date || !data.entryTime) {
+        alert('Preencha nome, unidade, data e hora de entrada.'); return;
+    }
+    try {
+        if (id) await convexMutation('visitors:updateVisitor', { id, ...data });
+        else    await convexMutation('visitors:createVisitor', data);
+        closeModal('visitor-modal');
+        showToast('Visitante salvo com sucesso', 'success');
+        await loadVisitors();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('vis-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('visitor-edit-id').value;
+    if (!id || !confirm('Excluir este registro de visitante?')) return;
+    await convexMutation('visitors:deleteVisitor', { id });
+    closeModal('visitor-modal');
+    showToast('Registro excluído', 'info');
+    await loadVisitors();
+});
+
+// ─── MÓDULO: GESTÃO DE USUÁRIOS ──────────────────────────────────────────────
+
+let allUsers = [];
+
+async function loadUsers() {
+    const list = document.getElementById('users-list');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allUsers = await convexQuery('users:listUsers') || [];
+        renderUsers();
+    } catch(e) { console.error('Erro ao carregar usuários:', e); }
+}
+
+function renderUsers() {
+    const list = document.getElementById('users-list');
+    if (!list) return;
+    if (!allUsers.length) { list.innerHTML = '<p class="text-emerald-700 text-sm">Nenhum usuário cadastrado.</p>'; return; }
+    const roleBadge = {
+        sysadmin: 'bg-purple-500/20 text-purple-400',
+        admin:    'bg-emerald-500/20 text-emerald-400',
+        viewer:   'bg-slate-500/20 text-slate-400',
+    };
+    const roleLabel = { sysadmin:'🛡️ Sysadmin', admin:'⚙️ Admin', viewer:'👁️ Viewer' };
+    list.innerHTML = allUsers.map(u => `
+        <div class="flex items-center justify-between gap-3 bg-emerald-900/20 border border-emerald-800/30 rounded-xl px-4 py-3">
+            <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sm font-semibold text-white truncate">${u.name}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${roleBadge[u.role] || roleBadge.viewer}">${roleLabel[u.role] || u.role}</span>
+                    ${!u.active ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-500/20 text-red-400">Inativo</span>' : ''}
+                </div>
+                <p class="text-xs text-emerald-600 mt-0.5">${u.email}</p>
+            </div>
+            <div class="flex gap-1 shrink-0">
+                <button onclick="openEditUser('${u._id}')" class="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                <button onclick="deleteUser('${u._id}')" class="p-1.5 rounded-lg text-red-700/60 hover:text-red-400 hover:bg-red-900/20 transition-colors" title="Excluir"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showUserForm(isNew = true) {
+    const wrap = document.getElementById('user-form-wrap');
+    const hint = document.getElementById('usr-pass-hint');
+    if (wrap) wrap.classList.remove('hidden');
+    if (hint) hint.textContent = isNew ? '(obrigatória)' : '(deixe em branco para manter)';
+    document.getElementById('user-form-title').textContent = isNew ? 'Novo Usuário' : 'Editar Usuário';
+}
+
+document.getElementById('new-user-btn')?.addEventListener('click', () => {
+    document.getElementById('user-edit-id').value = '';
+    document.getElementById('usr-name').value = '';
+    document.getElementById('usr-email').value = '';
+    document.getElementById('usr-password').value = '';
+    document.getElementById('usr-role').value = 'viewer';
+    document.getElementById('usr-active').checked = true;
+    showUserForm(true);
+});
+
+function openEditUser(id) {
+    const u = allUsers.find(x => x._id === id);
+    if (!u) return;
+    document.getElementById('user-edit-id').value = id;
+    document.getElementById('usr-name').value = u.name;
+    document.getElementById('usr-email').value = u.email;
+    document.getElementById('usr-password').value = '';
+    document.getElementById('usr-role').value = u.role;
+    document.getElementById('usr-active').checked = u.active;
+    showUserForm(false);
+}
+
+async function deleteUser(id) {
+    if (!confirm('Excluir este usuário? Esta ação é irreversível.')) return;
+    try {
+        await convexMutation('users:deleteUser', { id });
+        showToast('Usuário excluído', 'info');
+        await loadUsers();
+    } catch(e) { alert('Erro ao excluir: ' + e.message); }
+}
+
+document.getElementById('usr-cancel-btn')?.addEventListener('click', () => {
+    document.getElementById('user-form-wrap')?.classList.add('hidden');
+});
+
+document.getElementById('usr-save-btn')?.addEventListener('click', async () => {
+    const id       = document.getElementById('user-edit-id').value;
+    const name     = document.getElementById('usr-name').value.trim();
+    const email    = document.getElementById('usr-email').value.trim();
+    const pass     = document.getElementById('usr-password').value;
+    const role     = document.getElementById('usr-role').value;
+    const active   = document.getElementById('usr-active').checked;
+
+    if (!name || !email) { alert('Preencha nome e e-mail.'); return; }
+    if (!id && !pass) { alert('A senha é obrigatória para novos usuários.'); return; }
+
+    try {
+        let passwordHash = undefined;
+        if (pass) passwordHash = await hashPassword(pass);
+
+        if (id) {
+            const upd = { id, name, role, active };
+            if (passwordHash) upd.passwordHash = passwordHash;
+            await convexMutation('users:updateUser', upd);
+        } else {
+            await convexMutation('users:createUser', { name, email, passwordHash, role });
+        }
+        document.getElementById('user-form-wrap')?.classList.add('hidden');
+        showToast('Usuário salvo com sucesso', 'success');
+        await loadUsers();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('users-modal-close')?.addEventListener('click', () => closeModal('users-modal'));
+document.getElementById('users-modal-backdrop')?.addEventListener('click', () => closeModal('users-modal'));
+
+document.getElementById('drawer-users-btn')?.addEventListener('click', () => {
+    closeDrawer();
+    document.getElementById('user-form-wrap')?.classList.add('hidden');
+    openModal('users-modal');
+    loadUsers();
+});
+
 // ─── SINCRONIZA ADMIN COM MÓDULOS ─────────────────────────────────────────────
 // Sobrescreve setAdminMode para também atualizar botões dos módulos
 
@@ -1549,7 +2366,7 @@ const _origSetAdminMode = setAdminMode;
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
 window.addEventListener('load', async () => {
-    console.log('AMRTS Santorini v2.0 — Carregando dados do Convex...');
+    console.log('AMRTS Santorini v3.0 — Carregando dados do Convex...');
     await loadFromConvex();
     // Sincroniza indicador do drawer
     const drawerUpd = document.getElementById('drawer-last-update');

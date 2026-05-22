@@ -1090,6 +1090,413 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.0"></script>
+    <!-- ═══ MODAL: FORNECEDOR ═══ -->
+    <div id="supplier-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="supplier-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="supplier-modal-title" class="text-lg font-bold text-white">Novo Fornecedor</h3>
+                <button id="supplier-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="supplier-edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Nome <span class="text-red-400">*</span></label>
+                    <input id="sup-name" type="text" placeholder="Nome do fornecedor" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Categoria</label>
+                        <select id="sup-category" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="limpeza">🧹 Limpeza</option>
+                            <option value="manutencao">🔧 Manutenção</option>
+                            <option value="seguranca">🔒 Segurança</option>
+                            <option value="jardinagem">🌿 Jardinagem</option>
+                            <option value="outro">📦 Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Status</label>
+                        <select id="sup-status" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="ativo">✅ Ativo</option>
+                            <option value="inativo">⛔ Inativo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">CNPJ <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="sup-cnpj" type="text" placeholder="00.000.000/0001-00" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Contato <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="sup-contact" type="text" placeholder="Nome do responsável" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Telefone <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="sup-phone" type="text" placeholder="(00) 00000-0000" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">E-mail <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="sup-email" type="email" placeholder="contato@empresa.com" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Início do contrato</label>
+                        <input id="sup-contract-start" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Fim do contrato</label>
+                        <input id="sup-contract-end" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Valor mensal (R$) <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <input id="sup-monthly-value" type="number" min="0" step="0.01" placeholder="0,00" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Observações <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="sup-notes" rows="2" placeholder="Informações adicionais..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="sup-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="sup-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: PATRIMÔNIO ═══ -->
+    <div id="asset-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="asset-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="asset-modal-title" class="text-lg font-bold text-white">Novo Bem</h3>
+                <button id="asset-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="asset-edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Nome <span class="text-red-400">*</span></label>
+                    <input id="ast-name" type="text" placeholder="Ex: Bomba d'água, Gerador..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Categoria</label>
+                        <select id="ast-category" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="equipamento">⚙️ Equipamento</option>
+                            <option value="veiculo">🚗 Veículo</option>
+                            <option value="mobiliario">🪑 Mobiliário</option>
+                            <option value="eletronico">💻 Eletrônico</option>
+                            <option value="outro">📦 Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Status</label>
+                        <select id="ast-status" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="ativo">✅ Ativo</option>
+                            <option value="manutencao">🔧 Manutenção</option>
+                            <option value="inativo">⛔ Inativo</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Descrição <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="ast-description" rows="2" placeholder="Detalhes sobre o bem..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Data de aquisição</label>
+                        <input id="ast-acquisition-date" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Valor de aquisição (R$)</label>
+                        <input id="ast-acquisition-value" type="number" min="0" step="0.01" placeholder="0,00" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Localização <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <input id="ast-location" type="text" placeholder="Ex: Casa de máquinas, Portaria..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Observações <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="ast-notes" rows="2" placeholder="Informações adicionais..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="ast-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="ast-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: RESERVA ═══ -->
+    <div id="reservation-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="reservation-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="reservation-modal-title" class="text-lg font-bold text-white">Nova Reserva</h3>
+                <button id="reservation-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="reservation-edit-id">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Área <span class="text-red-400">*</span></label>
+                        <select id="rsv-area" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="salao">🎉 Salão de Festas</option>
+                            <option value="piscina">🏊 Piscina</option>
+                            <option value="churrasqueira">🔥 Churrasqueira</option>
+                            <option value="quadra">🏀 Quadra</option>
+                            <option value="outro">📍 Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Status</label>
+                        <select id="rsv-status" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="pendente">⏳ Pendente</option>
+                            <option value="confirmada">✅ Confirmada</option>
+                            <option value="cancelada">❌ Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Unidade <span class="text-red-400">*</span></label>
+                        <input id="rsv-unit" type="text" placeholder="Ex: 101, B-203..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Morador <span class="text-red-400">*</span></label>
+                        <input id="rsv-resident" type="text" placeholder="Nome do morador" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Data <span class="text-red-400">*</span></label>
+                    <input id="rsv-date" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Início <span class="text-red-400">*</span></label>
+                        <input id="rsv-start-time" type="time" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Término <span class="text-red-400">*</span></label>
+                        <input id="rsv-end-time" type="time" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Observações <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="rsv-notes" rows="2" placeholder="Informações adicionais..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="rsv-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="rsv-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: MANUTENÇÃO ═══ -->
+    <div id="maintenance-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="maintenance-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="maintenance-modal-title" class="text-lg font-bold text-white">Novo Chamado</h3>
+                <button id="maintenance-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="maintenance-edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Título <span class="text-red-400">*</span></label>
+                    <input id="mnt-title" type="text" placeholder="Descrição breve do problema" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Prioridade</label>
+                        <select id="mnt-priority" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="baixa">🔵 Baixa</option>
+                            <option value="media">🟡 Média</option>
+                            <option value="alta">🟠 Alta</option>
+                            <option value="urgente">🔴 Urgente</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Status</label>
+                        <select id="mnt-status" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="aberto">🔓 Aberto</option>
+                            <option value="em_andamento">⚙️ Em Andamento</option>
+                            <option value="concluido">✅ Concluído</option>
+                            <option value="cancelado">❌ Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Área / Local <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <input id="mnt-area" type="text" placeholder="Ex: Piscina, Portaria, Bloco A..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Descrição <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="mnt-description" rows="2" placeholder="Detalhes do problema..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Data prevista</label>
+                        <input id="mnt-scheduled-date" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Custo (R$)</label>
+                        <input id="mnt-cost" type="number" min="0" step="0.01" placeholder="0,00" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Observações <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="mnt-notes" rows="2" placeholder="Informações adicionais..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="mnt-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="mnt-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: VISITANTE ═══ -->
+    <div id="visitor-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="visitor-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="visitor-modal-title" class="text-lg font-bold text-white">Registrar Visitante</h3>
+                <button id="visitor-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="visitor-edit-id">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Nome <span class="text-red-400">*</span></label>
+                        <input id="vis-name" type="text" placeholder="Nome do visitante" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Documento <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="vis-document" type="text" placeholder="CPF, RG..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Unidade <span class="text-red-400">*</span></label>
+                        <input id="vis-unit" type="text" placeholder="Ex: 101, B-203..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Morador <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="vis-resident" type="text" placeholder="Quem receberá" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Data <span class="text-red-400">*</span></label>
+                        <input id="vis-date" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Entrada <span class="text-red-400">*</span></label>
+                        <input id="vis-entry-time" type="time" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Saída <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="vis-exit-time" type="time" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Status</label>
+                        <select id="vis-status" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="presente">🟢 Presente</option>
+                            <option value="saiu">⚫ Saiu</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Motivo <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="vis-purpose" type="text" placeholder="Visita, serviço..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Veículo <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                        <input id="vis-vehicle" type="text" placeholder="Placa / Modelo" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="vis-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="vis-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: GESTÃO DE USUÁRIOS ═══ -->
+    <div id="users-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="users-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    Gestão de Usuários
+                </h3>
+                <button id="users-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-1">
+                <!-- Lista de usuários -->
+                <div class="flex items-center justify-between mb-4">
+                    <p class="text-sm text-emerald-400">Usuários do sistema</p>
+                    <button id="new-user-btn" class="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                        Novo Usuário
+                    </button>
+                </div>
+                <div id="users-list" class="space-y-2 mb-6"><p class="text-emerald-700 text-sm animate-pulse">Carregando...</p></div>
+
+                <!-- Formulário de criar/editar usuário -->
+                <div id="user-form-wrap" class="hidden border border-emerald-800/50 rounded-2xl p-4 space-y-4 bg-emerald-950/30">
+                    <h4 id="user-form-title" class="text-sm font-bold text-emerald-300">Novo Usuário</h4>
+                    <input type="hidden" id="user-edit-id">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Nome</label>
+                            <input id="usr-name" type="text" placeholder="Nome completo" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">E-mail</label>
+                            <input id="usr-email" type="email" placeholder="usuario@email.com" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Senha <span id="usr-pass-hint" class="text-emerald-700 normal-case">(obrigatória)</span></label>
+                            <input id="usr-password" type="password" placeholder="••••••••" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Papel</label>
+                            <select id="usr-role" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                                <option value="viewer">👁️ Visualizador</option>
+                                <option value="admin">⚙️ Admin</option>
+                                <option value="sysadmin">🛡️ Sysadmin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input id="usr-active" type="checkbox" checked class="w-4 h-4 rounded border-emerald-700 bg-emerald-950 text-emerald-500">
+                        <label for="usr-active" class="text-sm text-emerald-300">Usuário ativo</label>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="usr-cancel-btn" class="px-4 py-2.5 text-emerald-600 hover:text-emerald-400 rounded-xl text-sm transition-colors border border-emerald-800/50">Cancelar</button>
+                        <button id="usr-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=3.0"></script>
 </body>
 </html>
