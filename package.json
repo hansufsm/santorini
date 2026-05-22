@@ -1,0 +1,19 @@
+{
+  "name": "santorini",
+  "version": "1.0.0",
+  "description": "Dashboard interativo para gestão financeira do Residencial Santorini.   Versão 2.0 — Dados persistidos no **Convex** · Hospedado no **GitHub Pages**.",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://local_proxy@127.0.0.1:41513/git/zionsti/santorini"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "convex": "^1.39.1"
+  }
+}
