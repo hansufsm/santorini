@@ -8,12 +8,14 @@ export const importAssociates = mutation({
   args: {
     associates: v.array(v.object({
       name: v.string(),
+      unit: v.optional(v.string()),        // aceita (mas não obriga) unidade do CSV
       cpf: v.optional(v.string()),
       cpfPrefix: v.optional(v.string()),
       email: v.optional(v.string()),
       phone: v.optional(v.string()),
       joinedAt: v.optional(v.string()),
       leftAt: v.optional(v.string()),
+      notes: v.optional(v.string()),
       status: v.union(v.literal("ativo"), v.literal("inativo"), v.literal("inadimplente")),
     })),
   },
