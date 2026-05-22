@@ -730,13 +730,31 @@ document.getElementById('portal-search-btn')?.addEventListener('click', () => {
     renderUserPortal(userTxs);
 });
 
-// ─── AUTENTICAÇÃO MOCKADA ─────────────────────────────────────────────────────
-// Temporário — substituir por autenticação real na Fase 2
+// ─── AUTENTICAÇÃO VIA CONVEX ──────────────────────────────────────────────────
+// Usuários persistidos na tabela `users` do Convex com hash SHA-256.
 
-const ADMIN_CREDENTIALS = {
-    email: 'zrhans@gmail.com',
-    password: 'S3msenha'
-};
+/** Retorna o hash SHA-256 (hex) de uma string, usando Web Crypto API. */
+async function hashPassword(password) {
+    const enc  = new TextEncoder();
+    const buf  = await crypto.subtle.digest('SHA-256', enc.encode(password));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Garante que o primeiro sysadmin existe no Convex (migração idempotente).
+ * Chamado uma vez na inicialização — se já existe, retorna sem fazer nada.
+ */
+async function ensureSysAdmin() {
+    try {
+        const hash = await hashPassword('S3msenha');
+        await convexMutation('users:seedSysAdmin', {
+            name:         'Hans Rogério Zimmermann',
+            email:        'zrhans@gmail.com',
+            passwordHash: hash,
+        });
+    } catch (_) { /* ignora — já existe ou Convex offline */ }
+}
+ensureSysAdmin();
 
 const adminModal       = document.getElementById('admin-modal');
 const adminControls    = document.getElementById('admin-controls');
@@ -748,7 +766,28 @@ const adminEmailInput  = document.getElementById('admin-email');
 const adminPassInput   = document.getElementById('admin-password');
 const adminLoginError  = document.getElementById('admin-login-error');
 
-function setAdminMode(isAdmin) {
+/**
+ * Ativa/desativa modo admin.
+ * @param {boolean} isAdmin
+ * @param {{ name: string, email: string, role: string }|null} user  – dados do Convex
+ */
+function setAdminMode(isAdmin, user = null) {
+    // Persistência de sessão
+    if (isAdmin) {
+        const stored = user || JSON.parse(sessionStorage.getItem('adminUser') || 'null');
+        if (stored) sessionStorage.setItem('adminUser', JSON.stringify(stored));
+        sessionStorage.setItem('adminSession', '1');
+
+        // Atualiza info do usuário no drawer
+        const nameEl = document.getElementById('drawer-user-name');
+        const roleEl = document.getElementById('drawer-user-role');
+        if (nameEl) nameEl.textContent = stored?.name  || 'Admin';
+        if (roleEl) roleEl.textContent = stored?.role  || 'admin';
+    } else {
+        sessionStorage.removeItem('adminSession');
+        sessionStorage.removeItem('adminUser');
+    }
+
     // Drawer admin sections
     const drawerLoginWrap    = document.getElementById('drawer-admin-login-wrap');
     const drawerControlsWrap = document.getElementById('drawer-admin-controls-wrap');
@@ -764,7 +803,6 @@ function setAdminMode(isAdmin) {
         adminControlsMob?.classList.remove('hidden');
         adminControlsMob?.classList.add('flex');
         adminLoginBtnMob?.classList.add('hidden');
-        sessionStorage.setItem('adminSession', '1');
     } else {
         adminControls?.classList.add('hidden');
         adminControls?.classList.remove('flex');
@@ -772,7 +810,6 @@ function setAdminMode(isAdmin) {
         adminControlsMob?.classList.add('hidden');
         adminControlsMob?.classList.remove('flex');
         adminLoginBtnMob?.classList.remove('hidden');
-        sessionStorage.removeItem('adminSession');
     }
     // Atualiza botões admin nos módulos da Fase 2
     if (typeof syncAdminButtons === 'function') syncAdminButtons(isAdmin);
@@ -800,21 +837,40 @@ adminModal?.addEventListener('click', (e) => {
     if (e.target === adminModal) adminModal.classList.add('hidden');
 });
 
-adminConfirmBtn?.addEventListener('click', () => {
+adminConfirmBtn?.addEventListener('click', async () => {
     const email = adminEmailInput?.value.trim();
     const pass  = adminPassInput?.value;
+    if (!email || !pass) return;
 
-    if (email === ADMIN_CREDENTIALS.email && pass === ADMIN_CREDENTIALS.password) {
-        adminModal?.classList.add('hidden');
-        setAdminMode(true);
-    } else {
+    // Feedback visual
+    adminConfirmBtn.disabled = true;
+    const origLabel = adminConfirmBtn.textContent;
+    adminConfirmBtn.textContent = 'Verificando…';
+
+    try {
+        const hash = await hashPassword(pass);
+        const user = await convexQuery('users:authenticate', { email, passwordHash: hash });
+        if (user) {
+            adminModal?.classList.add('hidden');
+            setAdminMode(true, user);
+        } else {
+            adminLoginError?.classList.remove('hidden');
+            if (adminPassInput) adminPassInput.value = '';
+            adminPassInput?.focus();
+        }
+    } catch (err) {
+        console.error('Erro no login:', err);
         adminLoginError?.classList.remove('hidden');
-        if (adminPassInput) adminPassInput.value = '';
-        adminPassInput?.focus();
+    } finally {
+        adminConfirmBtn.disabled = false;
+        adminConfirmBtn.textContent = origLabel;
     }
 });
 
 // Permitir Enter para confirmar login
+adminEmailInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') adminPassInput?.focus();
+});
 adminPassInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') adminConfirmBtn?.click();
 });
@@ -823,7 +879,8 @@ adminLogoutBtn?.addEventListener('click', () => setAdminMode(false));
 
 // Restaurar sessão admin se já estava logado
 if (sessionStorage.getItem('adminSession') === '1') {
-    setAdminMode(true);
+    const storedUser = JSON.parse(sessionStorage.getItem('adminUser') || 'null');
+    setAdminMode(true, storedUser);
 }
 
 // ─── MENU MOBILE ─────────────────────────────────────────────────────────────

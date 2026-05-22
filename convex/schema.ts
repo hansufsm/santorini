@@ -97,4 +97,20 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_assembly", ["assemblyId"]),
+
+  users: defineTable({
+    name: v.string(),
+    email: v.string(),
+    passwordHash: v.string(), // SHA-256 hex
+    role: v.union(
+      v.literal("sysadmin"),
+      v.literal("admin"),
+      v.literal("viewer")
+    ),
+    active: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_role", ["role"]),
 });
