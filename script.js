@@ -1033,6 +1033,88 @@ document.getElementById('drawer-import-csv-btn')?.addEventListener('click', () =
     document.getElementById('csv-file-input')?.click();
 });
 
+// ─── IMPORTAR CSV DE ASSOCIADOS ───────────────────────────────────────────────
+
+document.getElementById('drawer-import-associates-btn')?.addEventListener('click', () => {
+    closeDrawer();
+    document.getElementById('associates-csv-input')?.click();
+});
+
+document.getElementById('associates-csv-input')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';   // permite reselecionar o mesmo arquivo
+
+    showToast('Processando CSV de associados…', 'info', 3000);
+
+    try {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) throw new Error('CSV vazio ou sem dados.');
+
+        // Detecta separador (vírgula ou ponto-e-vírgula)
+        const sep = lines[0].includes(';') ? ';' : ',';
+        const headers = lines[0].split(sep).map(h => h.trim().toLowerCase()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')  // remove acentos
+            .replace(/\s+/g, '_'));
+
+        // Mapeamento flexível de colunas
+        const col = (names) => names.map(n => headers.indexOf(n)).find(i => i >= 0) ?? -1;
+        const iNome      = col(['nome', 'name']);
+        const iCpf       = col(['cpf']);
+        const iEmail     = col(['e-mail', 'email']);
+        const iTel       = col(['telefone', 'tel', 'fone', 'celular']);
+        const iAdesao    = col(['adesao', 'adesão', 'joined_at', 'data_adesao']);
+        const iDeslig    = col(['desligamento', 'left_at', 'data_desligamento', 'saida', 'saída']);
+
+        if (iNome < 0) throw new Error('Coluna "Nome" não encontrada no CSV.');
+
+        // Formata data BR (dd/mm/yyyy) ou ISO para ISO (yyyy-mm-dd)
+        function parseDate(str) {
+            if (!str || !str.trim()) return undefined;
+            const s = str.trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;       // já é ISO
+            const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+            return undefined;
+        }
+
+        const associates = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
+            const name = cols[iNome]?.trim();
+            if (!name) continue;
+
+            const cpfRaw  = iCpf  >= 0 ? cols[iCpf]?.replace(/\D/g, '') : '';
+            const leftAt  = iDeslig  >= 0 ? parseDate(cols[iDeslig])  : undefined;
+            const joinedAt = iAdesao >= 0 ? parseDate(cols[iAdesao]) : undefined;
+
+            associates.push({
+                name,
+                cpf:       cpfRaw || undefined,
+                cpfPrefix: cpfRaw ? cpfRaw.substring(0, 4) : undefined,
+                email:     iEmail >= 0 ? cols[iEmail]?.trim() || undefined : undefined,
+                phone:     iTel   >= 0 ? cols[iTel]?.trim()   || undefined : undefined,
+                joinedAt,
+                leftAt,
+                // Se tem data de desligamento → inativo; senão → ativo
+                status:    leftAt ? 'inativo' : 'ativo',
+            });
+        }
+
+        if (!associates.length) throw new Error('Nenhum associado válido encontrado.');
+
+        const result = await convexMutation('associates:importAssociates', { associates });
+        showToast(
+            `✓ ${result.inserted} inseridos, ${result.updated} atualizados (total: ${result.total})`,
+            'success', 5000
+        );
+    } catch (err) {
+        console.error('Erro ao importar associados:', err);
+        showToast('Erro: ' + err.message, 'error', 7000);
+    }
+});
+
 document.getElementById('drawer-clear-transactions-btn')?.addEventListener('click', async () => {
     closeDrawer();
     const ok = confirm(

@@ -20,9 +20,9 @@ export default defineSchema({
 
   associates: defineTable({
     name: v.string(),
-    unit: v.string(),
-    cpf: v.optional(v.string()),
-    cpfPrefix: v.optional(v.string()),
+    unit: v.optional(v.string()),       // não obrigatório — CSV de associados não tem unidade
+    cpf: v.optional(v.string()),         // CPF completo (só admin vê)
+    cpfPrefix: v.optional(v.string()),   // 4 primeiros dígitos — usado no portal público
     phone: v.optional(v.string()),
     email: v.optional(v.string()),
     status: v.union(
@@ -30,14 +30,16 @@ export default defineSchema({
       v.literal("inativo"),
       v.literal("inadimplente")
     ),
-    joinedAt: v.optional(v.string()),
+    joinedAt: v.optional(v.string()),    // data de adesão (ISO)
+    leftAt: v.optional(v.string()),      // data de desligamento (ISO)
     notes: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_status", ["status"])
     .index("by_unit", ["unit"])
-    .index("by_name", ["name"]),
+    .index("by_name", ["name"])
+    .index("by_cpf_prefix", ["cpfPrefix"]),
 
   announcements: defineTable({
     title: v.string(),
