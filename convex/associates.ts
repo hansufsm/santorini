@@ -116,7 +116,7 @@ export const searchAssociate = query({
     return all.filter((a) =>
       a.name.toLowerCase().includes(term) ||
       (a.cpfPrefix && a.cpfPrefix.startsWith(term)) ||
-      a.unit.includes(term)
+      (a.unit && a.unit.includes(term))
     );
   },
 });
