@@ -749,6 +749,12 @@ const adminPassInput   = document.getElementById('admin-password');
 const adminLoginError  = document.getElementById('admin-login-error');
 
 function setAdminMode(isAdmin) {
+    // Drawer admin sections
+    const drawerLoginWrap    = document.getElementById('drawer-admin-login-wrap');
+    const drawerControlsWrap = document.getElementById('drawer-admin-controls-wrap');
+    if (drawerLoginWrap)    drawerLoginWrap.classList.toggle('hidden', isAdmin);
+    if (drawerControlsWrap) drawerControlsWrap.classList.toggle('hidden', !isAdmin);
+
     const adminControlsMob = document.getElementById('admin-controls-mob');
     const adminLoginBtnMob = document.getElementById('admin-login-btn-mob');
     if (isAdmin) {
@@ -885,6 +891,20 @@ function closeDrawer() {
 navDrawerBtn?.addEventListener('click', openDrawer);
 closeNavBtn?.addEventListener('click', closeDrawer);
 navBackdrop?.addEventListener('click', closeDrawer);
+
+// Botões admin dentro do drawer
+document.getElementById('drawer-admin-login-btn')?.addEventListener('click', () => {
+    closeDrawer();
+    document.getElementById('admin-login-btn')?.click();
+});
+document.getElementById('drawer-admin-logout-btn')?.addEventListener('click', () => {
+    closeDrawer();
+    document.getElementById('admin-logout-btn')?.click();
+});
+document.getElementById('drawer-import-csv-btn')?.addEventListener('click', () => {
+    closeDrawer();
+    document.getElementById('import-csv-btn')?.click();
+});
 
 // ─── NAVEGAÇÃO DE MÓDULOS ─────────────────────────────────────────────────────
 
