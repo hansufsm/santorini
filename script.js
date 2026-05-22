@@ -220,7 +220,24 @@ function showLoading(show) {
     if (el) el.classList.toggle('hidden', !show);
 }
 
+/**
+ * Fecha drawer, todos os modais e desbloqueia scroll.
+ * Chamado em qualquer situação de erro para garantir que a UI nunca fica presa.
+ */
+function forceCloseAll() {
+    // Drawer
+    document.getElementById('nav-drawer')?.classList.add('-translate-x-full');
+    document.getElementById('nav-backdrop')?.classList.add('hidden');
+    // Todos os modais (qualquer elemento com classe .modal-overlay ou id terminando em -modal)
+    document.querySelectorAll('[id$="-modal"]').forEach(el => el.classList.add('hidden'));
+    // Admin modal
+    document.getElementById('admin-modal')?.classList.add('hidden');
+    // Desbloqueio de scroll
+    document.body.style.overflow = '';
+}
+
 function showConvexError(message) {
+    forceCloseAll();
     const lastUpdate = document.getElementById('last-update');
     if (lastUpdate) {
         lastUpdate.innerHTML = `
@@ -228,8 +245,6 @@ function showConvexError(message) {
             <button onclick="loadFromConvex()" class="ml-2 text-xs text-emerald-400 underline hover:text-emerald-300">Tentar novamente</button>
         `;
     }
-    // Garante que body.overflow nunca fica preso em erro
-    document.body.style.overflow = '';
 }
 
 // ─── IMPORTAÇÃO CSV → CONVEX ──────────────────────────────────────────────────
@@ -2571,6 +2586,18 @@ document.getElementById('drawer-users-btn')?.addEventListener('click', () => {
 
 const _origSetAdminMode = setAdminMode;
 // já atualiza admin-only buttons na função de navegação
+
+// ─── ESCAPE KEY: fecha qualquer overlay ──────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    // Tenta fechar modais abertos antes de fechar o drawer
+    const openModal = [...document.querySelectorAll('[id$="-modal"]')]
+        .find(el => !el.classList.contains('hidden'));
+    if (openModal) { closeModal(openModal.id); return; }
+    // Fecha drawer se aberto
+    const drawer = document.getElementById('nav-drawer');
+    if (drawer && !drawer.classList.contains('-translate-x-full')) { closeDrawer(); }
+});
 
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
