@@ -48,9 +48,9 @@ const CONVEX_TIMEOUT_MS = 12_000; // 12 s — aborta se Convex não responder
  * Fetch com timeout usando AbortController.
  * Trata HTTP errors E erros de aplicação Convex (status: "error").
  */
-async function convexFetch(endpoint, functionPath, args = {}) {
+async function convexFetch(endpoint, functionPath, args = {}, timeoutMs = CONVEX_TIMEOUT_MS) {
     const ctrl  = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), CONVEX_TIMEOUT_MS);
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
         const response = await fetch(`${CONVEX_URL}/api/${endpoint}`, {
             method: 'POST',
@@ -72,7 +72,7 @@ async function convexFetch(endpoint, functionPath, args = {}) {
     } catch (err) {
         clearTimeout(timer);
         if (err.name === 'AbortError') {
-            throw new Error(`Timeout: ${functionPath} não respondeu em ${CONVEX_TIMEOUT_MS / 1000}s. Verifique o deploy do Convex.`);
+            throw new Error(`Timeout: ${functionPath} não respondeu em ${timeoutMs / 1000}s. Verifique o deploy do Convex.`);
         }
         throw err;
     }
@@ -90,6 +90,13 @@ async function convexQuery(functionPath, args = {}) {
  */
 async function convexMutation(functionPath, args = {}) {
     return convexFetch('mutation', functionPath, args);
+}
+
+/**
+ * Mutation com timeout estendido — para operações de import em lote.
+ */
+async function convexMutationLong(functionPath, args = {}) {
+    return convexFetch('mutation', functionPath, args, 120_000); // 2 min
 }
 
 // ─── UTILITÁRIOS DE DATA ──────────────────────────────────────────────────────
@@ -248,9 +255,22 @@ async function importCSVToConvex(csvData) {
 
                     console.log(`Importando ${transactions.length} transações para o Convex...`);
 
-                    const result = await convexMutation('transactions:importTransactions', { transactions });
+                    // Envia em lotes de 50 para não estourar timeout nem limite de payload
+                    const CHUNK = 50;
+                    let inserted = 0, updated = 0, skipped = 0;
+                    for (let i = 0; i < transactions.length; i += CHUNK) {
+                        const chunk = transactions.slice(i, i + CHUNK);
+                        const lote  = Math.floor(i / CHUNK) + 1;
+                        const total = Math.ceil(transactions.length / CHUNK);
+                        showToast(`Importando lote ${lote}/${total}…`, 'info', 3500);
+                        const r = await convexMutationLong('transactions:importTransactions', { transactions: chunk });
+                        inserted += r.inserted  || 0;
+                        updated  += r.updated   || 0;
+                        skipped  += r.skipped   || 0;
+                    }
 
-                    console.log(`Resultado: ${result.inserted} inseridas, ${result.skipped} duplicatas ignoradas.`);
+                    const result = { inserted, updated, skipped, total: transactions.length };
+                    console.log(`Resultado: ${inserted} inseridas, ${updated} atualizadas, ${skipped} duplicatas.`);
                     resolve(result);
                 } catch (err) {
                     reject(err);
@@ -1104,9 +1124,20 @@ document.getElementById('associates-csv-input')?.addEventListener('change', asyn
 
         if (!associates.length) throw new Error('Nenhum associado válido encontrado.');
 
-        const result = await convexMutation('associates:importAssociates', { associates });
+        // Envia em lotes de 50
+        const CHUNK = 50;
+        let inserted = 0, updated = 0;
+        for (let i = 0; i < associates.length; i += CHUNK) {
+            const chunk = associates.slice(i, i + CHUNK);
+            const lote  = Math.floor(i / CHUNK) + 1;
+            const total = Math.ceil(associates.length / CHUNK);
+            showToast(`Importando associados ${lote}/${total}…`, 'info', 3500);
+            const r = await convexMutationLong('associates:importAssociates', { associates: chunk });
+            inserted += r.inserted || 0;
+            updated  += r.updated  || 0;
+        }
         showToast(
-            `✓ ${result.inserted} inseridos, ${result.updated} atualizados (total: ${result.total})`,
+            `✓ ${inserted} inseridos, ${updated} atualizados (total: ${associates.length})`,
             'success', 5000
         );
     } catch (err) {
