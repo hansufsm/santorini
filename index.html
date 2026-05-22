@@ -99,8 +99,13 @@
         <nav class="border-b border-emerald-900/50 bg-[#022c22]/80 sticky top-0 z-50 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20">
+                <div class="flex items-center gap-2 md:gap-3">
+                    <button id="nav-drawer-btn" class="p-2 rounded-lg text-emerald-400 hover:bg-emerald-900/30 transition-colors shrink-0" title="Navegação" aria-label="Abrir menu de navegação">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 shrink-0">
                         <img src="img/santorini.png" alt="Logo" class="w-full h-full object-cover scale-150">
                     </div>
                     <span class="text-base md:text-xl font-bold tracking-tight text-white">AMRTS <span class="text-emerald-400 italic">Santorini</span></span>
@@ -273,6 +278,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- ═══ MÓDULO: FINANCEIRO ═══ -->
+        <section id="module-financeiro" class="module-section">
 
         <!-- Hero Section with Image -->
         <div class="relative h-44 sm:h-52 md:h-64 lg:h-80 rounded-3xl overflow-hidden mb-6 md:mb-10 shadow-2xl group border border-emerald-800/30 hero-section">
@@ -451,6 +459,98 @@
                 </div>
             </div>
         </div>
+
+        </section><!-- fim #module-financeiro -->
+
+        <!-- ═══ MÓDULO: COMUNICADOS ═══ -->
+        <section id="module-comunicados" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        Comunicados
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Avisos e informações do condomínio</p>
+                </div>
+                <button id="new-announcement-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Novo
+                </button>
+            </div>
+            <!-- Filtros de tipo -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-afilter="all"        class="ann-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todos</button>
+                <button data-afilter="urgente"    class="ann-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🔴 Urgente</button>
+                <button data-afilter="info"       class="ann-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🔵 Info</button>
+                <button data-afilter="manutencao" class="ann-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🟡 Manutenção</button>
+                <button data-afilter="evento"     class="ann-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🟢 Evento</button>
+            </div>
+            <div id="announcements-list" class="space-y-4"></div>
+            <div id="announcements-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                <p class="text-emerald-700">Nenhum comunicado no momento.</p>
+            </div>
+        </section>
+
+        <!-- ═══ MÓDULO: DOCUMENTOS ═══ -->
+        <section id="module-documentos" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        Documentos e Atas
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Atas de reuniões, regulamentos e contratos</p>
+                </div>
+                <button id="new-document-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Adicionar
+                </button>
+            </div>
+            <!-- Filtros de categoria -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-dfilter="all"         class="doc-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todos</button>
+                <button data-dfilter="ata"         class="doc-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">📋 Atas</button>
+                <button data-dfilter="regulamento" class="doc-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">📜 Regulamentos</button>
+                <button data-dfilter="contrato"    class="doc-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🤝 Contratos</button>
+                <button data-dfilter="outro"       class="doc-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">📁 Outros</button>
+            </div>
+            <div id="documents-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <div id="documents-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <p class="text-emerald-700">Nenhum documento cadastrado.</p>
+            </div>
+        </section>
+
+        <!-- ═══ MÓDULO: ASSEMBLEIAS ═══ -->
+        <section id="module-assembleias" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Assembleias e Votações
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Registro de assembleias e resultados</p>
+                </div>
+                <button id="new-assembly-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Nova
+                </button>
+            </div>
+            <!-- Filtros de status -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-sfilter="all"       class="asm-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todas</button>
+                <button data-sfilter="agendada"  class="asm-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">📅 Agendadas</button>
+                <button data-sfilter="realizada" class="asm-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">✅ Realizadas</button>
+                <button data-sfilter="cancelada" class="asm-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">❌ Canceladas</button>
+            </div>
+            <div id="assemblies-list" class="space-y-4"></div>
+            <div id="assemblies-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <p class="text-emerald-700">Nenhuma assembleia registrada.</p>
+            </div>
+        </section>
+
     </main>
 
     <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 border-t border-emerald-900/50 mt-4 md:mt-8 text-center text-emerald-700 text-xs sm:text-sm">
@@ -573,6 +673,225 @@
                 <button id="admin-modal-close" class="w-full text-emerald-600 hover:text-emerald-400 text-xs py-1 transition-colors">
                     Cancelar
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ NAVIGATION DRAWER ═══ -->
+    <div id="nav-backdrop" class="hidden fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm transition-opacity"></div>
+    <div id="nav-drawer" class="fixed left-0 top-0 h-full w-72 bg-[#011a14] border-r border-emerald-900/50 z-[70] flex flex-col -translate-x-full transition-transform duration-300 ease-in-out shadow-2xl">
+        <!-- Drawer header -->
+        <div class="p-4 border-b border-emerald-900/50 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl overflow-hidden shadow-lg shrink-0">
+                <img src="img/santorini.png" alt="Logo" class="w-full h-full object-cover scale-150">
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-bold text-white text-sm leading-none">AMRTS <span class="text-emerald-400 italic">Santorini</span></p>
+                <p class="text-[10px] text-emerald-700 mt-0.5">Dashboard v2.0</p>
+            </div>
+            <button id="close-nav-drawer" class="p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/30 transition-colors shrink-0" title="Fechar">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+        <!-- Nav items -->
+        <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-800 px-3 py-2">Módulos</p>
+            <button data-module="financeiro" class="drawer-nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all bg-emerald-600/20 text-emerald-300 border border-emerald-600/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                Financeiro
+            </button>
+            <button data-module="comunicados" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                Comunicados
+            </button>
+            <button data-module="documentos" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Documentos e Atas
+            </button>
+            <button data-module="assembleias" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Assembleias
+            </button>
+        </nav>
+        <!-- Drawer footer -->
+        <div class="p-4 border-t border-emerald-900/50 space-y-1">
+            <a href="docs/index.html" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/20 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.582.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                Documentação
+            </a>
+            <div id="drawer-last-update" class="px-3 py-1 text-[10px] text-emerald-800 truncate">Conectando...</div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: COMUNICADO ═══ -->
+    <div id="announcement-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="announcement-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="announcement-modal-title" class="text-lg font-bold text-white">Novo Comunicado</h3>
+                <button id="announcement-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="announcement-edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Título</label>
+                    <input id="ann-title" type="text" placeholder="Ex: Manutenção da piscina" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Conteúdo</label>
+                    <textarea id="ann-content" rows="4" placeholder="Descreva o comunicado..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Tipo</label>
+                    <select id="ann-type" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                        <option value="info">🔵 Informativo</option>
+                        <option value="urgente">🔴 Urgente</option>
+                        <option value="manutencao">🟡 Manutenção</option>
+                        <option value="evento">🟢 Evento</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input id="ann-active" type="checkbox" checked class="w-4 h-4 rounded border-emerald-700 bg-emerald-950 text-emerald-500">
+                    <label for="ann-active" class="text-sm text-emerald-300">Publicar imediatamente</label>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="ann-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="ann-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: DOCUMENTO ═══ -->
+    <div id="document-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="document-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="document-modal-title" class="text-lg font-bold text-white">Adicionar Documento</h3>
+                <button id="document-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="document-edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Título</label>
+                    <input id="doc-title" type="text" placeholder="Ex: Ata da Reunião Ordinária" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Descrição <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="doc-description" rows="2" placeholder="Breve descrição do documento..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Categoria</label>
+                        <select id="doc-category" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="ata">📋 Ata</option>
+                            <option value="regulamento">📜 Regulamento</option>
+                            <option value="contrato">🤝 Contrato</option>
+                            <option value="outro">📁 Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Data</label>
+                        <input id="doc-date" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Link do documento <span class="text-emerald-700 normal-case">(Google Drive, Dropbox, etc.)</span></label>
+                    <input id="doc-url" type="url" placeholder="https://drive.google.com/..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="doc-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="doc-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: ASSEMBLEIA ═══ -->
+    <div id="assembly-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="assembly-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 id="assembly-modal-title" class="text-lg font-bold text-white">Nova Assembleia</h3>
+                <button id="assembly-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="assembly-edit-id">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Data</label>
+                        <input id="asm-date" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Tipo</label>
+                        <select id="asm-type" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="ordinaria">Ordinária</option>
+                            <option value="extraordinaria">Extraordinária</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Status</label>
+                        <select id="asm-status" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            <option value="agendada">📅 Agendada</option>
+                            <option value="realizada">✅ Realizada</option>
+                            <option value="cancelada">❌ Cancelada</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Presentes</label>
+                        <input id="asm-attendees" type="number" min="0" placeholder="0" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Local</label>
+                    <input id="asm-location" type="text" placeholder="Ex: Salão de festas, Online..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Pauta</label>
+                    <textarea id="asm-agenda" rows="3" placeholder="Itens da pauta..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Ata / Resumo <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <textarea id="asm-minutes" rows="3" placeholder="Resumo das decisões tomadas..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="asm-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="asm-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ MODAL: VOTAÇÃO ═══ -->
+    <div id="vote-modal" class="hidden fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" id="vote-modal-backdrop"></div>
+        <div class="relative bg-[#022c22] border border-emerald-800/50 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-emerald-800/50 flex justify-between items-center shrink-0">
+                <h3 class="text-lg font-bold text-white">Registrar Votação</h3>
+                <button id="vote-modal-close" class="text-emerald-600 hover:text-white transition-colors p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="vote-assembly-id">
+                <input type="hidden" id="vote-edit-id">
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Assunto votado</label>
+                    <input id="vote-title" type="text" placeholder="Ex: Aprovação do orçamento anual" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-2">Opções e votos</label>
+                    <div id="vote-options-container" class="space-y-2"></div>
+                    <button id="add-vote-option-btn" class="mt-2 w-full px-4 py-2 border border-dashed border-emerald-800/50 rounded-xl text-xs text-emerald-600 hover:border-emerald-600 hover:text-emerald-400 transition-colors">+ Adicionar opção</button>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Resultado <span class="text-emerald-700 normal-case">(opcional)</span></label>
+                    <input id="vote-result" type="text" placeholder="Ex: Aprovado por maioria" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-emerald-800/50 flex gap-3 shrink-0">
+                <button id="vote-delete-btn" class="hidden px-4 py-2.5 text-red-400 hover:bg-red-900/20 rounded-xl text-sm transition-colors border border-red-900/30">Excluir</button>
+                <button id="vote-save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Salvar</button>
             </div>
         </div>
     </div>

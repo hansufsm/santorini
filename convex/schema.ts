@@ -38,4 +38,63 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_unit", ["unit"])
     .index("by_name", ["name"]),
+
+  announcements: defineTable({
+    title: v.string(),
+    content: v.string(),
+    type: v.union(
+      v.literal("info"),
+      v.literal("urgente"),
+      v.literal("manutencao"),
+      v.literal("evento")
+    ),
+    active: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_active", ["active"])
+    .index("by_type", ["type"]),
+
+  documents: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    category: v.union(
+      v.literal("ata"),
+      v.literal("regulamento"),
+      v.literal("contrato"),
+      v.literal("outro")
+    ),
+    fileUrl: v.string(),
+    date: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_category", ["category"])
+    .index("by_date", ["date"]),
+
+  assemblies: defineTable({
+    date: v.string(),
+    type: v.union(v.literal("ordinaria"), v.literal("extraordinaria")),
+    location: v.optional(v.string()),
+    agenda: v.string(),
+    minutes: v.optional(v.string()),
+    attendees: v.optional(v.number()),
+    status: v.union(
+      v.literal("agendada"),
+      v.literal("realizada"),
+      v.literal("cancelada")
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_status", ["status"]),
+
+  votes: defineTable({
+    assemblyId: v.id("assemblies"),
+    title: v.string(),
+    options: v.array(v.object({ label: v.string(), count: v.number() })),
+    result: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_assembly", ["assemblyId"]),
 });

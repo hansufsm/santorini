@@ -768,6 +768,14 @@ function setAdminMode(isAdmin) {
         adminLoginBtnMob?.classList.remove('hidden');
         sessionStorage.removeItem('adminSession');
     }
+    // Atualiza botões admin nos módulos da Fase 2
+    if (typeof syncAdminButtons === 'function') syncAdminButtons(isAdmin);
+    // Re-renderiza módulo atual se já carregado
+    if (typeof currentModule !== 'undefined') {
+        if (currentModule === 'comunicados' && typeof renderAnnouncements === 'function') renderAnnouncements();
+        if (currentModule === 'documentos'  && typeof renderDocuments    === 'function') renderDocuments();
+        if (currentModule === 'assembleias' && typeof renderAssemblies   === 'function') renderAssemblies();
+    }
 }
 
 adminLoginBtn?.addEventListener('click', () => {
@@ -856,9 +864,572 @@ if (sessionStorage.getItem('adminSession') === '1') {
     });
 })();
 
+// ─── NAVIGATION DRAWER ───────────────────────────────────────────────────────
+
+const navDrawer    = document.getElementById('nav-drawer');
+const navBackdrop  = document.getElementById('nav-backdrop');
+const navDrawerBtn = document.getElementById('nav-drawer-btn');
+const closeNavBtn  = document.getElementById('close-nav-drawer');
+
+function openDrawer() {
+    navDrawer?.classList.remove('-translate-x-full');
+    navBackdrop?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+    navDrawer?.classList.add('-translate-x-full');
+    navBackdrop?.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+navDrawerBtn?.addEventListener('click', openDrawer);
+closeNavBtn?.addEventListener('click', closeDrawer);
+navBackdrop?.addEventListener('click', closeDrawer);
+
+// ─── NAVEGAÇÃO DE MÓDULOS ─────────────────────────────────────────────────────
+
+let currentModule = 'financeiro';
+const moduleLoaded = { financeiro: true, comunicados: false, documentos: false, assembleias: false };
+
+function switchModule(name) {
+    if (name === currentModule) { closeDrawer(); return; }
+    // Oculta seção atual
+    document.querySelector(`#module-${currentModule}`)?.classList.add('hidden');
+    // Mostra nova seção
+    document.querySelector(`#module-${name}`)?.classList.remove('hidden');
+    // Atualiza itens do drawer
+    document.querySelectorAll('.drawer-nav-item').forEach(btn => {
+        const isActive = btn.dataset.module === name;
+        btn.classList.toggle('active', isActive);
+        btn.classList.toggle('bg-emerald-600/20', isActive);
+        btn.classList.toggle('text-emerald-300', isActive);
+        btn.classList.toggle('border', isActive);
+        btn.classList.toggle('border-emerald-600/30', isActive);
+        btn.classList.toggle('text-emerald-600', !isActive);
+        btn.classList.toggle('hover:bg-emerald-900/30', !isActive);
+        btn.classList.toggle('hover:text-emerald-300', !isActive);
+    });
+    currentModule = name;
+    closeDrawer();
+    // Carrega dados do módulo se ainda não carregou
+    if (!moduleLoaded[name]) {
+        moduleLoaded[name] = true;
+        if (name === 'comunicados')  loadAnnouncements();
+        if (name === 'documentos')   loadDocuments();
+        if (name === 'assembleias')  loadAssemblies();
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('.drawer-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchModule(btn.dataset.module));
+});
+
+// Mostra/oculta botões admin nos módulos
+function syncAdminButtons(isAdmin) {
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.classList.toggle('hidden', !isAdmin);
+        if (isAdmin) el.classList.remove('hidden');
+    });
+}
+
+// ─── HELPERS MODAIS ───────────────────────────────────────────────────────────
+
+function openModal(id) {
+    document.getElementById(id)?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+    document.getElementById(id)?.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function fmtDateBR(iso) {
+    if (!iso) return '—';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+}
+function fmtTs(ts) {
+    const d = new Date(ts);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// ─── MÓDULO: COMUNICADOS ─────────────────────────────────────────────────────
+
+let allAnnouncements = [];
+let annFilter = 'all';
+
+async function loadAnnouncements() {
+    const list = document.getElementById('announcements-list');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        const isAdmin = !!sessionStorage.getItem('adminSession');
+        const fn = isAdmin ? 'announcements:getAllAnnouncements' : 'announcements:getActiveAnnouncements';
+        allAnnouncements = await convexQuery(fn) || [];
+        renderAnnouncements();
+    } catch(e) { console.error('Erro ao carregar comunicados:', e); }
+}
+
+function renderAnnouncements() {
+    const list  = document.getElementById('announcements-list');
+    const empty = document.getElementById('announcements-empty');
+    if (!list) return;
+    const filtered = annFilter === 'all' ? allAnnouncements : allAnnouncements.filter(a => a.type === annFilter);
+    if (!filtered.length) { list.innerHTML=''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const typeConfig = {
+        urgente:    { emoji:'🔴', label:'Urgente',    border:'border-red-500/40',     bg:'bg-red-500/10',     badge:'bg-red-500/20 text-red-400' },
+        info:       { emoji:'🔵', label:'Info',       border:'border-blue-500/40',    bg:'bg-blue-500/10',    badge:'bg-blue-500/20 text-blue-400' },
+        manutencao: { emoji:'🟡', label:'Manutenção', border:'border-yellow-500/40',  bg:'bg-yellow-500/10',  badge:'bg-yellow-500/20 text-yellow-400' },
+        evento:     { emoji:'🟢', label:'Evento',     border:'border-emerald-500/40', bg:'bg-emerald-500/10', badge:'bg-emerald-500/20 text-emerald-400' },
+    };
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    list.innerHTML = filtered.map(a => {
+        const cfg = typeConfig[a.type] || typeConfig.info;
+        return `
+        <div class="bg-emerald-900/20 border ${cfg.border} rounded-2xl p-4 md:p-5 transition-all hover:bg-emerald-900/30">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${cfg.badge}">${cfg.emoji} ${cfg.label}</span>
+                    ${!a.active ? '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-700/50 text-slate-400">Rascunho</span>' : ''}
+                </div>
+                ${isAdmin ? `<button onclick="editAnnouncement('${a._id}')" class="shrink-0 p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+            </div>
+            <h4 class="font-semibold text-white text-base mb-1">${a.title}</h4>
+            <p class="text-emerald-200/70 text-sm leading-relaxed whitespace-pre-line">${a.content}</p>
+            <p class="text-emerald-700 text-xs mt-3">${fmtTs(a.createdAt)}</p>
+        </div>`;
+    }).join('');
+}
+
+// Filtros de comunicados
+document.querySelectorAll('.ann-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        annFilter = btn.dataset.afilter;
+        document.querySelectorAll('.ann-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderAnnouncements();
+    });
+});
+
+// Modal comunicado
+document.getElementById('new-announcement-btn')?.addEventListener('click', () => {
+    document.getElementById('announcement-edit-id').value = '';
+    document.getElementById('ann-title').value = '';
+    document.getElementById('ann-content').value = '';
+    document.getElementById('ann-type').value = 'info';
+    document.getElementById('ann-active').checked = true;
+    document.getElementById('ann-delete-btn')?.classList.add('hidden');
+    document.getElementById('announcement-modal-title').textContent = 'Novo Comunicado';
+    openModal('announcement-modal');
+});
+document.getElementById('announcement-modal-close')?.addEventListener('click', () => closeModal('announcement-modal'));
+document.getElementById('announcement-modal-backdrop')?.addEventListener('click', () => closeModal('announcement-modal'));
+
+function editAnnouncement(id) {
+    const a = allAnnouncements.find(x => x._id === id);
+    if (!a) return;
+    document.getElementById('announcement-edit-id').value = id;
+    document.getElementById('ann-title').value = a.title;
+    document.getElementById('ann-content').value = a.content;
+    document.getElementById('ann-type').value = a.type;
+    document.getElementById('ann-active').checked = a.active;
+    document.getElementById('ann-delete-btn')?.classList.remove('hidden');
+    document.getElementById('announcement-modal-title').textContent = 'Editar Comunicado';
+    openModal('announcement-modal');
+}
+
+document.getElementById('ann-save-btn')?.addEventListener('click', async () => {
+    const id      = document.getElementById('announcement-edit-id').value;
+    const title   = document.getElementById('ann-title').value.trim();
+    const content = document.getElementById('ann-content').value.trim();
+    const type    = document.getElementById('ann-type').value;
+    const active  = document.getElementById('ann-active').checked;
+    if (!title || !content) { alert('Preencha título e conteúdo.'); return; }
+    try {
+        if (id) {
+            await convexMutation('announcements:updateAnnouncement', { id, title, content, type, active });
+        } else {
+            await convexMutation('announcements:createAnnouncement', { title, content, type, active });
+        }
+        closeModal('announcement-modal');
+        await loadAnnouncements();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('ann-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('announcement-edit-id').value;
+    if (!id || !confirm('Excluir este comunicado?')) return;
+    await convexMutation('announcements:deleteAnnouncement', { id });
+    closeModal('announcement-modal');
+    await loadAnnouncements();
+});
+
+// ─── MÓDULO: DOCUMENTOS ──────────────────────────────────────────────────────
+
+let allDocuments = [];
+let docFilter = 'all';
+
+async function loadDocuments() {
+    const list = document.getElementById('documents-list');
+    if (list) list.innerHTML = '<p class="col-span-3 text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allDocuments = await convexQuery('documents:getAllDocuments') || [];
+        renderDocuments();
+    } catch(e) { console.error('Erro ao carregar documentos:', e); }
+}
+
+function renderDocuments() {
+    const list  = document.getElementById('documents-list');
+    const empty = document.getElementById('documents-empty');
+    if (!list) return;
+    const filtered = docFilter === 'all' ? allDocuments : allDocuments.filter(d => d.category === docFilter);
+    if (!filtered.length) { list.innerHTML=''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const catConfig = {
+        ata:         { emoji:'📋', label:'Ata',          badge:'bg-blue-500/20 text-blue-400' },
+        regulamento: { emoji:'📜', label:'Regulamento',  badge:'bg-purple-500/20 text-purple-400' },
+        contrato:    { emoji:'🤝', label:'Contrato',     badge:'bg-yellow-500/20 text-yellow-400' },
+        outro:       { emoji:'📁', label:'Outro',        badge:'bg-slate-500/20 text-slate-400' },
+    };
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    list.innerHTML = filtered.map(d => {
+        const cfg = catConfig[d.category] || catConfig.outro;
+        return `
+        <div class="bg-emerald-900/20 border border-emerald-800/50 rounded-2xl p-4 flex flex-col gap-3 hover:bg-emerald-900/30 transition-all">
+            <div class="flex items-start justify-between gap-2">
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${cfg.badge}">${cfg.emoji} ${cfg.label}</span>
+                ${isAdmin ? `<button onclick="editDocument('${d._id}')" class="shrink-0 p-1 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+            </div>
+            <div class="flex-1">
+                <h4 class="font-semibold text-white text-sm mb-1">${d.title}</h4>
+                ${d.description ? `<p class="text-emerald-600 text-xs leading-relaxed line-clamp-2">${d.description}</p>` : ''}
+            </div>
+            <div class="flex items-center justify-between gap-2 mt-auto">
+                <span class="text-emerald-700 text-xs">${fmtDateBR(d.date)}</span>
+                <a href="${d.fileUrl}" target="_blank" rel="noopener" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/50 text-emerald-300 rounded-lg text-xs font-medium transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    Abrir
+                </a>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.doc-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        docFilter = btn.dataset.dfilter;
+        document.querySelectorAll('.doc-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderDocuments();
+    });
+});
+
+document.getElementById('new-document-btn')?.addEventListener('click', () => {
+    document.getElementById('document-edit-id').value = '';
+    document.getElementById('doc-title').value = '';
+    document.getElementById('doc-description').value = '';
+    document.getElementById('doc-category').value = 'ata';
+    document.getElementById('doc-date').value = '';
+    document.getElementById('doc-url').value = '';
+    document.getElementById('doc-delete-btn')?.classList.add('hidden');
+    document.getElementById('document-modal-title').textContent = 'Adicionar Documento';
+    openModal('document-modal');
+});
+document.getElementById('document-modal-close')?.addEventListener('click', () => closeModal('document-modal'));
+document.getElementById('document-modal-backdrop')?.addEventListener('click', () => closeModal('document-modal'));
+
+function editDocument(id) {
+    const d = allDocuments.find(x => x._id === id);
+    if (!d) return;
+    document.getElementById('document-edit-id').value = id;
+    document.getElementById('doc-title').value = d.title;
+    document.getElementById('doc-description').value = d.description || '';
+    document.getElementById('doc-category').value = d.category;
+    document.getElementById('doc-date').value = d.date;
+    document.getElementById('doc-url').value = d.fileUrl;
+    document.getElementById('doc-delete-btn')?.classList.remove('hidden');
+    document.getElementById('document-modal-title').textContent = 'Editar Documento';
+    openModal('document-modal');
+}
+
+document.getElementById('doc-save-btn')?.addEventListener('click', async () => {
+    const id   = document.getElementById('document-edit-id').value;
+    const data = {
+        title:       document.getElementById('doc-title').value.trim(),
+        description: document.getElementById('doc-description').value.trim() || undefined,
+        category:    document.getElementById('doc-category').value,
+        date:        document.getElementById('doc-date').value,
+        fileUrl:     document.getElementById('doc-url').value.trim(),
+    };
+    if (!data.title || !data.date || !data.fileUrl) { alert('Preencha título, data e link.'); return; }
+    try {
+        if (id) await convexMutation('documents:updateDocument', { id, ...data });
+        else    await convexMutation('documents:createDocument', data);
+        closeModal('document-modal');
+        await loadDocuments();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('doc-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('document-edit-id').value;
+    if (!id || !confirm('Excluir este documento?')) return;
+    await convexMutation('documents:deleteDocument', { id });
+    closeModal('document-modal');
+    await loadDocuments();
+});
+
+// ─── MÓDULO: ASSEMBLEIAS ──────────────────────────────────────────────────────
+
+let allAssemblies = [];
+let asmFilter = 'all';
+
+async function loadAssemblies() {
+    const list = document.getElementById('assemblies-list');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        allAssemblies = await convexQuery('assemblies:getAllAssemblies') || [];
+        renderAssemblies();
+    } catch(e) { console.error('Erro ao carregar assembleias:', e); }
+}
+
+function renderAssemblies() {
+    const list  = document.getElementById('assemblies-list');
+    const empty = document.getElementById('assemblies-empty');
+    if (!list) return;
+    const filtered = asmFilter === 'all' ? allAssemblies : allAssemblies.filter(a => a.status === asmFilter);
+    if (!filtered.length) { list.innerHTML=''; empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+    const statusCfg = {
+        agendada:  { label:'Agendada',  cls:'bg-blue-500/20 text-blue-300' },
+        realizada: { label:'Realizada', cls:'bg-emerald-500/20 text-emerald-300' },
+        cancelada: { label:'Cancelada', cls:'bg-red-500/20 text-red-400' },
+    };
+    const typeCfg = { ordinaria:'Ordinária', extraordinaria:'Extraordinária' };
+    const isAdmin = !!sessionStorage.getItem('adminSession');
+    list.innerHTML = filtered.map(a => {
+        const scfg = statusCfg[a.status] || statusCfg.agendada;
+        const totalVotes = (a.votes||[]).reduce((sum, v) => sum + v.options.reduce((s, o) => s + o.count, 0), 0);
+        const votesHtml = (a.votes||[]).map(v => {
+            const total = v.options.reduce((s,o)=>s+o.count,0);
+            const optHtml = v.options.map(o => {
+                const pct = total ? Math.round(o.count/total*100) : 0;
+                return `<div class="flex items-center gap-2 text-xs">
+                    <span class="w-24 truncate text-emerald-300">${o.label}</span>
+                    <div class="flex-1 bg-emerald-950/50 rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width:${pct}%"></div></div>
+                    <span class="text-emerald-600 w-12 text-right">${o.count} (${pct}%)</span>
+                </div>`;
+            }).join('');
+            return `<div class="mt-3 pt-3 border-t border-emerald-800/30">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs font-semibold text-emerald-400">${v.title}</p>
+                    ${isAdmin ? `<button onclick="editVote('${v._id}','${a._id}')" class="text-[10px] text-emerald-700 hover:text-emerald-400 transition-colors">editar</button>` : ''}
+                </div>
+                ${optHtml}
+                ${v.result ? `<p class="text-xs text-emerald-400 mt-2 font-medium">→ ${v.result}</p>` : ''}
+            </div>`;
+        }).join('');
+        return `
+        <div class="bg-emerald-900/20 border border-emerald-800/50 rounded-2xl p-4 md:p-5">
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-900/50 text-emerald-500">${typeCfg[a.type]||a.type}</span>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${scfg.cls}">${scfg.label}</span>
+                </div>
+                ${isAdmin ? `<button onclick="editAssembly('${a._id}')" class="shrink-0 p-1.5 rounded-lg text-emerald-700 hover:text-emerald-400 hover:bg-emerald-900/50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>` : ''}
+            </div>
+            <div class="flex items-center gap-4 text-sm text-emerald-300 mb-3">
+                <span class="flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>${fmtDateBR(a.date)}</span>
+                ${a.location ? `<span class="flex items-center gap-1.5 text-emerald-500"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>${a.location}</span>` : ''}
+                ${a.attendees ? `<span class="text-emerald-600 text-xs">${a.attendees} presentes</span>` : ''}
+            </div>
+            <div class="bg-emerald-950/30 rounded-xl p-3 mb-3">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-1">Pauta</p>
+                <p class="text-emerald-200/80 text-sm whitespace-pre-line leading-relaxed">${a.agenda}</p>
+            </div>
+            ${a.minutes ? `<div class="bg-emerald-950/20 rounded-xl p-3 mb-3"><p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-1">Ata / Resumo</p><p class="text-emerald-300/70 text-sm whitespace-pre-line leading-relaxed">${a.minutes}</p></div>` : ''}
+            ${votesHtml}
+            ${isAdmin ? `<button onclick="openNewVote('${a._id}')" class="mt-3 w-full px-4 py-2 border border-dashed border-emerald-800/50 rounded-xl text-xs text-emerald-700 hover:border-emerald-600 hover:text-emerald-400 transition-colors">+ Adicionar votação</button>` : ''}
+        </div>`;
+    }).join('');
+}
+
+document.querySelectorAll('.asm-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        asmFilter = btn.dataset.sfilter;
+        document.querySelectorAll('.asm-filter').forEach(b => {
+            b.classList.toggle('bg-emerald-600', b === btn);
+            b.classList.toggle('text-white', b === btn);
+            b.classList.toggle('bg-emerald-900/40', b !== btn);
+            b.classList.toggle('text-emerald-400', b !== btn);
+        });
+        renderAssemblies();
+    });
+});
+
+document.getElementById('new-assembly-btn')?.addEventListener('click', () => {
+    document.getElementById('assembly-edit-id').value = '';
+    document.getElementById('asm-date').value = '';
+    document.getElementById('asm-type').value = 'ordinaria';
+    document.getElementById('asm-status').value = 'agendada';
+    document.getElementById('asm-location').value = '';
+    document.getElementById('asm-agenda').value = '';
+    document.getElementById('asm-minutes').value = '';
+    document.getElementById('asm-attendees').value = '';
+    document.getElementById('asm-delete-btn')?.classList.add('hidden');
+    document.getElementById('assembly-modal-title').textContent = 'Nova Assembleia';
+    openModal('assembly-modal');
+});
+document.getElementById('assembly-modal-close')?.addEventListener('click', () => closeModal('assembly-modal'));
+document.getElementById('assembly-modal-backdrop')?.addEventListener('click', () => closeModal('assembly-modal'));
+
+function editAssembly(id) {
+    const a = allAssemblies.find(x => x._id === id);
+    if (!a) return;
+    document.getElementById('assembly-edit-id').value = id;
+    document.getElementById('asm-date').value = a.date;
+    document.getElementById('asm-type').value = a.type;
+    document.getElementById('asm-status').value = a.status;
+    document.getElementById('asm-location').value = a.location || '';
+    document.getElementById('asm-agenda').value = a.agenda;
+    document.getElementById('asm-minutes').value = a.minutes || '';
+    document.getElementById('asm-attendees').value = a.attendees || '';
+    document.getElementById('asm-delete-btn')?.classList.remove('hidden');
+    document.getElementById('assembly-modal-title').textContent = 'Editar Assembleia';
+    openModal('assembly-modal');
+}
+
+document.getElementById('asm-save-btn')?.addEventListener('click', async () => {
+    const id   = document.getElementById('assembly-edit-id').value;
+    const att  = document.getElementById('asm-attendees').value;
+    const data = {
+        date:      document.getElementById('asm-date').value,
+        type:      document.getElementById('asm-type').value,
+        status:    document.getElementById('asm-status').value,
+        location:  document.getElementById('asm-location').value.trim() || undefined,
+        agenda:    document.getElementById('asm-agenda').value.trim(),
+        minutes:   document.getElementById('asm-minutes').value.trim() || undefined,
+        attendees: att ? parseInt(att) : undefined,
+    };
+    if (!data.date || !data.agenda) { alert('Preencha data e pauta.'); return; }
+    try {
+        if (id) await convexMutation('assemblies:updateAssembly', { id, ...data });
+        else    await convexMutation('assemblies:createAssembly', data);
+        closeModal('assembly-modal');
+        await loadAssemblies();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('asm-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('assembly-edit-id').value;
+    if (!id || !confirm('Excluir esta assembleia e todas as suas votações?')) return;
+    await convexMutation('assemblies:deleteAssembly', { id });
+    closeModal('assembly-modal');
+    await loadAssemblies();
+});
+
+// ─── VOTAÇÕES ─────────────────────────────────────────────────────────────────
+
+function buildVoteOptions(options = []) {
+    const c = document.getElementById('vote-options-container');
+    if (!c) return;
+    const defaults = options.length ? options : [
+        { label:'Aprovado', count: 0 },
+        { label:'Rejeitado', count: 0 },
+        { label:'Abstenção', count: 0 },
+    ];
+    c.innerHTML = defaults.map((o, i) => `
+        <div class="flex gap-2 items-center">
+            <input type="text" value="${o.label}" placeholder="Opção ${i+1}" class="flex-1 bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-3 py-2 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 vote-option-label">
+            <input type="number" value="${o.count}" min="0" class="w-20 bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 vote-option-count">
+            <button onclick="this.parentElement.remove()" class="p-2 text-red-400/50 hover:text-red-400 transition-colors">×</button>
+        </div>`).join('');
+}
+
+document.getElementById('add-vote-option-btn')?.addEventListener('click', () => {
+    const c = document.getElementById('vote-options-container');
+    const idx = c.children.length;
+    const div = document.createElement('div');
+    div.className = 'flex gap-2 items-center';
+    div.innerHTML = `<input type="text" placeholder="Opção ${idx+1}" class="flex-1 bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-3 py-2 text-sm text-white placeholder-emerald-700 focus:outline-none focus:border-emerald-500 vote-option-label"><input type="number" value="0" min="0" class="w-20 bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 vote-option-count"><button onclick="this.parentElement.remove()" class="p-2 text-red-400/50 hover:text-red-400 transition-colors">×</button>`;
+    c.appendChild(div);
+});
+
+function openNewVote(assemblyId) {
+    document.getElementById('vote-assembly-id').value = assemblyId;
+    document.getElementById('vote-edit-id').value = '';
+    document.getElementById('vote-title').value = '';
+    document.getElementById('vote-result').value = '';
+    document.getElementById('vote-delete-btn')?.classList.add('hidden');
+    buildVoteOptions();
+    openModal('vote-modal');
+}
+
+function editVote(voteId, assemblyId) {
+    const a = allAssemblies.find(x => x._id === assemblyId);
+    const v = a?.votes?.find(x => x._id === voteId);
+    if (!v) return;
+    document.getElementById('vote-assembly-id').value = assemblyId;
+    document.getElementById('vote-edit-id').value = voteId;
+    document.getElementById('vote-title').value = v.title;
+    document.getElementById('vote-result').value = v.result || '';
+    document.getElementById('vote-delete-btn')?.classList.remove('hidden');
+    buildVoteOptions(v.options);
+    openModal('vote-modal');
+}
+
+document.getElementById('vote-modal-close')?.addEventListener('click', () => closeModal('vote-modal'));
+document.getElementById('vote-modal-backdrop')?.addEventListener('click', () => closeModal('vote-modal'));
+
+document.getElementById('vote-save-btn')?.addEventListener('click', async () => {
+    const id         = document.getElementById('vote-edit-id').value;
+    const assemblyId = document.getElementById('vote-assembly-id').value;
+    const title      = document.getElementById('vote-title').value.trim();
+    const result     = document.getElementById('vote-result').value.trim() || undefined;
+    const labels  = [...document.querySelectorAll('.vote-option-label')].map(i => i.value.trim());
+    const counts  = [...document.querySelectorAll('.vote-option-count')].map(i => parseInt(i.value) || 0);
+    const options = labels.map((label, i) => ({ label, count: counts[i] })).filter(o => o.label);
+    if (!title || !options.length) { alert('Preencha o assunto e pelo menos uma opção.'); return; }
+    try {
+        if (id) await convexMutation('assemblies:updateVote', { id, title, options, result });
+        else    await convexMutation('assemblies:createVote', { assemblyId, title, options, result });
+        closeModal('vote-modal');
+        await loadAssemblies();
+    } catch(e) { alert('Erro ao salvar: ' + e.message); }
+});
+
+document.getElementById('vote-delete-btn')?.addEventListener('click', async () => {
+    const id = document.getElementById('vote-edit-id').value;
+    if (!id || !confirm('Excluir esta votação?')) return;
+    await convexMutation('assemblies:deleteVote', { id });
+    closeModal('vote-modal');
+    await loadAssemblies();
+});
+
+// ─── SINCRONIZA ADMIN COM MÓDULOS ─────────────────────────────────────────────
+// Sobrescreve setAdminMode para também atualizar botões dos módulos
+
+const _origSetAdminMode = setAdminMode;
+// já atualiza admin-only buttons na função de navegação
+
 // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────────
 
 window.addEventListener('load', async () => {
     console.log('AMRTS Santorini v2.0 — Carregando dados do Convex...');
     await loadFromConvex();
+    // Sincroniza indicador do drawer
+    const drawerUpd = document.getElementById('drawer-last-update');
+    const lastUpd   = document.getElementById('last-update');
+    if (drawerUpd && lastUpd) {
+        const obs = new MutationObserver(() => { drawerUpd.textContent = lastUpd.textContent; });
+        obs.observe(lastUpd, { childList: true, subtree: true, characterData: true });
+    }
 });
