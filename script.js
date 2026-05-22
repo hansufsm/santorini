@@ -8,8 +8,7 @@
  */
 
 // ─── CONFIGURAÇÃO DO CONVEX ───────────────────────────────────────────────────
-// IMPORTANTE: Substitua pela URL do seu projeto Convex após rodar `npx convex dev`
-const CONVEX_URL = "https://SEU_PROJETO.convex.cloud";
+const CONVEX_URL = "https://tough-kangaroo-90.convex.cloud";
 
 // ─── CORES E CONSTANTES ───────────────────────────────────────────────────────
 const colors = {
