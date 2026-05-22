@@ -1,53 +1,129 @@
-# AMRTS Santorini — Dashboard de Contribuições
+# AMRTS Santorini — Dashboard de Gestão Condominial
 
-Dashboard interativo para gestão financeira do Residencial Santorini.  
-Versão 2.0 — Dados persistidos no **Convex** · Hospedado no **GitHub Pages**.
+Dashboard interativo para gestão financeira e societária do Residencial Santorini.  
+**v3.0** — Dados persistidos no **Convex** · Hospedado no **GitHub Pages**.
+
+---
 
 ## 🌐 Acesso
 
 **URL pública:** `https://zionsti.github.io/santorini`
+
+---
 
 ## ⚙️ Stack
 
 | Camada | Tecnologia |
 |--------|-----------|
 | Frontend | HTML5 + Tailwind CSS + Chart.js + PapaParse |
-| Banco de dados | Convex (nuvem, tempo real) |
+| Banco de dados | Convex (nuvem, serverless, tempo real) |
 | Hospedagem | GitHub Pages |
 | CI/CD | GitHub Actions (deploy automático no push) |
+
+---
 
 ## 📁 Estrutura
 
 ```
 santorini/
-├── index.html                  # Dashboard principal
-├── script.js                   # Lógica + integração Convex
+├── index.html                  # Dashboard principal (SPA)
+├── script.js                   # Toda a lógica + integração Convex
 ├── README.md
-├── .gitignore                  # Exclui CSVs e dados sensíveis
+├── CHANGELOG.md                # Histórico detalhado de versões
+├── .gitignore                  # Exclui CSVs, node_modules e dados sensíveis
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml          # Deploy automático GitHub Pages
+│       └── deploy.yml          # Deploy automático no GitHub Pages
 ├── convex/
-│   ├── schema.ts               # Schema das tabelas
-│   ├── transactions.ts         # Queries e mutations financeiras
-│   └── associates.ts           # Queries e mutations de associados
-├── img/
-│   └── santorini.png
-└── docs/
-    ├── index.html
-    ├── guia-usuario.md
-    └── detalhes-tecnicos.md
+│   ├── schema.ts               # Schema de todas as tabelas
+│   ├── transactions.ts         # Financeiro: queries e mutations
+│   ├── associates.ts           # Associados: CRUD + importação CSV
+│   ├── announcements.ts        # Comunicados e mural
+│   ├── documents.ts            # Documentos e atas
+│   ├── assemblies.ts           # Assembleias e votações
+│   ├── suppliers.ts            # Fornecedores e contratos
+│   ├── assets.ts               # Patrimônio
+│   ├── reservations.ts         # Reservas de áreas comuns
+│   ├── maintenances.ts         # Manutenção preventiva/corretiva
+│   ├── visitors.ts             # Controle de acesso / visitantes
+│   └── users.ts                # Gestão de usuários admin
+└── package.json                # Convex CLI
 ```
 
-## 🚀 Como atualizar os dados
+---
 
-1. Exporte o extrato no **InfinitePay** (formato CSV)
-2. Acesse o dashboard: `https://zionsti.github.io/santorini`
-3. Clique em **Importar CSV** e selecione o arquivo
-4. O sistema deduplica automaticamente e salva no Convex
-5. O dashboard atualiza imediatamente
+## ✅ Módulos implementados
 
-> **Os CSVs nunca são commitados no GitHub.** Dados ficam exclusivamente no Convex.
+| Fase | Módulo | Status |
+|------|--------|--------|
+| 1 | Transações financeiras (import CSV InfinitePay) | ✅ |
+| 1 | Cadastro de associados | ✅ |
+| 1 | Inadimplentes (view calculada por mês) | ✅ |
+| 2 | Comunicados e mural de avisos | ✅ |
+| 2 | Documentos e atas | ✅ |
+| 2 | Assembleias e votações | ✅ |
+| 3 | Fornecedores e contratos | ✅ |
+| 3 | Patrimônio | ✅ |
+| 3 | Reservas de áreas comuns | ✅ |
+| 3 | Manutenção preventiva/corretiva | ✅ |
+| 3 | Controle de acesso / visitantes | ✅ |
+| 3 | Gestão de usuários (admin/viewer) | ✅ |
+| 4 | **Botão do Pânico** (alerta emergência + geolocalização) | 🔜 Roadmap |
+
+---
+
+## 🔒 Segurança e privacidade
+
+- **Senhas** armazenadas como hash SHA-256 (Web Crypto API); nunca em plaintext
+- **Nomes em transações**: visitantes públicos veem "Associado 042" / "Despesa 07";
+  admins e o próprio associado autenticado veem o nome real
+- **CPF**: apenas os 5 primeiros dígitos (`cpfPrefix`) são expostos publicamente
+  para o Portal do Associado; CPF completo só é acessível para admins
+- **CSVs nunca são commitados** no repositório
+
+---
+
+## 📥 Importação de dados
+
+### Transações (InfinitePay CSV)
+1. Exporte o extrato no InfinitePay (formato CSV)
+2. Faça login como admin → Menu lateral → "Importar CSV"
+3. O sistema deduplica automaticamente (chave: `data|hora|valor|tipo`)
+4. Reimport com nomes reais: use "Limpar histórico" antes de reimportar
+
+### Associados (CSV manual)
+Formato aceito:
+```
+Nome,CPF,E-mail,Telefone,Adesao,Desligamento
+Maria Silva,123.456.789-00,maria@email.com,(55) 99999-0000,01/01/2024,
+João Inativo,987.654.321-00,joao@email.com,(55) 88888-0000,01/01/2023,01/06/2024
+```
+- Separador: `,` ou `;` (auto-detectado)
+- Datas: `dd/mm/yyyy` ou `yyyy-mm-dd`
+- `Desligamento` vazio → status `ativo`; preenchido → status `inativo`
+- Upsert por CPF (se disponível) ou nome exato
+
+### Portal do Associado
+- Acesse a seção "Área do Associado"
+- Digite os **5 primeiros dígitos do CPF** para ver seu extrato de contribuições
+
+---
+
+## 🚀 Deploy do Convex (backend)
+
+> **Necessário sempre que arquivos em `convex/` forem alterados.**  
+> O GitHub Pages hospeda apenas o frontend; o backend roda no Convex.
+
+```bash
+# Na sua máquina local, dentro da pasta do projeto:
+npx convex deploy --typecheck disable
+# Informe o deploy key quando solicitado
+```
+
+**Deploy key:** painel Convex → Settings → Deploy Keys  
+Após usar, **rotacione a chave** para manter a segurança.
+
+---
 
 ## 🛠️ Desenvolvimento local
 
@@ -56,19 +132,21 @@ santorini/
 git clone https://github.com/zionsti/santorini.git
 cd santorini
 
-# 2. Iniciar o Convex (projeto existente)
-npx convex dev --configure=existing --team hans-rogerio-zimmermann --project santorini
+# 2. Instalar dependências
+npm install
 
-# 3. Copiar a CONVEX_URL gerada para script.js
-# Linha: const CONVEX_URL = "https://SEU_PROJETO.convex.cloud";
+# 3. Iniciar Convex em modo dev (conecta ao projeto existente)
+npx convex dev --configure=existing --team hans-rogerio-zimmermann --project santorini
 
 # 4. Abrir index.html no navegador (ou usar Live Server)
 ```
 
-## 📦 Deploy
+---
 
-A cada `git push` na branch `main`, o GitHub Actions faz o deploy automático.  
-O site é atualizado em ~1 minuto.
+## 📦 Deploy do frontend
+
+A cada `git push` na branch `main`, o GitHub Actions publica automaticamente.  
+O site atualiza em ~1 minuto.
 
 ```bash
 git add .
@@ -76,22 +154,17 @@ git commit -m "feat: descrição da mudança"
 git push origin main
 ```
 
-## 📋 Módulos — Roadmap
+---
 
-| Fase | Módulo | Status |
-|------|--------|--------|
-| 1 | Transações financeiras | ✅ Implementado |
-| 1 | Cadastro de associados | ✅ Implementado |
-| 1 | Inadimplentes (view calculada) | ✅ Implementado |
-| 2 | Documentos e atas | 🔜 Planejado |
-| 2 | Assembleias e votações | 🔜 Planejado |
-| 2 | Comunicados e mural | 🔜 Planejado |
-| 3 | Fornecedores e contratos | 🔜 Planejado |
-| 3 | Patrimônio e empréstimos | 🔜 Planejado |
-| 3 | Reserva de áreas comuns | 🔜 Planejado |
-| 3 | Banco de indicações | 🔜 Planejado |
-| 3 | Manutenção preventiva | 🔜 Planejado |
-| 3 | Controle de acesso/visitantes | 🔜 Planejado |
+## 🗺️ Roadmap — Fase 4
+
+| # | Funcionalidade | Prioridade |
+|---|----------------|-----------|
+| 1 | **Botão do Pânico** — alerta de emergência com geolocalização (Google Maps link) enviado a todos os associados que optaram por receber alertas | Alta |
+| 2 | Canal de notificação para o Botão do Pânico (a definir: push browser / SMS / e-mail) | Alta |
+| 3 | Opt-in de alertas por associado | Média |
+| 4 | Histórico de acionamentos de emergência | Média |
+| 5 | Dashboard financeiro com previsão de inadimplência | Baixa |
 
 ---
 

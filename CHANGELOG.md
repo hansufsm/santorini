@@ -5,11 +5,161 @@ Cada entrada contém: versão (hash git), timestamp e descrição das mudanças.
 
 ---
 
+## [e7b351a] — 2026-05-22 (Sessão 3 — tarde)
+**fix: importAssociates aceita unit/notes/leftAt como opcionais nos args**
+
+### Problema corrigido
+- `importAssociates` rejeitava chamadas com campos `leftAt` e `notes` por não
+  estarem declarados nos `args` da mutation → Server Error ao importar CSV
+- Adicionados `unit`, `notes` e confirmado `leftAt` como `v.optional` nos args
+
+### Pendente (requer ação manual)
+- **Executar `npx convex deploy --typecheck disable`** para publicar as
+  correções acumuladas do Convex (schema `unit` opcional, Map-based import,
+  campos extras nos args). Sem o deploy, o import de associados continua falhando.
+
+---
+
+## [ca704c2] — 2026-05-22 (Sessão 3 — manhã)
+**fix: travamento de menus + limpeza da top bar**
+
+### Correções de UX
+- `showConvexError` agora sempre reseta `document.body.style.overflow = ''`
+  → menus voltam a funcionar após erro de servidor
+- Removido botão "Importar CSV" da top bar desktop (mantido só no drawer admin)
+- Removido link "Documentação" da top bar desktop (mantido só no drawer)
+- `csv-file-input` movido para fora do `admin-controls` (acessível pelo drawer)
+- Handler direto adicionado para `import-csv-btn-mob` (o botão delegado foi removido)
+
+---
+
+## [a6f619f] — 2026-05-22 (Sessão 3 — manhã)
+**feat: portal busca por 5 dígitos do CPF + fix importAssociates**
+
+### Portal do Associado
+- Campo de busca aceita os **5 primeiros dígitos do CPF** como identificador
+- `inputmode="numeric" maxlength="5" pattern="[0-9]{5}"` (teclado numérico no mobile)
+- Frontend filtra `associates` por `cpfPrefix.startsWith(prefixo)` antes de
+  cruzar com o histórico de transações
+
+### Backend — importAssociates
+- Corrigido bug N+1: substituída query-dentro-de-loop por varredura única +
+  `Map` em memória (`byCpf` e `byName`) → O(n) em vez de O(n²)
+- `getAllAssociates` corrigido: ordenação por `name` (era por `unit`, que agora
+  é opcional e quebrava o sort)
+- `searchAssociate` corrigido: `a.unit.includes(term)` → `(a.unit && a.unit.includes(term))`
+
+---
+
+## [95da2c6] — 2026-05-22 (Sessão 3 — manhã)
+**fix: renomeia 'Top Contribuintes' para 'Contribuintes Assíduos'**
+- Card na seção financeira: "Top Contribuintes" → "Contribuintes Assíduos"
+- Rótulo do gráfico de barras: "Total recebido" → "Contribuição acumulada"
+
+---
+
+## [e5036d3] — 2026-05-22 (Sessão 3 — manhã)
+**fix: anonimização 'Associado 042' / 'Despesa 07' em vez de iniciais**
+
+- Visitantes públicos veem **"Associado 042"** (crédito) ou **"Despesa 07"** (débito)
+- Admins continuam vendo nome real
+- Associado autenticado vê o próprio nome real no extrato
+- ID determinístico via `_stableId(str, max)` — mesmo nome → mesmo número sempre
+- Formato anterior ("Hans Z.") removido
+
+---
+
+## [06a1a13] — 2026-05-22 (Sessão 3 — manhã)
+**fix: searchAssociate seguro com unit opcional**
+- Proteção de null em `a.unit && a.unit.includes(term)` dentro do filtro de busca
+
+---
+
+## [18e0d78] — 2026-05-22 (Sessão 3 — manhã)
+**fix: import CSV em lotes de 50 + timeout 2 min para operações longas**
+
+- `convexMutationLong(fn, args)`: AbortController com timeout de 120 s
+  (padrão era 12 s → expirava antes de importar CSVs grandes)
+- Importação de transações: chunked em lotes de 50 registros por mutation
+- Toast progressivo: "Importando lote X/Y…" durante o processo
+- Retorna `{ inserted, updated, skipped }` acumulados de todos os lotes
+
+---
+
+## [71c56fb] — 2026-05-22 (Sessão 3 — manhã)
+**feat: importador CSV de associados + schema atualizado**
+
+### Backend (Convex)
+- `schema.ts`:
+  - `associates.unit` → `v.optional(v.string())` (era obrigatório)
+  - `associates.leftAt` adicionado como `v.optional(v.string())`
+  - Índice `by_cpf_prefix` adicionado
+  - Novas tabelas da Fase 3: `suppliers`, `assets`, `reservations`,
+    `maintenances`, `visitors`
+- `associates.ts`: mutation `importAssociates` com upsert por CPF ou nome
+
+### Frontend
+- Botão "Importar Associados" no drawer admin
+- Parser CSV aceita formato `Nome,CPF,E-mail,Telefone,Adesao,Desligamento`
+  - Separador auto-detectado (`,` ou `;`)
+  - Datas `dd/mm/yyyy` convertidas para ISO `yyyy-mm-dd`
+  - `cpfPrefix` = 5 primeiros dígitos do CPF (apenas números)
+  - Status derivado: `leftAt` preenchido → `"inativo"`, vazio → `"ativo"`
+  - Vírgula trailing no final de cada linha: tratada corretamente
+
+---
+
+## [62ee3c1] — 2026-05-22 (Sessão 3 — manhã)
+**feat: limpar histórico + upsert no reimport de transações**
+
+### Backend
+- `transactions.ts`: mutation `clearAllTransactions` — apaga todo o histórico
+  (usado antes de reimportar CSV com nomes reais)
+- `importTransactions`: upsert — se `transactionKey` já existe e nome/tipo
+  difere, faz `patch`; retorna `{ inserted, updated, skipped }`
+- Chave de deduplicação: `${date}|${time}|${value}|${detail}` (sem `name`,
+  permite reimport com nomes corrigidos)
+
+### Frontend
+- Botão "Limpar histórico" (laranja) no drawer admin com confirmação
+- Toast após limpar: "X transações removidas"
+- `appState` zerado após limpeza
+
+---
+
+## [73e9aab] — 2026-05-22 (Sessão 3 — manhã)
+**feat: anonimização de nomes para visitantes públicos**
+
+- `maskName(name, own, value)`: admin vê real, público vê pseudônimo
+- `getTransactionKey`: chave sem `name` para permitir reimport com nomes reais
+
+---
+
+## [0f40f19] — 2026-05-22 (Sessão 2)
+**feat: Fase 3 — Fornecedores, Patrimônio, Reservas, Manutenção, Visitantes + Gestão de Usuários + UX**
+
+### Módulos adicionados
+- **Fornecedores** — CRUD com categoria, CNPJ, contato, valor mensal, vigência de contrato
+- **Patrimônio** — cadastro de bens com categoria, localização, valor de aquisição, status
+- **Reservas** — agendamento de áreas comuns por unidade com controle de conflito
+- **Manutenção** — chamados com prioridade, área, custo, datas de execução
+- **Visitantes** — registro de entrada/saída com documento, unidade e veículo
+- **Gestão de Usuários** — criação e listagem de contas admin/viewer (senha SHA-256)
+
+### UX geral
+- Login admin: `showLoginError(msg)` substitui alert nativo
+- `showConvexError`: botão "Tentar novamente" + reset de overflow
+- `showToast(msg, type, duration)`: notificações não-bloqueantes
+- Timeout 12 s via AbortController em todas as chamadas Convex
+- `convexFetch` verifica `data.status === 'error'` (HTTP 200 com erro interno)
+
+---
+
 ## [eded343] — 2026-05-22 03:55 UTC
 **chore: adiciona package.json (Convex CLI) e atualiza .gitignore**
 - Inicializa npm no projeto para uso do Convex CLI
 - Adiciona `convex ^1.39.1` como dependência
-- Atualiza `.gitignore`: exclui `node_modules/` (entrada duplicada removida)
+- Atualiza `.gitignore`: exclui `node_modules/`
 
 ---
 
@@ -17,158 +167,66 @@ Cada entrada contém: versão (hash git), timestamp e descrição das mudanças.
 **feat: Fase 2 — Comunicados, Documentos e Assembleias + Drawer de navegação**
 
 ### Backend (Convex)
-- `schema.ts`: adição de 4 novas tabelas — `announcements`, `documents`, `assemblies`, `votes`
-- `convex/announcements.ts`: CRUD completo + `getAllAnnouncements` / `getActiveAnnouncements`
-- `convex/documents.ts`: CRUD completo + `getAllDocuments` / `getDocumentsByCategory`
+- `schema.ts`: tabelas `announcements`, `documents`, `assemblies`, `votes`
+- `convex/announcements.ts`: CRUD completo
+- `convex/documents.ts`: CRUD completo
 - `convex/assemblies.ts`: CRUD assembleias + CRUD votos com cascade delete
 
 ### Navegação — Drawer lateral
-- Botão `≡` na esquerda da nav abre drawer slide-in
-- Módulos navegáveis: Financeiro · Comunicados · Documentos · Assembleias
-- Lazy-load: cada módulo busca dados apenas ao ser acessado pela primeira vez
-- Backdrop click fecha o drawer
+- Botão `≡` abre drawer slide-in com todos os módulos
+- Lazy-load por módulo
 
-### Módulo: Comunicados e Mural
-- Cards tipados: 🔴 Urgente / 🔵 Info / 🟡 Manutenção / 🟢 Evento
-- Filtros por tipo (pill buttons)
-- Admin: criar / editar / excluir via modal bottom-sheet (mobile-first)
-
-### Módulo: Documentos e Atas
-- Grid responsivo 1→2→3 colunas
-- Categorias: Ata / Regulamento / Contrato / Outro
-- Armazenamento via links externos (Google Drive, Dropbox, etc.)
-- Admin: CRUD completo
-
-### Módulo: Assembleias e Votações
-- Cards com pauta, ata resumida, local, status, número de presentes
-- Votações com barra de progresso por opção (% + contagem)
-- Filtros: Todas / Agendadas / Realizadas / Canceladas
-- Admin: criar assembleia + registrar/editar votações aninhadas
-
-### UX
-- Modais como bottom-sheet em mobile (`rounded-t-3xl sm:rounded-3xl`)
-- `setAdminMode` sincroniza botões admin em todos os módulos
-- Drawer com indicador de last-update sincronizado via MutationObserver
+### Módulos
+- **Comunicados e Mural** — cards tipados, filtros, CRUD admin
+- **Documentos e Atas** — grid responsivo, links externos, categorias
+- **Assembleias e Votações** — pauta, ata, votações com barra de progresso
 
 ---
 
 ## [f6fa00d] — 2026-05-22 03:42 UTC
 **feat: revisão completa Mobile First — responsividade e fluidez**
 
-### Layout geral
-- Logo: `text-base md:text-xl` (evita quebra em telas < 360px)
-- Padding global: `p-4 md:p-6/p-8` em todas as seções
-- Gaps: `gap-3 md:gap-6`
-
-### Hero section
-- Altura progressiva: `h-44 sm:h-52 md:h-64 lg:h-80`
-- Título: `text-2xl sm:text-3xl md:text-4xl`
-- Descrição oculta em mobile para liberar espaço visual
-
-### Stats cards
-- Grid: `grid-cols-2` em mobile (2 cards por linha, mais compacto)
-- Números grandes: `text-xl md:text-3xl`
-
-### Gráficos
-- Altura responsiva: `h-48 md:h-64`
-- Header flex-col em mobile, flex-row em sm+
-- Select de período: `text-xs sm:text-sm`
-
-### Filtros e busca
-- Remove `min-w-[200px]` que causava scroll horizontal
-- `gap-2 md:gap-4`; seletores: `text-xs sm:text-sm`
-
-### Tabela de transações
-- Coluna "Tipo" oculta em mobile (`hidden sm:table-cell`)
-- Tipo exibido inline abaixo do nome em mobile
-- Padding células: `px-3 md:px-6 py-3 md:py-4`
-
-### Paginação
-- `flex-col sm:flex-row`; botões full-width em mobile
-- Texto: `← Anterior` / `Próximo →`; `py-2` para tap target ≥ 44px
-
-### Modais
-- Contributor Portal: `p-4 sm:p-6 md:p-8`; busca empilhada em mobile
-- Stats grid: `grid-cols-1 sm:grid-cols-3`
-- Admin modal: `p-5 md:p-8`
-
-### CSS
-- `canvas { max-width: 100% }` — gráficos respeitam container
-- `border-radius` suavizado em < 360px
-
 ---
 
 ## [7c99e70] — 2026-05-22 02:54 UTC
 **feat: menu hamburguer para layout mobile**
 
-- Nav mobile: apenas logo + ícone tema 🌙 + ☰ hamburguer
-- Dropdown mobile com todos os controles:
-  - Área do Associado, Documentação, Layout, Atualizar, Imprimir, Admin
-- `controls-panel` (Layout/Tema/Imprimir) oculto em mobile (`hidden md:block`)
-- `setAdminMode` atualizado para sincronizar controles admin no mobile
-- Zero mudança no layout desktop
-
----
-
-## [360d13d] — 2026-05-22 02:39 UTC
-**ci: dispara deploy GitHub Pages**
-- Commit vazio para acionar o workflow após configuração do Pages
-
 ---
 
 ## [8ac9b75] — 2026-05-22 02:10 UTC
 **merge: conecta dashboard ao Convex (tough-kangaroo-90)**
-- Merge da branch `claude/dev-process-memory-ZiE3X` → `main`
 
 ---
 
 ## [a2e2268] — 2026-05-22 02:08 UTC
 **config: conecta dashboard ao Convex (tough-kangaroo-90)**
-- Substitui placeholder `CONVEX_URL = "https://SEU_PROJETO.convex.cloud"`
-  pela URL real: `https://tough-kangaroo-90.convex.cloud`
-- Dashboard agora lê e persiste dados no Convex em produção
 
 ---
 
 ## [0ab1363] — 2026-05-22 01:30 UTC
-**feat: Fase 1 — integração Convex + login admin mockado**
+**feat: Fase 1 — integração Convex + login admin**
 
-### Backend (Convex)
 - `convex/schema.ts`: tabelas `transactions` e `associates`
-- `convex/transactions.ts`: importação de CSV com deduplicação, queries de
-  resumo, fluxo mensal, top contribuintes, histórico por associado, inadimplentes
-- `convex/associates.ts`: CRUD completo de associados, busca, resumo por status
-
-### Frontend
-- `index.html`: dashboard completo com nav, hero, stats cards, gráficos,
-  filtros, tabela de transações, modal Área do Associado, modal Admin
-- `script.js`: integração via HTTP API do Convex (`/api/query`, `/api/mutation`),
-  importação de CSV (PapaParse), paginação por mês, exportação CSV,
-  tema claro/escuro, layout boxed/wide, login admin com sessão
-
-### Módulos da Fase 1
-- ✅ Transações financeiras (importação CSV InfinitePay, deduplicação)
-- ✅ Cadastro de associados
-- ✅ Inadimplentes (view calculada: ativos sem pagamento no mês)
+- `convex/transactions.ts`: importação CSV InfinitePay, deduplicação,
+  resumo financeiro, fluxo mensal, top contribuintes, inadimplentes
+- `convex/associates.ts`: CRUD completo, busca, resumo por status
+- `index.html` + `script.js`: dashboard completo, tema claro/escuro,
+  layout boxed/wide, login admin com sessionStorage
 
 ---
 
 ## [72a7a2d] — 2026-05-22 00:45 UTC
-**Criando pastas**
-- Estrutura inicial de diretórios do projeto
+**chore: estrutura inicial de diretórios**
 
 ---
 
-## [caff3b9] — 2026-05-21 21:36 UTC
-## [79d721a] — 2026-05-21 21:33 UTC
-**Add files via upload**
-- Upload inicial dos arquivos base via interface do GitHub
+## [caff3b9 / 79d721a] — 2026-05-21
+**Add files via upload** — upload inicial via interface GitHub
 
 ---
 
-## [8a27f83] — 2026-05-21 21:31 UTC
-**Initial commit**
-- Criação do repositório `zionsti/santorini`
+## [8a27f83] — 2026-05-21
+**Initial commit** — criação do repositório `zionsti/santorini`
 
 ---
 
