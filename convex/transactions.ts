@@ -16,6 +16,7 @@ export const importTransactions = mutation({
   },
   handler: async (ctx, { transactions }) => {
     let inserted = 0;
+    let updated = 0;
     let skipped = 0;
     const importedAt = Date.now();
     for (const tx of transactions) {
@@ -23,11 +24,31 @@ export const importTransactions = mutation({
         .query("transactions")
         .withIndex("by_key", (q) => q.eq("transactionKey", tx.transactionKey))
         .first();
-      if (existing) { skipped++; continue; }
+      if (existing) {
+        // Upsert: atualiza nome e dados se o registro já existe (ex: reimport com nomes reais)
+        if (existing.name !== tx.name || existing.type !== tx.type) {
+          await ctx.db.patch(existing._id, { name: tx.name, type: tx.type, originalValue: tx.originalValue });
+          updated++;
+        } else {
+          skipped++;
+        }
+        continue;
+      }
       await ctx.db.insert("transactions", { ...tx, importedAt });
       inserted++;
     }
-    return { inserted, skipped, total: transactions.length };
+    return { inserted, updated, skipped, total: transactions.length };
+  },
+});
+
+// ─── LIMPAR TODAS AS TRANSAÇÕES ───────────────────────────────────────────────
+// Apaga todo o histórico — usar antes de reimportar CSV com dados corrigidos.
+export const clearAllTransactions = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("transactions").collect();
+    await Promise.all(all.map((t) => ctx.db.delete(t._id)));
+    return { deleted: all.length };
   },
 });
 

@@ -138,8 +138,9 @@ const cleanName = (name) => {
     return name.replace(/^Pix\s+/i, '').replace(/^Pix/i, '').trim();
 };
 
+// Chave de dedup sem nome — permite reimportar CSV com nomes corrigidos sem duplicar.
 const getTransactionKey = (t) =>
-    `${t.date}|${t.time}|${t.name}|${t.value}|${t.detail}`.toLowerCase();
+    `${t.date}|${t.time}|${t.value}|${t.detail}`.toLowerCase();
 
 // ─── PARSE DE VALOR DO CSV ────────────────────────────────────────────────────
 
@@ -1030,6 +1031,28 @@ document.getElementById('drawer-admin-logout-btn')?.addEventListener('click', ()
 document.getElementById('drawer-import-csv-btn')?.addEventListener('click', () => {
     closeDrawer();
     document.getElementById('csv-file-input')?.click();
+});
+
+document.getElementById('drawer-clear-transactions-btn')?.addEventListener('click', async () => {
+    closeDrawer();
+    const ok = confirm(
+        '⚠️ Limpar TODO o histórico de transações?\n\n' +
+        'Esta ação apaga todos os registros do Convex e não pode ser desfeita.\n' +
+        'Use antes de reimportar o CSV com dados corrigidos.'
+    );
+    if (!ok) return;
+    try {
+        const result = await convexMutation('transactions:clearAllTransactions', {});
+        showToast(`✓ ${result.deleted} transações removidas`, 'success', 4000);
+        appState.rawTransactions = [];
+        appState.filteredTransactions = [];
+        appState.summary = { totalReceived:0, totalSent:0, netBalance:0, contributorsCount:0, receivedCount:0, sentCount:0 };
+        renderTable();
+        renderCharts();
+    } catch (err) {
+        console.error('Erro ao limpar histórico:', err);
+        showToast('Erro: ' + err.message, 'error', 6000);
+    }
 });
 
 // ─── NAVEGAÇÃO DE MÓDULOS ─────────────────────────────────────────────────────
