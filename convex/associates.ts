@@ -1,0 +1,91 @@
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+
+export const createAssociate = mutation({
+  args: {
+    name: v.string(),
+    unit: v.string(),
+    cpf: v.optional(v.string()),
+    cpfPrefix: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    status: v.union(v.literal("ativo"), v.literal("inativo"), v.literal("inadimplente")),
+    joinedAt: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    return await ctx.db.insert("associates", { ...args, createdAt: now, updatedAt: now });
+  },
+});
+
+export const updateAssociate = mutation({
+  args: {
+    id: v.id("associates"),
+    name: v.optional(v.string()),
+    unit: v.optional(v.string()),
+    cpf: v.optional(v.string()),
+    cpfPrefix: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    status: v.optional(v.union(v.literal("ativo"), v.literal("inativo"), v.literal("inadimplente"))),
+    joinedAt: v.optional(v.string()),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, { id, ...fields }) => {
+    await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
+  },
+});
+
+export const updateAssociateStatus = mutation({
+  args: {
+    id: v.id("associates"),
+    status: v.union(v.literal("ativo"), v.literal("inativo"), v.literal("inadimplente")),
+  },
+  handler: async (ctx, { id, status }) => {
+    await ctx.db.patch(id, { status, updatedAt: Date.now() });
+  },
+});
+
+export const getAllAssociates = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("associates").collect();
+    return all.sort((a, b) => a.unit.localeCompare(b.unit));
+  },
+});
+
+export const getAssociatesByStatus = query({
+  args: {
+    status: v.union(v.literal("ativo"), v.literal("inativo"), v.literal("inadimplente")),
+  },
+  handler: async (ctx, { status }) => {
+    return await ctx.db.query("associates").withIndex("by_status", (q) => q.eq("status", status)).collect();
+  },
+});
+
+export const searchAssociate = query({
+  args: { search: v.string() },
+  handler: async (ctx, { search }) => {
+    const term = search.toLowerCase().trim();
+    const all = await ctx.db.query("associates").collect();
+    return all.filter((a) =>
+      a.name.toLowerCase().includes(term) ||
+      (a.cpfPrefix && a.cpfPrefix.startsWith(term)) ||
+      a.unit.includes(term)
+    );
+  },
+});
+
+export const getAssociatesSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("associates").collect();
+    return {
+      total: all.length,
+      ativos: all.filter((a) => a.status === "ativo").length,
+      inativos: all.filter((a) => a.status === "inativo").length,
+      inadimplentes: all.filter((a) => a.status === "inadimplente").length,
+    };
+  },
+});

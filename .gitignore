@@ -1,19 +1,10 @@
-# Dados sensíveis — nunca commitar CSVs de extratos
 extratos-infinite/
 *.csv
-
-# Convex gerado localmente
 convex/_generated/
-
-# Ambiente local
 .env
 .env.local
 node_modules/
-
-# Editor
 .vscode/
 *.code-workspace
-
-# OS
 .DS_Store
 Thumbs.db
