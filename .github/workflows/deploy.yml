@@ -27,6 +27,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inject build info into footer
+        run: |
+          COMMIT=$(git rev-parse --short HEAD)
+          DATE=$(git log -1 --format="%ci" | sed 's/ +.*//' | sed 's/ /T/' | cut -c1-16)
+          echo "Commit: $COMMIT  Date: $DATE"
+          sed -i "s/__GIT_COMMIT__/${COMMIT}/g" index.html
+          sed -i "s/__GIT_DATE__/${DATE} UTC/g" index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
