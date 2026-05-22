@@ -113,4 +113,88 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"]),
+
+  suppliers: defineTable({
+    name: v.string(),
+    category: v.string(),
+    cnpj: v.optional(v.string()),
+    contact: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    contractStart: v.optional(v.string()),
+    contractEnd: v.optional(v.string()),
+    monthlyValue: v.optional(v.number()),
+    status: v.union(v.literal("ativo"), v.literal("inativo")),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_category", ["category"])
+    .index("by_name", ["name"]),
+
+  assets: defineTable({
+    name: v.string(),
+    category: v.string(),
+    description: v.optional(v.string()),
+    acquisitionDate: v.optional(v.string()),
+    acquisitionValue: v.optional(v.number()),
+    location: v.optional(v.string()),
+    status: v.union(v.literal("ativo"), v.literal("inativo"), v.literal("manutencao")),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_category", ["category"]),
+
+  reservations: defineTable({
+    area: v.string(),
+    unit: v.string(),
+    residentName: v.string(),
+    date: v.string(),
+    startTime: v.string(),
+    endTime: v.string(),
+    status: v.union(v.literal("pendente"), v.literal("confirmada"), v.literal("cancelada")),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_area", ["area"])
+    .index("by_status", ["status"])
+    .index("by_unit", ["unit"]),
+
+  maintenances: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    area: v.optional(v.string()),
+    priority: v.union(v.literal("baixa"), v.literal("media"), v.literal("alta"), v.literal("urgente")),
+    status: v.union(v.literal("aberto"), v.literal("em_andamento"), v.literal("concluido"), v.literal("cancelado")),
+    scheduledDate: v.optional(v.string()),
+    completedDate: v.optional(v.string()),
+    cost: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_status", ["status"])
+    .index("by_priority", ["priority"]),
+
+  visitors: defineTable({
+    name: v.string(),
+    document: v.optional(v.string()),
+    unit: v.string(),
+    residentName: v.optional(v.string()),
+    date: v.string(),
+    entryTime: v.string(),
+    exitTime: v.optional(v.string()),
+    purpose: v.optional(v.string()),
+    vehicle: v.optional(v.string()),
+    status: v.union(v.literal("presente"), v.literal("saiu")),
+    createdAt: v.number(),
+  })
+    .index("by_date", ["date"])
+    .index("by_unit", ["unit"])
+    .index("by_status", ["status"]),
 });
