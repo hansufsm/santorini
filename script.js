@@ -892,18 +892,28 @@ navDrawerBtn?.addEventListener('click', openDrawer);
 closeNavBtn?.addEventListener('click', closeDrawer);
 navBackdrop?.addEventListener('click', closeDrawer);
 
-// Botões admin dentro do drawer
+// Botões admin dentro do drawer — acionam diretamente sem delegação
 document.getElementById('drawer-admin-login-btn')?.addEventListener('click', () => {
     closeDrawer();
-    document.getElementById('admin-login-btn')?.click();
+    setTimeout(() => {
+        const modal = document.getElementById('admin-modal');
+        const err   = document.getElementById('admin-login-error');
+        const email = document.getElementById('admin-email');
+        const pass  = document.getElementById('admin-password');
+        if (modal) modal.classList.remove('hidden');
+        err?.classList.add('hidden');
+        if (email) email.value = '';
+        if (pass)  pass.value  = '';
+        setTimeout(() => email?.focus(), 100);
+    }, 50);
 });
 document.getElementById('drawer-admin-logout-btn')?.addEventListener('click', () => {
     closeDrawer();
-    document.getElementById('admin-logout-btn')?.click();
+    setAdminMode(false);
 });
 document.getElementById('drawer-import-csv-btn')?.addEventListener('click', () => {
     closeDrawer();
-    document.getElementById('import-csv-btn')?.click();
+    document.getElementById('csv-file-input')?.click();
 });
 
 // ─── NAVEGAÇÃO DE MÓDULOS ─────────────────────────────────────────────────────
