@@ -117,6 +117,6 @@ export const getDefaulters = query({
     return activeAssociates.filter((a) => !paidThisMonth.has(a.name.toLowerCase())).map((a) => {
       const lastPayment = allReceived.filter((t) => t.name.toLowerCase().includes(a.name.toLowerCase())).sort((x, y) => y.date.localeCompare(x.date))[0];
       return { id: a._id, name: a.name, unit: a.unit, status: a.status, lastPaymentDate: lastPayment?.date ?? null };
-    }).sort((a, b) => a.unit.localeCompare(b.unit));
+    }).sort((a, b) => (a.unit ?? "").localeCompare(b.unit ?? ""));
   },
 });
