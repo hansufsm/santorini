@@ -223,8 +223,13 @@ function showLoading(show) {
 function showConvexError(message) {
     const lastUpdate = document.getElementById('last-update');
     if (lastUpdate) {
-        lastUpdate.innerHTML = `<span class="text-red-400 text-xs">⚠ Erro Convex: ${message}</span>`;
+        lastUpdate.innerHTML = `
+            <span class="text-red-400 text-xs">⚠ ${message.includes('Timeout') ? 'Convex offline' : 'Erro Convex'}</span>
+            <button onclick="loadFromConvex()" class="ml-2 text-xs text-emerald-400 underline hover:text-emerald-300">Tentar novamente</button>
+        `;
     }
+    // Garante que body.overflow nunca fica preso em erro
+    document.body.style.overflow = '';
 }
 
 // ─── IMPORTAÇÃO CSV → CONVEX ──────────────────────────────────────────────────
@@ -686,8 +691,9 @@ bindOptional('export-btn', 'click', () => {
     document.body.removeChild(link);
 });
 
-// ── Importar CSV ──
-bindOptional('import-csv-btn', 'click', () => {
+// ── Importar CSV (botão mobile do menu hambúrguer → direto no input) ──
+bindOptional('import-csv-btn-mob', 'click', () => {
+    document.getElementById('mobile-menu')?.classList.add('hidden');
     document.getElementById('csv-file-input')?.click();
 });
 
@@ -1040,7 +1046,6 @@ if (sessionStorage.getItem('adminSession') === '1') {
         ['print-btn-mob',              'print-btn'],
         ['refresh-btn-mob',            'refresh-btn'],
         ['admin-login-btn-mob',        'admin-login-btn'],
-        ['import-csv-btn-mob',         'import-csv-btn'],
         ['admin-logout-btn-mob',       'admin-logout-btn'],
     ];
 
