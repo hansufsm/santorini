@@ -413,7 +413,7 @@ function renderCharts() {
         window.topChartInstance = new Chart(ctxTop, {
             type: 'bar',
             data: {
-                labels: top5.map(t => t[0]),
+                labels: top5.map(([n]) => maskName(n)),
                 datasets: [{ label: 'Total Contribuído', data: top5.map(t => t[1]), backgroundColor: colors.success, borderRadius: 4 }]
             },
             options: {
@@ -428,6 +428,25 @@ function renderCharts() {
             }
         });
     }
+}
+
+// ─── PRIVACIDADE: ANONIMIZAÇÃO DE NOMES ──────────────────────────────────────
+/**
+ * Mascara nomes para visitantes públicos.
+ * - Admin vê sempre o nome completo.
+ * - Portal do associado: o próprio nome fica visível, os demais são mascarados.
+ * - Público: "Hans Rogério Zimmermann" → "Hans Z."
+ *
+ * @param {string}      name  – nome completo da transação
+ * @param {string|null} own   – nome do associado logado no portal (opcional)
+ */
+function maskName(name, own = null) {
+    if (!name) return '—';
+    if (sessionStorage.getItem('adminSession')) return name;            // admin: tudo visível
+    if (own && name.trim().toLowerCase() === own.trim().toLowerCase()) return name; // próprio nome
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0][0].toUpperCase() + '***';
+    return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`; // "Hans Z."
 }
 
 function renderTable() {
@@ -455,7 +474,7 @@ function renderTable() {
                 ${formatDateBR(t.date)}<div class="text-[10px] opacity-50">${t.time}</div>
             </td>
             <td class="px-3 md:px-6 py-3 md:py-4">
-                <div class="text-xs sm:text-sm font-medium text-slate-200">${t.name}</div>
+                <div class="text-xs sm:text-sm font-medium text-slate-200">${maskName(t.name)}</div>
                 <div class="text-[10px] text-slate-500 sm:hidden">${t.detail}</div>
             </td>
             <td class="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
@@ -546,13 +565,13 @@ function applyFilters(resetMonth = false) {
 
 // ─── PORTAL DO ASSOCIADO ──────────────────────────────────────────────────────
 
-function renderUserPortal(transactions) {
-    const name  = transactions[0].name;
+function renderUserPortal(transactions, own = null) {
+    const name  = own || transactions[0].name;   // nome real do associado, visível para ele próprio
     const total = transactions.reduce((acc, t) => acc + t.value, 0);
     const months = new Set(transactions.map(t => getMonthKey(t.date))).size;
     const lastDate = transactions[0].date;
 
-    document.getElementById('portal-user-name').textContent  = name;
+    document.getElementById('portal-user-name').textContent  = name; // nome sem máscara no portal
     document.getElementById('portal-user-total').textContent = formatCurrency(total);
     document.getElementById('portal-user-months').textContent = months;
     document.getElementById('portal-user-last').textContent  = formatDateBR(lastDate);
@@ -630,7 +649,7 @@ bindOptional('export-btn', 'click', () => {
         : appState.filteredTransactions;
     const csv = "data:text/csv;charset=utf-8,"
         + "Data,Hora,Nome,Tipo,Detalhe,Valor\n"
-        + toExport.map(t => `${t.date},${t.time},${t.name},${t.type},${t.detail},${t.value}`).join("\n");
+        + toExport.map(t => `${t.date},${t.time},${maskName(t.name)},${t.type},${t.detail},${t.value}`).join("\n");
     const link = Object.assign(document.createElement("a"), { href: encodeURI(csv), download: "amrts_relatorio.csv" });
     document.body.appendChild(link);
     link.click();
@@ -742,7 +761,8 @@ document.getElementById('portal-search-btn')?.addEventListener('click', () => {
     document.getElementById('portal-error')?.classList.add('hidden');
     document.getElementById('portal-search-step')?.classList.add('hidden');
     document.getElementById('portal-results-step')?.classList.remove('hidden');
-    renderUserPortal(userTxs);
+    // Passa o nome real encontrado como "own" → associado vê o próprio nome sem máscara
+    renderUserPortal(userTxs, userTxs[0].name);
 });
 
 // ─── AUTENTICAÇÃO VIA CONVEX ──────────────────────────────────────────────────
