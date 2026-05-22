@@ -1167,47 +1167,88 @@ document.getElementById('associates-csv-input')?.addEventListener('change', asyn
             return undefined;
         }
 
-        const associates = [];
+        const csvRows = [];
         for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ''));
             const name = cols[iNome]?.trim();
             if (!name) continue;
 
-            const cpfRaw  = iCpf  >= 0 ? cols[iCpf]?.replace(/\D/g, '') : '';
-            const leftAt  = iDeslig  >= 0 ? parseDate(cols[iDeslig])  : undefined;
+            const cpfRaw   = iCpf >= 0 ? cols[iCpf]?.replace(/\D/g, '') : '';
+            const leftAt   = iDeslig >= 0 ? parseDate(cols[iDeslig]) : undefined;
             const joinedAt = iAdesao >= 0 ? parseDate(cols[iAdesao]) : undefined;
 
-            associates.push({
+            csvRows.push({
                 name,
                 cpf:       cpfRaw || undefined,
                 cpfPrefix: cpfRaw ? cpfRaw.substring(0, 5) : undefined,
                 email:     iEmail >= 0 ? cols[iEmail]?.trim() || undefined : undefined,
                 phone:     iTel   >= 0 ? cols[iTel]?.trim()   || undefined : undefined,
                 joinedAt,
-                leftAt,
-                // Se tem data de desligamento → inativo; senão → ativo
+                // leftAt não está disponível em todas as versões do schema;
+                // guarda em notes e deriva o status
+                notes:     leftAt ? `Desligamento: ${leftAt}` : undefined,
                 status:    leftAt ? 'inativo' : 'ativo',
             });
         }
 
-        if (!associates.length) throw new Error('Nenhum associado válido encontrado.');
+        if (!csvRows.length) throw new Error('Nenhum associado válido encontrado.');
 
-        // Envia em lotes de 50
-        const CHUNK = 50;
-        let inserted = 0, updated = 0;
-        for (let i = 0; i < associates.length; i += CHUNK) {
-            const chunk = associates.slice(i, i + CHUNK);
-            const lote  = Math.floor(i / CHUNK) + 1;
-            const total = Math.ceil(associates.length / CHUNK);
-            showToast(`Importando associados ${lote}/${total}…`, 'info', 3500);
-            const r = await convexMutationLong('associates:importAssociates', { associates: chunk });
-            inserted += r.inserted || 0;
-            updated  += r.updated  || 0;
+        // ── Deduplicação no frontend (não depende do importAssociates do Convex) ──
+        // Carrega todos os registros existentes UMA vez, monta mapas em memória,
+        // depois chama createAssociate ou updateAssociate individualmente.
+        // Compatível com qualquer versão do Convex em produção.
+        showToast(`Carregando cadastro existente…`, 'info', 3000);
+        const existing = await convexQuery('associates:getAllAssociates', {});
+        const byCpf  = new Map((existing || []).filter(r => r.cpf).map(r => [r.cpf, r]));
+        const byName = new Map((existing || []).map(r => [r.name.toLowerCase(), r]));
+
+        let inserted = 0, updated = 0, errors = 0;
+        for (let i = 0; i < csvRows.length; i++) {
+            const a = csvRows[i];
+            if ((i % 5) === 0) {
+                showToast(`Importando ${i + 1}/${csvRows.length}…`, 'info', 3500);
+            }
+            try {
+                const found = (a.cpf ? byCpf.get(a.cpf) : null) ?? byName.get(a.name.toLowerCase()) ?? null;
+                if (found) {
+                    // updateAssociate aceita todos os campos como opcionais
+                    await convexMutation('associates:updateAssociate', {
+                        id:        found._id,
+                        name:      a.name,
+                        cpf:       a.cpf,
+                        cpfPrefix: a.cpfPrefix,
+                        email:     a.email,
+                        phone:     a.phone,
+                        joinedAt:  a.joinedAt,
+                        notes:     a.notes,
+                        status:    a.status,
+                    });
+                    updated++;
+                } else {
+                    // createAssociate requer unit (string), usa '' quando não há coluna de unidade
+                    await convexMutation('associates:createAssociate', {
+                        name:      a.name,
+                        unit:      '',
+                        cpf:       a.cpf,
+                        cpfPrefix: a.cpfPrefix,
+                        email:     a.email,
+                        phone:     a.phone,
+                        joinedAt:  a.joinedAt,
+                        notes:     a.notes,
+                        status:    a.status,
+                    });
+                    inserted++;
+                    // Adiciona ao mapa para deduplicar duplicatas dentro do próprio CSV
+                    if (a.cpf) byCpf.set(a.cpf, { name: a.name, cpf: a.cpf });
+                    byName.set(a.name.toLowerCase(), { name: a.name });
+                }
+            } catch (rowErr) {
+                console.warn(`Linha ${i+2} (${a.name}):`, rowErr.message);
+                errors++;
+            }
         }
-        showToast(
-            `✓ ${inserted} inseridos, ${updated} atualizados (total: ${associates.length})`,
-            'success', 5000
-        );
+        const msg = `✓ ${inserted} inseridos, ${updated} atualizados${errors ? `, ${errors} com erro` : ''} (total: ${csvRows.length})`;
+        showToast(msg, errors ? 'warning' : 'success', 6000);
     } catch (err) {
         console.error('Erro ao importar associados:', err);
         showToast('Erro: ' + err.message, 'error', 7000);
