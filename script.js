@@ -421,7 +421,7 @@ function renderCharts() {
         });
     }
 
-    // ── Top Contribuintes ──
+    // ── Contribuintes Assíduos ──
     const contributorTotals = {};
     appState.rawTransactions.filter(t => t.value > 0 && t.detail === 'Recebido').forEach(t => {
         contributorTotals[t.name] = (contributorTotals[t.name] || 0) + t.value;
@@ -435,7 +435,7 @@ function renderCharts() {
             type: 'bar',
             data: {
                 labels: top5.map(([n]) => maskName(n)),
-                datasets: [{ label: 'Total Contribuído', data: top5.map(t => t[1]), backgroundColor: colors.success, borderRadius: 4 }]
+                datasets: [{ label: 'Contribuição acumulada', data: top5.map(t => t[1]), backgroundColor: colors.success, borderRadius: 4 }]
             },
             options: {
                 indexAxis: 'y',
