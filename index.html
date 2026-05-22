@@ -551,6 +551,145 @@
             </div>
         </section>
 
+        <!-- ═══ MÓDULO: FORNECEDORES ═══ -->
+        <section id="module-fornecedores" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                        Fornecedores
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Prestadores de serviço e contratos</p>
+                </div>
+                <button id="new-supplier-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Novo
+                </button>
+            </div>
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-spfilter="all"    class="sup-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todos</button>
+                <button data-spfilter="ativo"  class="sup-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">✅ Ativos</button>
+                <button data-spfilter="inativo" class="sup-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">⛔ Inativos</button>
+            </div>
+            <div id="suppliers-list" class="space-y-3"><p class="text-emerald-700 text-sm animate-pulse">Carregando...</p></div>
+            <div id="suppliers-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                <p class="text-emerald-700">Nenhum fornecedor cadastrado.</p>
+            </div>
+        </section>
+
+        <!-- ═══ MÓDULO: PATRIMÔNIO ═══ -->
+        <section id="module-patrimonio" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                        Patrimônio
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Bens e equipamentos do condomínio</p>
+                </div>
+                <button id="new-asset-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Novo
+                </button>
+            </div>
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-atfilter="all"        class="ast-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todos</button>
+                <button data-atfilter="ativo"      class="ast-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">✅ Ativos</button>
+                <button data-atfilter="manutencao" class="ast-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🔧 Manutenção</button>
+                <button data-atfilter="inativo"    class="ast-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">⛔ Inativos</button>
+            </div>
+            <div id="assets-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"><p class="col-span-3 text-emerald-700 text-sm animate-pulse">Carregando...</p></div>
+            <div id="assets-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                <p class="text-emerald-700">Nenhum bem cadastrado.</p>
+            </div>
+        </section>
+
+        <!-- ═══ MÓDULO: RESERVAS ═══ -->
+        <section id="module-reservas" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Reservas de Áreas
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Agendamento de espaços comuns</p>
+                </div>
+                <button id="new-reservation-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Nova
+                </button>
+            </div>
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-rvfilter="all"        class="rsv-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todas</button>
+                <button data-rvfilter="pendente"   class="rsv-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">⏳ Pendentes</button>
+                <button data-rvfilter="confirmada" class="rsv-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">✅ Confirmadas</button>
+                <button data-rvfilter="cancelada"  class="rsv-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">❌ Canceladas</button>
+            </div>
+            <div id="reservations-list" class="space-y-3"><p class="text-emerald-700 text-sm animate-pulse">Carregando...</p></div>
+            <div id="reservations-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <p class="text-emerald-700">Nenhuma reserva cadastrada.</p>
+            </div>
+        </section>
+
+        <!-- ═══ MÓDULO: MANUTENÇÃO ═══ -->
+        <section id="module-manutencao" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Manutenção
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Ordens de serviço e chamados</p>
+                </div>
+                <button id="new-maintenance-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Novo
+                </button>
+            </div>
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-mtfilter="all"         class="mnt-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todos</button>
+                <button data-mtfilter="aberto"      class="mnt-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🔓 Abertos</button>
+                <button data-mtfilter="em_andamento" class="mnt-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">⚙️ Em Andamento</button>
+                <button data-mtfilter="concluido"   class="mnt-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">✅ Concluídos</button>
+                <button data-mtfilter="cancelado"   class="mnt-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">❌ Cancelados</button>
+            </div>
+            <div id="maintenances-list" class="space-y-3"><p class="text-emerald-700 text-sm animate-pulse">Carregando...</p></div>
+            <div id="maintenances-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></svg>
+                <p class="text-emerald-700">Nenhum chamado de manutenção.</p>
+            </div>
+        </section>
+
+        <!-- ═══ MÓDULO: VISITANTES ═══ -->
+        <section id="module-visitantes" class="module-section hidden">
+            <div class="flex items-start justify-between mb-6 gap-3">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        Visitantes
+                    </h2>
+                    <p class="text-emerald-600 text-sm mt-0.5">Registro de entrada e saída</p>
+                </div>
+                <button id="new-visitor-btn" class="admin-only hidden shrink-0 flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                    Registrar
+                </button>
+            </div>
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button data-vsfilter="all"      class="vis-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-600 text-white transition-all">Todos</button>
+                <button data-vsfilter="presente" class="vis-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">🟢 Presentes</button>
+                <button data-vsfilter="saiu"     class="vis-filter px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/40 transition-all">⚫ Saíram</button>
+            </div>
+            <div id="visitors-list" class="space-y-3"><p class="text-emerald-700 text-sm animate-pulse">Carregando...</p></div>
+            <div id="visitors-empty" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-emerald-900 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                <p class="text-emerald-700">Nenhum visitante registrado hoje.</p>
+            </div>
+        </section>
+
     </main>
 
     <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8 border-t border-emerald-900/50 mt-4 md:mt-8 text-center text-emerald-700 text-xs sm:text-sm">
@@ -717,6 +856,28 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 Assembleias
             </button>
+
+            <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-800 px-3 py-2 mt-2">Operacional</p>
+            <button data-module="fornecedores" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                Fornecedores
+            </button>
+            <button data-module="patrimonio" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>
+                Patrimônio
+            </button>
+            <button data-module="reservas" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                Reservas de Áreas
+            </button>
+            <button data-module="manutencao" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Manutenção
+            </button>
+            <button data-module="visitantes" class="drawer-nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-emerald-600 hover:bg-emerald-900/30 hover:text-emerald-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                Visitantes
+            </button>
         </nav>
         <!-- Drawer footer -->
         <div class="p-4 border-t border-emerald-900/50 space-y-1">
@@ -741,6 +902,10 @@
                 <button id="drawer-import-csv-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-400 hover:bg-emerald-900/20 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                     Importar CSV
+                </button>
+                <button id="drawer-users-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-400 hover:bg-emerald-900/20 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    Gerenciar Usuários
                 </button>
                 <button id="drawer-admin-logout-btn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500/70 hover:text-red-400 hover:bg-red-900/20 transition-all">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
