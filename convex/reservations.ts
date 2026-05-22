@@ -1,11 +1,23 @@
+/**
+ * reservations.ts — Reservas de áreas comuns
+ *
+ * Política de exclusão: reservas nunca são deletadas permanentemente.
+ * A função "deleteReservation" faz soft delete (preenche deletedAt).
+ */
+
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+// Retorna todas as reservas não inativadas (painel admin)
 export const getAllReservations = query({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("reservations").collect();
-    return all.sort((a, b) => b.date.localeCompare(a.date));
+
+    // Filtrar registros inativados
+    const visible = all.filter((r) => r.deletedAt === undefined);
+
+    return visible.sort((a, b) => b.date.localeCompare(a.date));
   },
 });
 
@@ -17,7 +29,11 @@ export const getReservationsByUnit = query({
       .query("reservations")
       .withIndex("by_unit", (q) => q.eq("unit", unit))
       .collect();
-    return all.sort((a, b) => b.date.localeCompare(a.date));
+
+    // Filtrar inativadas
+    const visible = all.filter((r) => r.deletedAt === undefined);
+
+    return visible.sort((a, b) => b.date.localeCompare(a.date));
   },
 });
 
@@ -71,9 +87,17 @@ export const updateReservation = mutation({
   },
 });
 
+/**
+ * "Exclui" uma reserva — soft delete.
+ * O registro permanece para histórico, mas some das listagens normais.
+ */
 export const deleteReservation = mutation({
   args: { id: v.id("reservations") },
   handler: async (ctx, { id }) => {
-    await ctx.db.delete(id);
+    await ctx.db.patch(id, {
+      status: "cancelada",  // cancelar junto com o soft delete
+      deletedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
   },
 });

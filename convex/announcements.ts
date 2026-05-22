@@ -1,15 +1,29 @@
+/**
+ * announcements.ts — Comunicados do condomínio
+ *
+ * Política de exclusão: comunicados nunca são deletados permanentemente.
+ * A função "deleteAnnouncement" agora faz soft delete (preenche deletedAt).
+ * Assim o histórico é mantido, mas o comunicado some das listagens normais.
+ */
+
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
+// Retorna todos os comunicados não inativados (visão do painel admin)
 export const getAllAnnouncements = query({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("announcements").collect();
-    return all.sort((a, b) => b.createdAt - a.createdAt);
+
+    // Filtrar os que foram inativados (soft delete)
+    const visible = all.filter((a) => a.deletedAt === undefined);
+
+    // Ordenar do mais recente para o mais antigo
+    return visible.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 
-// Retorna apenas os comunicados ativos (portal do associado + visão pública)
+// Retorna apenas comunicados ativos e não inativados (portal do associado + público)
 export const getActiveAnnouncements = query({
   args: {},
   handler: async (ctx) => {
@@ -17,7 +31,11 @@ export const getActiveAnnouncements = query({
       .query("announcements")
       .withIndex("by_active", (q) => q.eq("active", true))
       .collect();
-    return all.sort((a, b) => b.createdAt - a.createdAt);
+
+    // Filtrar os que foram inativados (soft delete) mesmo que active=true
+    const visible = all.filter((a) => a.deletedAt === undefined);
+
+    return visible.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 
@@ -64,9 +82,19 @@ export const updateAnnouncement = mutation({
   },
 });
 
+/**
+ * "Exclui" um comunicado — na prática, apenas o inativa (soft delete).
+ * O registro permanece no banco com deletedAt preenchido.
+ * Para auditoria futura, pode-se criar uma query "getAllAnnouncementsHistory".
+ */
 export const deleteAnnouncement = mutation({
   args: { id: v.id("announcements") },
   handler: async (ctx, { id }) => {
-    await ctx.db.delete(id);
+    // Soft delete: marcar como inativo e preencher deletedAt
+    await ctx.db.patch(id, {
+      active: false,
+      deletedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
   },
 });
