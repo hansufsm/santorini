@@ -11,11 +11,13 @@
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireRole } from "./auth";
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export const createAssociate = mutation({
   args: {
+    sessionToken: v.string(),
     name: v.string(),
     unit: v.string(),
     cpf: v.optional(v.string()),
@@ -30,7 +32,10 @@ export const createAssociate = mutation({
     joinedAt: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { sessionToken, ...args }) => {
+    // Apenas diretoria ou sysadmin podem cadastrar associados
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
     const now = Date.now();
     return await ctx.db.insert("associates", {
       ...args,
@@ -42,6 +47,7 @@ export const createAssociate = mutation({
 
 export const updateAssociate = mutation({
   args: {
+    sessionToken: v.string(),
     id: v.id("associates"),
     name: v.optional(v.string()),
     unit: v.optional(v.string()),
@@ -59,13 +65,16 @@ export const updateAssociate = mutation({
     joinedAt: v.optional(v.string()),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, { id, ...fields }) => {
+  handler: async (ctx, { sessionToken, id, ...fields }) => {
+    // Apenas diretoria ou sysadmin podem editar o cadastro completo
+    await requireRole(ctx.db, sessionToken, "diretoria");
     await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
   },
 });
 
 export const updateAssociateStatus = mutation({
   args: {
+    sessionToken: v.string(),
     id: v.id("associates"),
     status: v.union(
       v.literal("ativo"),
@@ -73,7 +82,9 @@ export const updateAssociateStatus = mutation({
       v.literal("inadimplente")
     ),
   },
-  handler: async (ctx, { id, status }) => {
+  handler: async (ctx, { sessionToken, id, status }) => {
+    // Apenas diretoria ou sysadmin podem alterar o status
+    await requireRole(ctx.db, sessionToken, "diretoria");
     await ctx.db.patch(id, { status, updatedAt: Date.now() });
   },
 });
@@ -191,11 +202,20 @@ export const authenticateAssociate = query({
  */
 export const updateAssociateContact = mutation({
   args: {
+    sessionToken: v.string(),
     id: v.id("associates"),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
   },
-  handler: async (ctx, { id, email, phone }) => {
+  handler: async (ctx, { sessionToken, id, email, phone }) => {
+    // Morador pode editar apenas seus próprios dados de contato
+    const caller = await requireRole(ctx.db, sessionToken, "morador");
+
+    // Verificar que o usuário está editando seus próprios dados
+    if (caller.associateId?.toString() !== id) {
+      throw new Error("Você só pode editar seus próprios dados de contato.");
+    }
+
     const record = await ctx.db.get(id);
     if (!record) throw new Error("Associado não encontrado");
 

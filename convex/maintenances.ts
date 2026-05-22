@@ -1,29 +1,28 @@
 /**
- * maintenances.ts — Chamados de manutenção
+ * maintenances.ts — Chamados de manutenção / suporte
  *
  * Política de exclusão: chamados nunca são deletados permanentemente.
- * A função "deleteMaintenance" faz soft delete (preenche deletedAt).
- * O histórico de chamados é importante para auditoria.
+ * - createMaintenance: qualquer usuário logado pode abrir um chamado
+ * - updateMaintenance / deleteMaintenance: apenas diretoria
  */
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireRole } from "./auth";
 
-// Retorna todos os chamados não inativados (painel admin)
+// Retorna todos os chamados não inativados
 export const getAllMaintenances = query({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("maintenances").collect();
-
-    // Filtrar registros inativados
     const visible = all.filter((m) => m.deletedAt === undefined);
-
     return visible.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 
 export const createMaintenance = mutation({
   args: {
+    sessionToken: v.string(),
     title: v.string(),
     description: v.optional(v.string()),
     area: v.optional(v.string()),
@@ -41,7 +40,10 @@ export const createMaintenance = mutation({
     ),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { sessionToken, ...args }) => {
+    // Qualquer usuário logado pode abrir um chamado de suporte
+    await requireRole(ctx.db, sessionToken, "morador");
+
     if (!args.title) throw new Error("Título é obrigatório");
     const now = Date.now();
     return await ctx.db.insert("maintenances", {
@@ -54,6 +56,7 @@ export const createMaintenance = mutation({
 
 export const updateMaintenance = mutation({
   args: {
+    sessionToken: v.string(),
     id: v.id("maintenances"),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
@@ -76,20 +79,27 @@ export const updateMaintenance = mutation({
     ),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, { id, ...fields }) => {
+  handler: async (ctx, { sessionToken, id, ...fields }) => {
+    // Apenas diretoria pode atualizar chamados
+    await requireRole(ctx.db, sessionToken, "diretoria");
     await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
   },
 });
 
 /**
- * "Exclui" um chamado — soft delete.
- * O registro permanece para histórico.
+ * "Exclui" um chamado — soft delete + status cancelado.
  */
 export const deleteMaintenance = mutation({
-  args: { id: v.id("maintenances") },
-  handler: async (ctx, { id }) => {
+  args: {
+    sessionToken: v.string(),
+    id: v.id("maintenances"),
+  },
+  handler: async (ctx, { sessionToken, id }) => {
+    // Apenas diretoria pode inativar chamados
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
     await ctx.db.patch(id, {
-      status: "cancelado",  // marcar como cancelado junto com o soft delete
+      status: "cancelado",
       deletedAt: Date.now(),
       updatedAt: Date.now(),
     });

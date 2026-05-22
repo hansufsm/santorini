@@ -2,21 +2,20 @@
  * reservations.ts — Reservas de áreas comuns
  *
  * Política de exclusão: reservas nunca são deletadas permanentemente.
- * A função "deleteReservation" faz soft delete (preenche deletedAt).
+ * - createReservation: qualquer usuário logado (morador ou acima)
+ * - updateReservation / deleteReservation: apenas diretoria ou sysadmin
  */
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireRole } from "./auth";
 
 // Retorna todas as reservas não inativadas (painel admin)
 export const getAllReservations = query({
   args: {},
   handler: async (ctx) => {
     const all = await ctx.db.query("reservations").collect();
-
-    // Filtrar registros inativados
     const visible = all.filter((r) => r.deletedAt === undefined);
-
     return visible.sort((a, b) => b.date.localeCompare(a.date));
   },
 });
@@ -29,16 +28,14 @@ export const getReservationsByUnit = query({
       .query("reservations")
       .withIndex("by_unit", (q) => q.eq("unit", unit))
       .collect();
-
-    // Filtrar inativadas
     const visible = all.filter((r) => r.deletedAt === undefined);
-
     return visible.sort((a, b) => b.date.localeCompare(a.date));
   },
 });
 
 export const createReservation = mutation({
   args: {
+    sessionToken: v.string(),
     area: v.string(),
     unit: v.string(),
     residentName: v.string(),
@@ -52,7 +49,10 @@ export const createReservation = mutation({
     ),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, { sessionToken, ...args }) => {
+    // Qualquer usuário logado pode criar uma reserva
+    await requireRole(ctx.db, sessionToken, "morador");
+
     if (!args.unit || !args.residentName || !args.date)
       throw new Error("Unidade, morador e data são obrigatórios");
     const now = Date.now();
@@ -66,6 +66,7 @@ export const createReservation = mutation({
 
 export const updateReservation = mutation({
   args: {
+    sessionToken: v.string(),
     id: v.id("reservations"),
     area: v.optional(v.string()),
     unit: v.optional(v.string()),
@@ -82,20 +83,27 @@ export const updateReservation = mutation({
     ),
     notes: v.optional(v.string()),
   },
-  handler: async (ctx, { id, ...fields }) => {
+  handler: async (ctx, { sessionToken, id, ...fields }) => {
+    // Apenas diretoria confirma, cancela ou altera reservas
+    await requireRole(ctx.db, sessionToken, "diretoria");
     await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
   },
 });
 
 /**
- * "Exclui" uma reserva — soft delete.
- * O registro permanece para histórico, mas some das listagens normais.
+ * "Exclui" uma reserva — soft delete + status cancelada.
  */
 export const deleteReservation = mutation({
-  args: { id: v.id("reservations") },
-  handler: async (ctx, { id }) => {
+  args: {
+    sessionToken: v.string(),
+    id: v.id("reservations"),
+  },
+  handler: async (ctx, { sessionToken, id }) => {
+    // Apenas diretoria pode cancelar/inativar reservas
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
     await ctx.db.patch(id, {
-      status: "cancelada",  // cancelar junto com o soft delete
+      status: "cancelada",
       deletedAt: Date.now(),
       updatedAt: Date.now(),
     });

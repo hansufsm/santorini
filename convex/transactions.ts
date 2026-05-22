@@ -1,8 +1,10 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireRole } from "./auth";
 
 export const importTransactions = mutation({
   args: {
+    sessionToken: v.string(),
     transactions: v.array(v.object({
       date: v.string(),
       time: v.string(),
@@ -14,7 +16,10 @@ export const importTransactions = mutation({
       transactionKey: v.string(),
     })),
   },
-  handler: async (ctx, { transactions }) => {
+  handler: async (ctx, { sessionToken, transactions }) => {
+    // Apenas diretoria ou sysadmin podem importar transações
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
     let inserted = 0;
     let skipped = 0;
     const importedAt = Date.now();
