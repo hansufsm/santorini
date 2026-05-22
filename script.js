@@ -452,22 +452,31 @@ function renderCharts() {
 }
 
 // ─── PRIVACIDADE: ANONIMIZAÇÃO DE NOMES ──────────────────────────────────────
+/** Número estável 1–max derivado do nome (mesmo nome → mesmo número). */
+function _stableId(str, max) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) { h = Math.imul(31, h) + str.charCodeAt(i) | 0; }
+    return (Math.abs(h) % max) + 1;
+}
+
 /**
  * Mascara nomes para visitantes públicos.
  * - Admin vê sempre o nome completo.
  * - Portal do associado: o próprio nome fica visível, os demais são mascarados.
- * - Público: "Hans Rogério Zimmermann" → "Hans Z."
+ * - Crédito (value >= 0): "Associado 042"
+ * - Débito  (value <  0): "Despesa 07"
  *
  * @param {string}      name  – nome completo da transação
- * @param {string|null} own   – nome do associado logado no portal (opcional)
+ * @param {string|null} own   – nome do associado logado no portal
+ * @param {number}      value – valor da transação (determina o rótulo)
  */
-function maskName(name, own = null) {
+function maskName(name, own = null, value = 1) {
     if (!name) return '—';
-    if (sessionStorage.getItem('adminSession')) return name;            // admin: tudo visível
-    if (own && name.trim().toLowerCase() === own.trim().toLowerCase()) return name; // próprio nome
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0][0].toUpperCase() + '***';
-    return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`; // "Hans Z."
+    if (sessionStorage.getItem('adminSession')) return name;
+    if (own && name.trim().toLowerCase() === own.trim().toLowerCase()) return name;
+    const key = name.trim().toLowerCase();
+    if (value >= 0) return `Associado ${String(_stableId(key, 999)).padStart(3, '0')}`;
+    return `Despesa ${String(_stableId(key, 99)).padStart(2, '0')}`;
 }
 
 function renderTable() {
@@ -495,7 +504,7 @@ function renderTable() {
                 ${formatDateBR(t.date)}<div class="text-[10px] opacity-50">${t.time}</div>
             </td>
             <td class="px-3 md:px-6 py-3 md:py-4">
-                <div class="text-xs sm:text-sm font-medium text-slate-200">${maskName(t.name)}</div>
+                <div class="text-xs sm:text-sm font-medium text-slate-200">${maskName(t.name, null, t.value)}</div>
                 <div class="text-[10px] text-slate-500 sm:hidden">${t.detail}</div>
             </td>
             <td class="px-3 md:px-6 py-3 md:py-4 hidden sm:table-cell">
@@ -670,7 +679,7 @@ bindOptional('export-btn', 'click', () => {
         : appState.filteredTransactions;
     const csv = "data:text/csv;charset=utf-8,"
         + "Data,Hora,Nome,Tipo,Detalhe,Valor\n"
-        + toExport.map(t => `${t.date},${t.time},${maskName(t.name)},${t.type},${t.detail},${t.value}`).join("\n");
+        + toExport.map(t => `${t.date},${t.time},${maskName(t.name, null, t.value)},${t.type},${t.detail},${t.value}`).join("\n");
     const link = Object.assign(document.createElement("a"), { href: encodeURI(csv), download: "amrts_relatorio.csv" });
     document.body.appendChild(link);
     link.click();
