@@ -42,39 +42,54 @@ let appState = {
 };
 
 // ─── CLIENTE CONVEX (HTTP API) ────────────────────────────────────────────────
+const CONVEX_TIMEOUT_MS = 12_000; // 12 s — aborta se Convex não responder
+
+/**
+ * Fetch com timeout usando AbortController.
+ * Trata HTTP errors E erros de aplicação Convex (status: "error").
+ */
+async function convexFetch(endpoint, functionPath, args = {}) {
+    const ctrl  = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), CONVEX_TIMEOUT_MS);
+    try {
+        const response = await fetch(`${CONVEX_URL}/api/${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: functionPath, args }),
+            signal: ctrl.signal,
+        });
+        clearTimeout(timer);
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`Convex ${endpoint} error (${functionPath}): ${err}`);
+        }
+        const data = await response.json();
+        // Convex retorna HTTP 200 mesmo para erros de aplicação
+        if (data.status === 'error') {
+            throw new Error(data.errorMessage || `Erro em ${functionPath}`);
+        }
+        return data.value;
+    } catch (err) {
+        clearTimeout(timer);
+        if (err.name === 'AbortError') {
+            throw new Error(`Timeout: ${functionPath} não respondeu em ${CONVEX_TIMEOUT_MS / 1000}s. Verifique o deploy do Convex.`);
+        }
+        throw err;
+    }
+}
 
 /**
  * Executa uma query no Convex via HTTP API.
  */
 async function convexQuery(functionPath, args = {}) {
-    const response = await fetch(`${CONVEX_URL}/api/query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: functionPath, args })
-    });
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Convex query error (${functionPath}): ${err}`);
-    }
-    const data = await response.json();
-    return data.value;
+    return convexFetch('query', functionPath, args);
 }
 
 /**
  * Executa uma mutation no Convex via HTTP API.
  */
 async function convexMutation(functionPath, args = {}) {
-    const response = await fetch(`${CONVEX_URL}/api/mutation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: functionPath, args })
-    });
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Convex mutation error (${functionPath}): ${err}`);
-    }
-    const data = await response.json();
-    return data.value;
+    return convexFetch('mutation', functionPath, args);
 }
 
 // ─── UTILITÁRIOS DE DATA ──────────────────────────────────────────────────────
@@ -766,6 +781,27 @@ const adminEmailInput  = document.getElementById('admin-email');
 const adminPassInput   = document.getElementById('admin-password');
 const adminLoginError  = document.getElementById('admin-login-error');
 
+/** Exibe mensagem de erro detalhada no modal de login. */
+function showLoginError(msg = 'Credenciais inválidas.') {
+    if (!adminLoginError) return;
+    adminLoginError.textContent = msg;
+    adminLoginError.classList.remove('hidden');
+}
+
+/** Toast simples: notificação flutuante no canto inferior. */
+function showToast(msg, type = 'info', durationMs = 3000) {
+    const colors = { success: 'bg-emerald-700', error: 'bg-red-700', info: 'bg-slate-700' };
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl text-sm text-white shadow-xl transition-all duration-300 opacity-0 ${colors[type] || colors.info}`;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; });
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, durationMs);
+}
+
 /**
  * Ativa/desativa modo admin.
  * @param {boolean} isAdmin
@@ -853,14 +889,17 @@ adminConfirmBtn?.addEventListener('click', async () => {
         if (user) {
             adminModal?.classList.add('hidden');
             setAdminMode(true, user);
+            // Guia o usuário no mobile: notifica que o CSV fica no menu
+            if (window.innerWidth < 768) showToast('Admin ativo — use o menu ≡ para Importar CSV', 'success', 4000);
         } else {
-            adminLoginError?.classList.remove('hidden');
+            showLoginError('E-mail ou senha incorretos.');
             if (adminPassInput) adminPassInput.value = '';
             adminPassInput?.focus();
         }
     } catch (err) {
         console.error('Erro no login:', err);
-        adminLoginError?.classList.remove('hidden');
+        // Mostra mensagem de erro legível (ex: timeout, função não encontrada)
+        showLoginError(err.message || 'Erro ao conectar. Tente novamente.');
     } finally {
         adminConfirmBtn.disabled = false;
         adminConfirmBtn.textContent = origLabel;
