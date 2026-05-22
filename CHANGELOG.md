@@ -5,6 +5,58 @@ Cada entrada contém: versão (hash git), timestamp e descrição das mudanças.
 
 ---
 
+## [66392b6] — 2026-05-22 (Sessão 4)
+**fix: getAllAssociates com fallback seguro + clearAllAssociates + botão Limpar Associados**
+
+### Causa raiz identificada e corrigida
+- `getAllAssociates` em produção ordena por `a.unit.localeCompare(b.unit)`; registros
+  com `unit: undefined` (inseridos por tentativas anteriores sem o campo) causavam
+  `TypeError` → Server Error antes de qualquer import iniciar
+- Solução: `getAllAssociates` envolto em `try/catch` no frontend; se falhar, import
+  continua sem deduplicação e exibe aviso amarelo
+
+### Nova mutation Convex
+- `associates:clearAllAssociates` — apaga todo o cadastro de associados
+  (análogo ao `clearAllTransactions` existente para transações)
+
+### UI
+- Botão **Limpar associados** adicionado ao drawer admin (laranja, com confirmação)
+- Funciona após `npx convex deploy`
+
+---
+
+## [9416989] — 2026-05-22 (Sessão 4)
+**fix: import associados sem importAssociates — usa create/update individuais**
+
+### Problema
+- `importAssociates` em produção tem bug N+1: faz varredura completa da tabela
+  para cada associado do lote → timeout com lotes de 50 registros → Server Error
+
+### Solução (sem depender de deploy Convex)
+- Import reescrito para rodar inteiramente no frontend:
+  1. `getAllAssociates` carrega todos os registros existentes uma vez
+  2. Frontend monta `Map(cpf→registro)` e `Map(nome→registro)`
+  3. Para cada linha do CSV: `updateAssociate` se encontrado, `createAssociate` se novo
+- `createAssociate` usa `unit: ''` (campo obrigatório em versões antigas do schema)
+- Data de desligamento (`leftAt`) armazenada em `notes` até deploy atualizar o schema
+- Toast de progresso a cada 5 registros; erros por linha capturados individualmente
+
+---
+
+## [2dcb940] — 2026-05-22 (Sessão 4)
+**fix: forceCloseAll() fecha drawer/modais em qualquer erro + Escape key global**
+
+### Problema
+- Erros durante o import enquanto o drawer estava aberto deixavam o backdrop
+  visível e `overflow:hidden` ativo → botões da navbar não respondiam a cliques
+
+### Solução
+- `forceCloseAll()`: fecha drawer + todos os `[id$="-modal"]` + reseta overflow;
+  chamada automaticamente em qualquer `showConvexError()`
+- Handler global `keydown` para `Escape`: fecha modal aberto ou drawer
+
+---
+
 ## [e7b351a] — 2026-05-22 (Sessão 3 — tarde)
 **fix: importAssociates aceita unit/notes/leftAt como opcionais nos args**
 

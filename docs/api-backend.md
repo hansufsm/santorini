@@ -3,8 +3,8 @@
 Todas as funções são chamadas via HTTP POST para `https://tough-kangaroo-90.convex.cloud/api/`.
 
 ```
-POST /api/query    → para queries (leitura)
-POST /api/mutation → para mutations (escrita)
+POST /api/query    → leitura (sem efeitos colaterais)
+POST /api/mutation → escrita (insere, atualiza, deleta)
 ```
 
 **Corpo da requisição:**
@@ -15,8 +15,10 @@ POST /api/mutation → para mutations (escrita)
 **Resposta (sempre HTTP 200):**
 ```json
 { "status": "success", "value": <resultado> }
-{ "status": "error", "errorMessage": "..." }
+{ "status": "error",   "errorMessage": "..." }
 ```
+
+> ⚠️ O Convex retorna HTTP 200 mesmo para erros de aplicação. Sempre verificar `data.status`.
 
 ---
 
@@ -24,14 +26,14 @@ POST /api/mutation → para mutations (escrita)
 
 ### `transactions:importTransactions` `mutation`
 
-Importa lote de transações com upsert por chave.
+Importa lote de transações com upsert por chave de deduplicação.
 
 ```typescript
 args: {
   transactions: Array<{
     date: string           // "yyyy-mm-dd"
     time: string           // "hh:mm:ss"
-    type: string           // "Recebido" | "Enviado" | ...
+    type: string           // ex: "Pix"
     name: string           // nome do pagador/recebedor
     detail: string         // "Recebido" | "Enviado"
     value: number          // positivo = crédito, negativo = débito
@@ -42,7 +44,7 @@ args: {
 returns: { inserted: number, updated: number, skipped: number, total: number }
 ```
 
-**Deduplicação:** se `transactionKey` já existe e nome/tipo difere → `patch`. Se igual → `skip`. Se não existe → `insert`.
+**Deduplicação:** `transactionKey` igual + nome/tipo diferente → `patch`. Igual → `skip`. Novo → `insert`.
 
 ---
 
@@ -63,7 +65,7 @@ Retorna todas as transações ordenadas por data decrescente.
 
 ```typescript
 args: {}
-returns: Transaction[]  // ordenado: mais recente primeiro
+returns: Transaction[]
 ```
 
 ---
@@ -81,7 +83,7 @@ returns: string[]  // ["2026-05", "2026-04", ...] — decrescente
 
 ### `transactions:getSummary` `query`
 
-Resumo financeiro geral (todos os períodos).
+Resumo financeiro consolidado (todos os períodos).
 
 ```typescript
 args: {}
@@ -114,7 +116,7 @@ returns: Array<{ name: string, total: number }>
 Fluxo mensal de entradas e saídas.
 
 ```typescript
-args: { months?: number }  // se definido, retorna os N últimos meses
+args: { months?: number }  // se definido: últimos N meses
 returns: Array<{ month: string, received: number, sent: number }>
 ```
 
@@ -122,10 +124,10 @@ returns: Array<{ month: string, received: number, sent: number }>
 
 ### `transactions:getAssociateHistory` `query`
 
-Histórico de contribuições de um associado específico.
+Histórico de contribuições de um associado (busca por substring do nome).
 
 ```typescript
-args: { search: string }  // substring do nome (case-insensitive)
+args: { search: string }
 returns: {
   name: string
   total: number
@@ -139,14 +141,14 @@ returns: {
 
 ### `transactions:getDefaulters` `query`
 
-Lista de associados ativos sem pagamento no mês especificado.
+Associados ativos sem pagamento no mês especificado.
 
 ```typescript
 args: { monthKey: string }  // "yyyy-mm"
 returns: Array<{
   id: Id<"associates">
   name: string
-  unit: string | undefined
+  unit?: string
   status: "ativo" | "inativo" | "inadimplente"
   lastPaymentDate: string | null
 }>
@@ -158,19 +160,22 @@ returns: Array<{
 
 ### `associates:importAssociates` `mutation`
 
-Importação em lote com upsert por CPF (preferencial) ou nome.
+Import em lote com upsert — carrega toda a tabela uma vez e usa Maps em memória (O(n), sem N+1).
+
+> ⚠️ Esta versão corrigida ainda não está em produção — requer `npx convex deploy`.  
+> O frontend usa `createAssociate`/`updateAssociate` individualmente como alternativa compatível.
 
 ```typescript
 args: {
   associates: Array<{
     name: string
     unit?: string
-    cpf?: string           // CPF completo (somente números)
-    cpfPrefix?: string     // 5 primeiros dígitos
+    cpf?: string        // somente dígitos
+    cpfPrefix?: string  // 5 primeiros dígitos
     email?: string
     phone?: string
-    joinedAt?: string      // "yyyy-mm-dd"
-    leftAt?: string        // "yyyy-mm-dd" — se presente: status = inativo
+    joinedAt?: string   // "yyyy-mm-dd"
+    leftAt?: string     // "yyyy-mm-dd"
     notes?: string
     status: "ativo" | "inativo" | "inadimplente"
   }>
@@ -178,18 +183,27 @@ args: {
 returns: { inserted: number, updated: number, total: number }
 ```
 
-**Algoritmo (O(n) — sem N+1):** carrega todos os registros existentes uma vez → monta `Map(cpf→registro)` e `Map(nome→registro)` → para cada item do lote, busca no Map → patch se encontrado, insert se não encontrado.
+---
+
+### `associates:clearAllAssociates` `mutation` ⚠️ requer deploy
+
+Apaga TODOS os associados. Use antes de reimportar CSV com dados corrigidos.
+
+```typescript
+args: {}
+returns: { deleted: number }
+```
 
 ---
 
 ### `associates:createAssociate` `mutation`
 
-Cria um único associado.
+Cria um único associado. Disponível em todas as versões de produção.
 
 ```typescript
 args: {
   name: string
-  unit: string
+  unit: string          // obrigatório; use '' se não houver unidade
   cpf?: string
   cpfPrefix?: string
   phone?: string
@@ -205,11 +219,11 @@ returns: Id<"associates">
 
 ### `associates:updateAssociate` `mutation`
 
-Atualiza campos de um associado existente.
+Atualiza campos de um associado existente (todos opcionais).
 
 ```typescript
 args: {
-  id: Id<"associates">
+  id: Id<"associates">  // obrigatório
   name?: string
   unit?: string
   cpf?: string
@@ -241,7 +255,10 @@ returns: void
 
 ### `associates:getAllAssociates` `query`
 
-Retorna todos os associados, ordenados por nome (pt-BR collation).
+Retorna todos os associados ordenados por nome (pt-BR).
+
+> ⚠️ Versão em produção ordena por `unit` (quebra se unit for undefined). Deploy necessário para a versão corrigida.  
+> O frontend usa `try/catch` como fallback se esta query falhar.
 
 ```typescript
 args: {}
@@ -252,7 +269,7 @@ returns: Associate[]
 
 ### `associates:getAssociatesByStatus` `query`
 
-Filtra associados por status (usa índice `by_status`).
+Filtra por status usando índice `by_status`.
 
 ```typescript
 args: { status: "ativo" | "inativo" | "inadimplente" }
@@ -263,7 +280,7 @@ returns: Associate[]
 
 ### `associates:searchAssociate` `query`
 
-Busca por substring de nome, prefixo de CPF ou unidade.
+Busca por substring de nome, prefixo de CPF (5 dígitos) ou unidade.
 
 ```typescript
 args: { search: string }
@@ -274,7 +291,7 @@ returns: Associate[]
 
 ### `associates:getAssociatesSummary` `query`
 
-Contagem por status.
+Contagem de associados por status.
 
 ```typescript
 args: {}
@@ -287,7 +304,7 @@ returns: { total: number, ativos: number, inativos: number, inadimplentes: numbe
 
 ### `users:getUserByEmail` `query`
 
-Busca usuário por e-mail (para autenticação).
+Busca usuário por e-mail (usado na autenticação).
 
 ```typescript
 args: { email: string }
@@ -304,7 +321,7 @@ Cria novo usuário admin.
 args: {
   name: string
   email: string
-  passwordHash: string  // SHA-256 hex calculado no browser
+  passwordHash: string  // SHA-256 hex (calculado no browser)
   role: "sysadmin" | "admin" | "viewer"
 }
 returns: Id<"users">
@@ -314,11 +331,11 @@ returns: Id<"users">
 
 ### `users:getAllUsers` `query`
 
-Lista todos os usuários (sysadmin only — verificação no frontend).
+Lista todos os usuários (verificação de permissão feita no frontend).
 
 ```typescript
 args: {}
-returns: User[]  // passwordHash omitido no retorno
+returns: User[]
 ```
 
 ---
@@ -343,7 +360,7 @@ returns: void
 
 ### `users:deleteUser` `mutation`
 
-Remove um usuário.
+Remove um usuário permanentemente.
 
 ```typescript
 args: { id: Id<"users"> }
@@ -352,9 +369,10 @@ returns: void
 
 ---
 
-## Demais módulos
+## Demais módulos (padrão CRUD)
 
-Os módulos abaixo seguem o padrão CRUD idêntico: `create*`, `update*`, `delete*`, `getAll*`, `get*ById`.
+Os módulos abaixo seguem o padrão `create*`, `update*`, `delete*`, `getAll*`, `get*ById`.  
+Consulte o código-fonte em `convex/` para assinaturas detalhadas.
 
 | Módulo | Arquivo | Entidade |
 |--------|---------|---------|
@@ -367,15 +385,12 @@ Os módulos abaixo seguem o padrão CRUD idêntico: `create*`, `update*`, `delet
 | Manutenção | `maintenances.ts` | `maintenances` |
 | Visitantes | `visitors.ts` | `visitors` |
 
-Consulte o código-fonte de cada arquivo em `convex/` para a assinatura exata de cada função.
-
 ---
 
-## Códigos de erro comuns
+## Legenda de estado das funções
 
-| Mensagem | Causa | Solução |
-|---------|-------|---------|
-| `Server Error` (sem detalhe) | Schema validation failure | Verificar campos obrigatórios; fazer deploy do Convex atualizado |
-| `Timeout: ... não respondeu em Xs` | Convex offline ou deploy não realizado | Rodar `npx convex deploy` |
-| `Convex mutation error (path): ...` | Erro HTTP (não 2xx) | Verificar URL do Convex em `script.js` |
-| `Nenhum associado válido encontrado` | CSV vazio ou sem coluna "Nome" | Verificar formato do CSV |
+| Ícone | Significado |
+|-------|------------|
+| (sem ícone) | Em produção e funcionando |
+| ⚠️ requer deploy | Código local pronto; `npx convex deploy` pendente |
+| ❌ descontinuada | Não usar — manter por compatibilidade |
