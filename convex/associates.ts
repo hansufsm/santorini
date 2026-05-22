@@ -42,6 +42,17 @@ export const importAssociates = mutation({
   },
 });
 
+// ─── LIMPAR TODOS OS ASSOCIADOS ───────────────────────────────────────────────
+// Apaga todo o cadastro — usar antes de reimportar CSV com dados corrigidos.
+export const clearAllAssociates = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("associates").collect();
+    await Promise.all(all.map((a) => ctx.db.delete(a._id)));
+    return { deleted: all.length };
+  },
+});
+
 export const createAssociate = mutation({
   args: {
     name: v.string(),

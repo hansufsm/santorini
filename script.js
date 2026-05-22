@@ -1193,14 +1193,19 @@ document.getElementById('associates-csv-input')?.addEventListener('change', asyn
 
         if (!csvRows.length) throw new Error('Nenhum associado válido encontrado.');
 
-        // ── Deduplicação no frontend (não depende do importAssociates do Convex) ──
-        // Carrega todos os registros existentes UMA vez, monta mapas em memória,
-        // depois chama createAssociate ou updateAssociate individualmente.
-        // Compatível com qualquer versão do Convex em produção.
+        // ── Deduplicação no frontend ──────────────────────────────────────────
+        // Carrega todos os registros existentes; se falhar (registros corrompidos
+        // no DB causam crash no getAllAssociates), importa tudo como novo.
         showToast(`Carregando cadastro existente…`, 'info', 3000);
-        const existing = await convexQuery('associates:getAllAssociates', {});
-        const byCpf  = new Map((existing || []).filter(r => r.cpf).map(r => [r.cpf, r]));
-        const byName = new Map((existing || []).map(r => [r.name.toLowerCase(), r]));
+        let existing = [];
+        try {
+            existing = await convexQuery('associates:getAllAssociates', {}) || [];
+        } catch (loadErr) {
+            console.warn('getAllAssociates falhou — importando sem deduplicação:', loadErr.message);
+            showToast('⚠ Cadastro existente inacessível — importando tudo como novo. Use "Limpar Associados" antes se necessário.', 'warning', 6000);
+        }
+        const byCpf  = new Map(existing.filter(r => r.cpf).map(r => [r.cpf, r]));
+        const byName = new Map(existing.map(r => [r.name.toLowerCase(), r]));
 
         let inserted = 0, updated = 0, errors = 0;
         for (let i = 0; i < csvRows.length; i++) {
@@ -1273,6 +1278,23 @@ document.getElementById('drawer-clear-transactions-btn')?.addEventListener('clic
         renderCharts();
     } catch (err) {
         console.error('Erro ao limpar histórico:', err);
+        showToast('Erro: ' + err.message, 'error', 6000);
+    }
+});
+
+document.getElementById('drawer-clear-associates-btn')?.addEventListener('click', async () => {
+    closeDrawer();
+    const ok = confirm(
+        '⚠️ Limpar TODOS os associados?\n\n' +
+        'Esta ação apaga todos os registros de associados do Convex e não pode ser desfeita.\n' +
+        'Use antes de reimportar o CSV com dados corretos.'
+    );
+    if (!ok) return;
+    try {
+        const result = await convexMutation('associates:clearAllAssociates', {});
+        showToast(`✓ ${result.deleted} associados removidos`, 'success', 4000);
+    } catch (err) {
+        console.error('Erro ao limpar associados:', err);
         showToast('Erro: ' + err.message, 'error', 6000);
     }
 });
