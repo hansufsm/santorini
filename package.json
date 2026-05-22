@@ -1,0 +1,20 @@
+{
+  "name": "santorini",
+  "version": "2.0.0",
+  "description": "Dashboard de gestão financeira e societária — Residencial Santorini",
+  "main": "script.js",
+  "scripts": {
+    "dev": "npx convex dev",
+    "deploy": "npx convex deploy --typecheck disable"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zionsti/santorini"
+  },
+  "keywords": ["convex", "dashboard", "condominio"],
+  "author": "Hans Rogério Zimmermann",
+  "license": "ISC",
+  "dependencies": {
+    "convex": "^1.39.1"
+  }
+}

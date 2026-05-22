@@ -75,6 +75,10 @@
         body.light .card-gradient-received, body.light .card-gradient-sent, body.light .card-gradient-balance { color: white; }
         body.light .card-gradient-received *, body.light .card-gradient-sent *, body.light .card-gradient-balance * { color: white !important; }
         
+        /* Esconde scrollbar mantendo funcionalidade */
+        .no-scrollbar { scrollbar-width: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
         @media print {
             nav, .hero-section, #refresh-btn, #export-btn, .filters-section, footer, .controls-panel { display: none !important; }
             body { background: white !important; color: black !important; }
@@ -360,85 +364,313 @@
     </footer>
     </div> <!-- Fim do container max-w-1440px -->
 
-    <!-- Contributor Portal Modal -->
-    <div id="contributor-modal" class="fixed inset-0 z-[100] hidden">
-        <div class="absolute inset-0 bg-emerald-950/90 backdrop-blur-sm"></div>
-        <div class="absolute inset-0 flex items-center justify-center p-4">
-            <div class="bg-[#022c22] border border-emerald-800/50 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-                <div class="p-6 border-b border-emerald-800/50 flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Área do Associado
-                    </h3>
-                    <button id="close-modal" class="text-emerald-500 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                
-                <div class="p-8 overflow-y-auto flex-1">
-                    <div id="portal-search-step">
-                        <p class="text-emerald-100/70 mb-6">Para visualizar seu extrato individual, digite os 4 primeiros dígitos do seu CPF ou seu nome completo.</p>
-                        <div class="flex gap-4">
-                            <input type="text" id="portal-search-input" placeholder="Ex: 1234 ou Nome Completo" 
-                                   class="flex-1 bg-emerald-950/50 border border-emerald-800/50 text-white rounded-xl px-6 py-3 outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
-                            <button id="portal-search-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40">
-                                Consultar
-                            </button>
-                        </div>
-                        <p id="portal-error" class="text-red-400 text-sm mt-3 hidden">Nenhum registro encontrado para este identificador.</p>
-                    </div>
+    <!-- ═══ PAINEL DO ASSOCIADO (Full-screen overlay) ═══ -->
+    <div id="associado-portal" class="fixed inset-0 z-[100] hidden bg-[#011a14] flex flex-col">
 
-                    <div id="portal-results-step" class="hidden">
-                        <div class="flex items-center justify-between mb-8">
-                            <div>
-                                <h4 id="portal-user-name" class="text-2xl font-bold text-white">---</h4>
-                                <p class="text-emerald-400 text-sm">Histórico de Contribuições Mensais</p>
-                            </div>
-                            <button id="back-to-search" class="text-emerald-500 hover:underline text-sm">Nova consulta</button>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div class="bg-emerald-900/20 p-4 rounded-2xl border border-emerald-800/30">
-                                <span class="text-xs text-emerald-500 uppercase font-bold">Total Contribuído</span>
-                                <h5 id="portal-user-total" class="text-2xl font-bold text-white">R$ 0,00</h5>
-                            </div>
-                            <div class="bg-emerald-900/20 p-4 rounded-2xl border border-emerald-800/30">
-                                <span class="text-xs text-emerald-500 uppercase font-bold">Meses Ativos</span>
-                                <h5 id="portal-user-months" class="text-2xl font-bold text-white">0</h5>
-                            </div>
-                            <div class="bg-emerald-900/20 p-4 rounded-2xl border border-emerald-800/30">
-                                <span class="text-xs text-emerald-500 uppercase font-bold">Última Contribuição</span>
-                                <h5 id="portal-user-last" class="text-xl font-bold text-white">--/--/----</h5>
-                            </div>
-                        </div>
-
-                        <div class="bg-emerald-900/10 rounded-2xl p-6 border border-emerald-800/30 mb-8 h-64">
-                            <canvas id="userMonthlyChart"></canvas>
-                        </div>
-
-                        <div class="overflow-hidden rounded-xl border border-emerald-800/30">
-                            <table class="w-full text-left">
-                                <thead class="bg-emerald-950/50 text-emerald-500 text-[10px] uppercase font-bold">
-                                    <tr>
-                                        <th class="px-6 py-3">Data</th>
-                                        <th class="px-6 py-3">Tipo</th>
-                                        <th class="px-6 py-3 text-right">Valor</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="portal-user-table" class="divide-y divide-emerald-800/20 text-sm">
-                                    <!-- Rows -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+        <!-- ── Top bar ── -->
+        <div class="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-emerald-900/50 bg-[#022c22]/90 backdrop-blur-md shrink-0">
+            <div class="flex items-center gap-3">
+                <button id="assoc-close-btn" class="p-1.5 rounded-lg text-emerald-500 hover:text-white hover:bg-emerald-900/40 transition-colors flex items-center gap-1.5 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    <span class="hidden sm:inline">Voltar</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <span class="text-white font-bold text-sm sm:text-base">Portal do Associado</span>
                 </div>
             </div>
+            <button id="assoc-logout-btn" class="hidden items-center gap-1.5 px-3 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-900/20 rounded-xl transition-colors border border-red-900/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                Sair
+            </button>
         </div>
-    </div>
+
+        <!-- ── Scrollable content ── -->
+        <div class="flex-1 overflow-y-auto">
+
+            <!-- ▸ TELA DE LOGIN ◂ -->
+            <div id="assoc-auth-screen" class="flex items-center justify-center min-h-full px-4 py-8">
+                <div class="w-full max-w-sm">
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-emerald-900/40 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-emerald-800/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white">Área do Associado</h2>
+                        <p class="text-emerald-500 text-sm mt-1">AMRTS Santorini</p>
+                    </div>
+                    <div class="bg-emerald-900/20 border border-emerald-800/50 rounded-2xl p-6 space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">CPF</label>
+                            <input id="assoc-cpf-input" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"
+                                class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-3 text-white placeholder-emerald-800 focus:outline-none focus:border-emerald-500 transition-colors tracking-widest font-mono text-lg">
+                        </div>
+                        <p id="assoc-login-error" class="hidden text-xs text-red-400 bg-red-900/20 border border-red-800/30 rounded-lg px-3 py-2"></p>
+                        <button id="assoc-login-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-colors text-sm">
+                            Acessar minha área
+                        </button>
+                    </div>
+                    <p class="text-emerald-800 text-xs text-center mt-4">Seu CPF é usado somente para identificação. Apenas membros cadastrados têm acesso.</p>
+                </div>
+            </div>
+
+            <!-- ▸ PORTAL (após login) ◂ -->
+            <div id="assoc-portal-content" class="hidden max-w-4xl mx-auto px-4 sm:px-6 py-6">
+
+                <!-- Header do portal -->
+                <div class="flex items-start justify-between mb-6">
+                    <div>
+                        <h2 id="assoc-portal-name" class="text-xl sm:text-2xl font-bold text-white"></h2>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="assoc-portal-unit" class="text-emerald-600 text-sm"></span>
+                            <span id="assoc-portal-status" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-400"></span>
+                        </div>
+                    </div>
+                    <span id="assoc-portal-joined" class="text-emerald-700 text-xs hidden sm:block">Membro desde: —</span>
+                </div>
+
+                <!-- Barra de abas -->
+                <div class="flex gap-1 overflow-x-auto pb-1 mb-6 border-b border-emerald-800/40 no-scrollbar">
+                    <button data-assoc-tab="inicio"      class="assoc-tab-btn px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all text-emerald-600 hover:text-emerald-400">🏠 Início</button>
+                    <button data-assoc-tab="extrato"     class="assoc-tab-btn px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all text-emerald-600 hover:text-emerald-400">📋 Extrato</button>
+                    <button data-assoc-tab="mensalidade" class="assoc-tab-btn px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all text-emerald-600 hover:text-emerald-400">💳 Mensalidade</button>
+                    <button data-assoc-tab="cadastro"    class="assoc-tab-btn px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all text-emerald-600 hover:text-emerald-400">👤 Cadastro</button>
+                    <button data-assoc-tab="reservas"    class="assoc-tab-btn px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all text-emerald-600 hover:text-emerald-400">📅 Reservas</button>
+                    <button data-assoc-tab="comunicados" class="assoc-tab-btn px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all text-emerald-600 hover:text-emerald-400">📢 Comunicados</button>
+                    <button data-assoc-tab="suporte"     class="assoc-tab-btn px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 transition-all text-emerald-600 hover:text-emerald-400">🔧 Suporte</button>
+                </div>
+
+                <!-- ── ABA: INÍCIO ── -->
+                <div id="assoc-tab-inicio" class="assoc-tab-panel">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4">
+                            <span class="text-[10px] text-emerald-500 uppercase font-bold block mb-1">Total Contribuído</span>
+                            <span id="assoc-stat-total" class="text-xl sm:text-2xl font-bold text-white">—</span>
+                        </div>
+                        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4">
+                            <span class="text-[10px] text-emerald-500 uppercase font-bold block mb-1">Meses Ativos</span>
+                            <span id="assoc-stat-months" class="text-xl sm:text-2xl font-bold text-white">—</span>
+                        </div>
+                        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4">
+                            <span class="text-[10px] text-emerald-500 uppercase font-bold block mb-1">Última Contribuição</span>
+                            <span id="assoc-stat-last" class="text-base sm:text-xl font-bold text-white">—</span>
+                        </div>
+                        <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4">
+                            <span class="text-[10px] text-emerald-500 uppercase font-bold block mb-1">Próxima Estimada</span>
+                            <span id="assoc-stat-next" class="text-base sm:text-xl font-bold text-emerald-400">—</span>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-900/10 border border-emerald-800/30 rounded-2xl p-4 md:p-6 h-52 md:h-64">
+                        <p class="text-xs text-emerald-600 uppercase font-bold mb-3">Histórico de contribuições</p>
+                        <canvas id="assoc-inicio-chart" class="h-full"></canvas>
+                    </div>
+                </div>
+
+                <!-- ── ABA: EXTRATO ── -->
+                <div id="assoc-tab-extrato" class="assoc-tab-panel hidden">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <h3 class="text-base font-semibold text-emerald-100">Minhas Contribuições</h3>
+                        <select id="assoc-extrato-month" class="bg-emerald-950/50 border border-emerald-800/50 rounded-xl px-3 py-2 text-sm text-emerald-300 outline-none focus:border-emerald-500"></select>
+                    </div>
+                    <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-emerald-950/50 text-emerald-500 text-[10px] uppercase font-bold">
+                                <tr>
+                                    <th class="px-4 py-3">Data</th>
+                                    <th class="px-4 py-3 hidden sm:table-cell">Tipo</th>
+                                    <th class="px-4 py-3 text-right">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assoc-extrato-body" class="divide-y divide-emerald-800/20 text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between text-sm text-emerald-600">
+                        <span id="assoc-extrato-label"></span>
+                        <div class="flex gap-2">
+                            <button id="assoc-extrato-prev" class="px-3 py-1 rounded-lg bg-emerald-950/50 border border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/50 disabled:opacity-30 text-xs transition-colors">← Anterior</button>
+                            <button id="assoc-extrato-next" class="px-3 py-1 rounded-lg bg-emerald-950/50 border border-emerald-800/50 text-emerald-400 hover:bg-emerald-900/50 disabled:opacity-30 text-xs transition-colors">Próximo →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── ABA: MENSALIDADE ── -->
+                <div id="assoc-tab-mensalidade" class="assoc-tab-panel hidden">
+                    <!-- Estado: PAGO -->
+                    <div id="assoc-mens-paid" class="hidden bg-emerald-900/20 border border-emerald-700/40 rounded-2xl p-6 text-center mb-6">
+                        <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-emerald-400">Mensalidade em dia!</h3>
+                        <p id="assoc-mens-paid-month" class="text-emerald-600 text-sm mt-1"></p>
+                        <div class="mt-4 flex justify-center gap-6">
+                            <div class="text-center">
+                                <span class="text-xs text-emerald-600 uppercase block">Pago em</span>
+                                <span id="assoc-mens-paid-date" class="text-white font-semibold text-sm"></span>
+                            </div>
+                            <div class="text-center">
+                                <span class="text-xs text-emerald-600 uppercase block">Valor</span>
+                                <span id="assoc-mens-paid-value" class="text-emerald-400 font-semibold text-sm"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Estado: PENDENTE -->
+                    <div id="assoc-mens-pending" class="hidden bg-yellow-900/10 border border-yellow-700/30 rounded-2xl p-6 text-center mb-6">
+                        <div class="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-yellow-400">Mensalidade em aberto</h3>
+                        <p id="assoc-mens-pending-month" class="text-yellow-600/80 text-sm mt-1"></p>
+                        <p class="text-emerald-700 text-xs mt-3">Nenhum pagamento registrado para este mês ainda.</p>
+                    </div>
+                    <!-- PIX placeholder -->
+                    <div class="bg-emerald-950/30 border border-dashed border-emerald-800/40 rounded-2xl p-6 text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-800 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        <p class="text-emerald-700 font-medium text-sm">Dados de pagamento (PIX)</p>
+                        <p class="text-emerald-800 text-xs mt-1">Ainda não configurado — entre em contato com a administração para informações sobre como efetuar o pagamento.</p>
+                    </div>
+                </div>
+
+                <!-- ── ABA: MEU CADASTRO ── -->
+                <div id="assoc-tab-cadastro" class="assoc-tab-panel hidden space-y-4">
+                    <!-- Dados fixos -->
+                    <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-5">
+                        <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-4">Dados Cadastrais</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <span class="text-xs text-emerald-600 uppercase font-bold block mb-1">Nome Completo</span>
+                                <span id="assoc-cad-name" class="text-white text-sm font-medium"></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-emerald-600 uppercase font-bold block mb-1">Unidade</span>
+                                <span id="assoc-cad-unit" class="text-white text-sm font-medium"></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-emerald-600 uppercase font-bold block mb-1">Status</span>
+                                <span id="assoc-cad-status" class="text-white text-sm font-medium"></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-emerald-600 uppercase font-bold block mb-1">Membro desde</span>
+                                <span id="assoc-cad-joined" class="text-white text-sm font-medium"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Dados editáveis -->
+                    <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-5">
+                        <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-4">Contato (editável)</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">E-mail</label>
+                                <input id="assoc-cad-email" type="email" placeholder="seu@email.com"
+                                    class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-800 focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Telefone</label>
+                                <input id="assoc-cad-phone" type="tel" placeholder="(51) 99999-9999"
+                                    class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-800 focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <p id="assoc-cad-feedback" class="hidden text-xs text-emerald-400 bg-emerald-900/30 rounded-lg px-3 py-2"></p>
+                            <button id="assoc-cadastro-save-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm">
+                                Salvar alterações
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── ABA: RESERVAS ── -->
+                <div id="assoc-tab-reservas" class="assoc-tab-panel hidden space-y-6">
+                    <!-- Formulário nova reserva -->
+                    <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-5">
+                        <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-4">Nova Solicitação de Reserva</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Área</label>
+                                <select id="assoc-rsv-area" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                                    <option value="">Selecione a área</option>
+                                    <option value="salao">Salão de Festas</option>
+                                    <option value="piscina">Piscina</option>
+                                    <option value="churrasqueira">Churrasqueira</option>
+                                    <option value="quadra">Quadra Esportiva</option>
+                                    <option value="academia">Academia</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Data</label>
+                                <input id="assoc-rsv-date" type="date" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Horário início</label>
+                                <input id="assoc-rsv-start" type="time" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Horário término</label>
+                                <input id="assoc-rsv-end" type="time" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Observações (opcional)</label>
+                            <textarea id="assoc-rsv-notes" rows="2" placeholder="Número de pessoas, equipamentos necessários..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-800 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 flex-wrap gap-2">
+                            <p class="text-xs text-emerald-700">Status inicial: <strong class="text-yellow-600">Pendente</strong> — a administração confirmará a reserva.</p>
+                            <button id="assoc-rsv-submit-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm">
+                                Enviar solicitação
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Minhas reservas -->
+                    <div>
+                        <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-3">Minhas Reservas</h3>
+                        <p id="assoc-rsv-empty" class="hidden text-emerald-700 text-sm text-center py-8 bg-emerald-900/10 rounded-2xl border border-emerald-800/20">Nenhuma reserva encontrada para sua unidade.</p>
+                        <div id="assoc-rsv-list" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- ── ABA: COMUNICADOS ── -->
+                <div id="assoc-tab-comunicados" class="assoc-tab-panel hidden">
+                    <p id="assoc-ann-empty" class="hidden text-emerald-700 text-sm text-center py-12 bg-emerald-900/10 rounded-2xl border border-emerald-800/20">Nenhum comunicado ativo no momento.</p>
+                    <div id="assoc-ann-list" class="space-y-4"></div>
+                </div>
+
+                <!-- ── ABA: SUPORTE ── -->
+                <div id="assoc-tab-suporte" class="assoc-tab-panel hidden">
+                    <div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-5">
+                        <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-1">Abrir Chamado de Suporte</h3>
+                        <p class="text-emerald-700 text-xs mb-4">Descreva o problema ou solicitação. A administração irá analisar e responder em breve.</p>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Título *</label>
+                                <input id="assoc-sup-title" type="text" placeholder="Ex: Lâmpada queimada no corredor" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-800 focus:outline-none focus:border-emerald-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Descrição</label>
+                                <textarea id="assoc-sup-description" rows="3" placeholder="Descreva o problema com mais detalhes..." class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-800 focus:outline-none focus:border-emerald-500 transition-colors resize-none"></textarea>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Local</label>
+                                    <input id="assoc-sup-area" type="text" placeholder="Ex: Garagem, Corredor B, Piscina" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white placeholder-emerald-800 focus:outline-none focus:border-emerald-500 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-emerald-600 uppercase font-bold block mb-1.5">Prioridade</label>
+                                    <select id="assoc-sup-priority" class="w-full bg-emerald-950/60 border border-emerald-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
+                                        <option value="baixa">Baixa — pode aguardar</option>
+                                        <option value="media" selected>Média — necessário em breve</option>
+                                        <option value="alta">Alta — urgente</option>
+                                        <option value="urgente">Urgente — risco imediato</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p id="assoc-sup-feedback" class="hidden text-xs text-emerald-400 bg-emerald-900/30 rounded-lg px-3 py-2"></p>
+                            <button id="assoc-sup-submit-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition-colors text-sm">
+                                Enviar chamado
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- fim assoc-portal-content -->
+        </div><!-- fim overflow-y-auto -->
+    </div><!-- fim #associado-portal -->
 
     <!-- Modal Login Admin -->
     <div id="admin-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">

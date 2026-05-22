@@ -89,3 +89,48 @@ export const getAssociatesSummary = query({
     };
   },
 });
+
+// ─── PORTAL DO ASSOCIADO ──────────────────────────────────────────────────────
+
+// Autentica pelo CPF completo (11 dígitos). Retorna apenas campos seguros —
+// nunca expõe o CPF real, notes ou dados administrativos.
+export const authenticateAssociate = query({
+  args: { cpf: v.string() },
+  handler: async (ctx, { cpf }) => {
+    const cleaned = cpf.replace(/\D/g, "");
+    if (cleaned.length !== 11) return null;
+    const all = await ctx.db.query("associates").collect();
+    const match = all.find(
+      (a) => a.cpf && a.cpf.replace(/\D/g, "") === cleaned
+    );
+    if (!match) return null;
+    return {
+      _id: match._id,
+      name: match.name,
+      unit: match.unit ?? "",
+      email: match.email ?? "",
+      phone: match.phone ?? "",
+      status: match.status,
+      joinedAt: match.joinedAt ?? "",
+      cpfPrefix: match.cpfPrefix ?? cleaned.slice(0, 5),
+    };
+  },
+});
+
+// Autoatendimento: associado atualiza apenas e-mail e telefone (usa o _id da sessão).
+export const updateAssociateContact = mutation({
+  args: {
+    id: v.id("associates"),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+  },
+  handler: async (ctx, { id, email, phone }) => {
+    const record = await ctx.db.get(id);
+    if (!record) throw new Error("Associado não encontrado");
+    const update: Record<string, unknown> = { updatedAt: Date.now() };
+    if (email !== undefined) update.email = email;
+    if (phone !== undefined) update.phone = phone;
+    await ctx.db.patch(id, update);
+    return { success: true };
+  },
+});

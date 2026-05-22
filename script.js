@@ -692,43 +692,506 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
 
 document.getElementById('print-btn')?.addEventListener('click', () => window.print());
 
-// ── Portal do Associado ──
-const contributorModal = document.getElementById('contributor-modal');
+// ─── PAINEL DO ASSOCIADO ──────────────────────────────────────────────────────
 
-document.getElementById('contributor-portal-btn')?.addEventListener('click', () => {
-    contributorModal?.classList.remove('hidden');
-    document.getElementById('portal-search-step')?.classList.remove('hidden');
-    document.getElementById('portal-results-step')?.classList.add('hidden');
-    const input = document.getElementById('portal-search-input');
-    if (input) input.value = '';
-    document.getElementById('portal-error')?.classList.add('hidden');
-});
+// ── Utilitários de sessão ──
+function getAssocSession() {
+    try { return JSON.parse(sessionStorage.getItem('associadoSession') || 'null'); }
+    catch { return null; }
+}
+function setAssocSession(data) {
+    if (data) sessionStorage.setItem('associadoSession', JSON.stringify(data));
+    else sessionStorage.removeItem('associadoSession');
+}
 
-document.getElementById('close-modal')?.addEventListener('click', () => {
-    contributorModal?.classList.add('hidden');
-});
+// ── Helpers de UI ──
+function showAssocLogin() {
+    document.getElementById('assoc-auth-screen')?.classList.remove('hidden');
+    document.getElementById('assoc-portal-content')?.classList.add('hidden');
+    document.getElementById('assoc-logout-btn')?.classList.add('hidden');
+    document.getElementById('assoc-logout-btn')?.classList.remove('flex');
+    const cpfInput = document.getElementById('assoc-cpf-input');
+    if (cpfInput) cpfInput.value = '';
+    document.getElementById('assoc-login-error')?.classList.add('hidden');
+}
 
-document.getElementById('back-to-search')?.addEventListener('click', () => {
-    document.getElementById('portal-search-step')?.classList.remove('hidden');
-    document.getElementById('portal-results-step')?.classList.add('hidden');
-});
+function showAssocPortal(session) {
+    document.getElementById('assoc-auth-screen')?.classList.add('hidden');
+    document.getElementById('assoc-portal-content')?.classList.remove('hidden');
+    const logoutBtn = document.getElementById('assoc-logout-btn');
+    logoutBtn?.classList.remove('hidden');
+    logoutBtn?.classList.add('flex');
 
-document.getElementById('portal-search-btn')?.addEventListener('click', () => {
-    const search = document.getElementById('portal-search-input')?.value.trim().toLowerCase() || '';
-    if (!search) return;
-
-    const userTxs = appState.rawTransactions.filter(t => t.value > 0 && t.name.toLowerCase().includes(search));
-
-    if (!userTxs.length) {
-        document.getElementById('portal-error')?.classList.remove('hidden');
-        return;
+    // Preenche cabeçalho
+    document.getElementById('assoc-portal-name').textContent = `Olá, ${session.name.split(' ')[0]}!`;
+    if (session.unit) document.getElementById('assoc-portal-unit').textContent = `Unidade ${session.unit}`;
+    const statusCfg = {
+        ativo:        { cls: 'bg-emerald-500/20 text-emerald-400', label: 'Ativo' },
+        inadimplente: { cls: 'bg-yellow-500/20 text-yellow-400',   label: 'Inadimplente' },
+        inativo:      { cls: 'bg-red-500/20 text-red-400',         label: 'Inativo' },
+    };
+    const sc = statusCfg[session.status] || statusCfg.ativo;
+    const badge = document.getElementById('assoc-portal-status');
+    if (badge) { badge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${sc.cls}`; badge.textContent = sc.label; }
+    const joinedEl = document.getElementById('assoc-portal-joined');
+    if (joinedEl && session.joinedAt) {
+        joinedEl.textContent = `Membro desde: ${formatDateBR(session.joinedAt)}`;
+        joinedEl.classList.remove('hidden');
     }
 
-    document.getElementById('portal-error')?.classList.add('hidden');
-    document.getElementById('portal-search-step')?.classList.add('hidden');
-    document.getElementById('portal-results-step')?.classList.remove('hidden');
-    renderUserPortal(userTxs);
+    // Ativa aba inicial
+    switchAssocTab('inicio');
+}
+
+// ── Abertura / fechamento do portal ──
+document.getElementById('contributor-portal-btn')?.addEventListener('click', openAssocPortal);
+
+function openAssocPortal() {
+    const portal = document.getElementById('associado-portal');
+    portal?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    const session = getAssocSession();
+    if (session) showAssocPortal(session);
+    else showAssocLogin();
+}
+
+function closeAssocPortal() {
+    document.getElementById('associado-portal')?.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('assoc-close-btn')?.addEventListener('click', closeAssocPortal);
+
+document.getElementById('assoc-logout-btn')?.addEventListener('click', () => {
+    setAssocSession(null);
+    assocTabLoaded = {};
+    showAssocLogin();
 });
+
+// ── Máscara CPF ──
+document.getElementById('assoc-cpf-input')?.addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+    e.target.value = v;
+});
+
+// ── Login ──
+async function doAssocLogin() {
+    const raw = document.getElementById('assoc-cpf-input')?.value.replace(/\D/g, '') || '';
+    const errEl = document.getElementById('assoc-login-error');
+    if (raw.length !== 11) {
+        errEl.textContent = 'Digite o CPF completo (11 dígitos).';
+        errEl?.classList.remove('hidden'); return;
+    }
+    const btn = document.getElementById('assoc-login-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Verificando…'; }
+    try {
+        const associate = await convexQuery('associates:authenticateAssociate', { cpf: raw });
+        if (!associate) {
+            errEl.textContent = 'CPF não encontrado. Verifique o número ou contate a administração.';
+            errEl?.classList.remove('hidden'); return;
+        }
+        errEl?.classList.add('hidden');
+        setAssocSession(associate);
+        showAssocPortal(associate);
+    } catch (err) {
+        console.error('Erro no login do associado:', err);
+        errEl.textContent = 'Erro ao conectar. Tente novamente.';
+        errEl?.classList.remove('hidden');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Acessar minha área'; }
+    }
+}
+document.getElementById('assoc-login-btn')?.addEventListener('click', doAssocLogin);
+document.getElementById('assoc-cpf-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doAssocLogin();
+});
+
+// ── Alternância de abas ──
+let currentAssocTab = 'inicio';
+let assocTabLoaded = {};
+
+function switchAssocTab(name) {
+    document.querySelectorAll('.assoc-tab-panel').forEach(p => p.classList.add('hidden'));
+    document.getElementById(`assoc-tab-${name}`)?.classList.remove('hidden');
+    document.querySelectorAll('.assoc-tab-btn').forEach(btn => {
+        const isActive = btn.dataset.assocTab === name;
+        btn.classList.toggle('border-b-2',          isActive);
+        btn.classList.toggle('border-emerald-400',  isActive);
+        btn.classList.toggle('text-emerald-300',    isActive);
+        btn.classList.toggle('font-semibold',       isActive);
+        btn.classList.toggle('text-emerald-600',    !isActive);
+    });
+    currentAssocTab = name;
+    if (!assocTabLoaded[name]) {
+        assocTabLoaded[name] = true;
+        const session = getAssocSession();
+        if (!session) return;
+        if (name === 'inicio')      renderAssocInicio(session);
+        if (name === 'extrato')     loadAssocExtrato(session);
+        if (name === 'mensalidade') renderAssocMensalidade(session);
+        if (name === 'cadastro')    renderAssocCadastro(session);
+        if (name === 'reservas')    loadAssocReservas(session);
+        if (name === 'comunicados') loadAssocComunicados();
+        if (name === 'suporte')     renderAssocSuporte(session);
+    }
+}
+document.querySelectorAll('.assoc-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchAssocTab(btn.dataset.assocTab));
+});
+
+// ── ABA: INÍCIO ──
+function renderAssocInicio(session) {
+    const txs = appState.rawTransactions.filter(
+        t => t.value > 0 && t.name.trim().toLowerCase() === session.name.trim().toLowerCase()
+    ).sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+
+    const total  = txs.reduce((s, t) => s + t.value, 0);
+    const months = new Set(txs.map(t => getMonthKey(t.date))).size;
+    const lastDate = txs.length ? txs[0].date : null;
+
+    document.getElementById('assoc-stat-total').textContent   = formatCurrency(total);
+    document.getElementById('assoc-stat-months').textContent  = months || '0';
+    document.getElementById('assoc-stat-last').textContent    = lastDate ? formatDateBR(lastDate) : '—';
+
+    let nextDue = '—';
+    if (lastDate) {
+        const mk = getMonthKey(lastDate).split('-');
+        const next = new Date(Number(mk[0]), Number(mk[1]), 1); // 1st day of following month
+        nextDue = `${MONTH_NAMES[next.getMonth()]}/${next.getFullYear()}`;
+    }
+    document.getElementById('assoc-stat-next').textContent = nextDue;
+
+    // Gráfico (últimos 6 meses)
+    const monthlyData = {};
+    txs.forEach(t => { const mk = getMonthKey(t.date); monthlyData[mk] = (monthlyData[mk] || 0) + t.value; });
+    const labels = Object.keys(monthlyData).sort().slice(-6);
+    const mn = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+    const ctx = document.getElementById('assoc-inicio-chart')?.getContext('2d');
+    if (ctx) {
+        if (window.assocInicioChartInst) window.assocInicioChartInst.destroy();
+        window.assocInicioChartInst = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.map(l => { const [y,m] = l.split('-'); return `${mn[+m-1]}/${y}`; }),
+                datasets: [{ label: 'Contribuição', data: labels.map(l => monthlyData[l] || 0),
+                    borderColor: colors.primary, backgroundColor: 'rgba(16,185,129,0.1)',
+                    fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: colors.primary }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                scales: {
+                    y: { grid: { color: colors.grid }, ticks: { color: colors.slate, font: { size: 10 }, callback: v => formatCurrency(v) } },
+                    x: { grid: { display: false }, ticks: { color: colors.slate, font: { size: 10 } } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+}
+
+// ── ABA: EXTRATO ──
+let assocExtratoMonthIdx = 0;
+let assocExtratoTxs = [];
+
+function loadAssocExtrato(session) {
+    assocExtratoTxs = appState.rawTransactions.filter(
+        t => t.value > 0 && t.name.trim().toLowerCase() === session.name.trim().toLowerCase()
+    ).sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+    assocExtratoMonthIdx = 0;
+    // Preenche select de meses
+    const months = getAvailableMonths(assocExtratoTxs);
+    const sel = document.getElementById('assoc-extrato-month');
+    if (sel) sel.innerHTML = months.map(m => `<option value="${m}">${formatMonthLabel(m)}</option>`).join('');
+    renderAssocExtrato();
+}
+
+function renderAssocExtrato() {
+    const months = getAvailableMonths(assocExtratoTxs);
+    const tbody = document.getElementById('assoc-extrato-body');
+    if (!months.length) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center py-8 text-emerald-700">Nenhuma contribuição registrada.</td></tr>';
+        return;
+    }
+    const month = months[Math.min(assocExtratoMonthIdx, months.length - 1)];
+    const monthTxs = assocExtratoTxs.filter(t => getMonthKey(t.date) === month);
+    const total = monthTxs.reduce((s, t) => s + t.value, 0);
+
+    if (tbody) {
+        tbody.innerHTML = monthTxs.map(t => `
+            <tr class="hover:bg-emerald-900/10 transition-colors">
+                <td class="px-4 py-3 text-xs text-emerald-300">${formatDateBR(t.date)}<div class="text-[10px] text-emerald-700">${t.time}</div></td>
+                <td class="px-4 py-3 text-xs text-emerald-500 hidden sm:table-cell">${t.type}</td>
+                <td class="px-4 py-3 text-right font-mono text-xs text-emerald-400 font-semibold">+${formatCurrency(t.value)}</td>
+            </tr>`).join('') +
+        `<tr class="bg-emerald-950/50 border-t-2 border-emerald-700/60">
+            <td colspan="2" class="px-4 py-3 text-xs font-bold text-emerald-300">Total ${formatMonthLabel(month)}</td>
+            <td class="px-4 py-3 text-right font-mono text-xs font-bold text-emerald-300">+${formatCurrency(total)}</td>
+        </tr>`;
+    }
+    const label = document.getElementById('assoc-extrato-label');
+    if (label) label.textContent = `${formatMonthLabel(month)} — ${monthTxs.length} transação(ões)`;
+    const sel = document.getElementById('assoc-extrato-month');
+    if (sel) sel.value = month;
+    const prevBtn = document.getElementById('assoc-extrato-prev');
+    const nextBtn = document.getElementById('assoc-extrato-next');
+    if (prevBtn) prevBtn.disabled = assocExtratoMonthIdx >= months.length - 1;
+    if (nextBtn) nextBtn.disabled = assocExtratoMonthIdx === 0;
+}
+
+bindOptional('assoc-extrato-prev', 'click', () => {
+    const months = getAvailableMonths(assocExtratoTxs);
+    if (assocExtratoMonthIdx < months.length - 1) { assocExtratoMonthIdx++; renderAssocExtrato(); }
+});
+bindOptional('assoc-extrato-next', 'click', () => {
+    if (assocExtratoMonthIdx > 0) { assocExtratoMonthIdx--; renderAssocExtrato(); }
+});
+bindOptional('assoc-extrato-month', 'change', (e) => {
+    const months = getAvailableMonths(assocExtratoTxs);
+    const idx = months.indexOf(e.target.value);
+    if (idx >= 0) { assocExtratoMonthIdx = idx; renderAssocExtrato(); }
+});
+
+// ── ABA: MENSALIDADE ──
+function renderAssocMensalidade(session) {
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const txs = appState.rawTransactions.filter(
+        t => t.value > 0 && t.name.trim().toLowerCase() === session.name.trim().toLowerCase()
+    );
+    const thisMonthTx = txs.find(t => getMonthKey(t.date) === currentMonthKey);
+    const paidEl  = document.getElementById('assoc-mens-paid');
+    const pendEl  = document.getElementById('assoc-mens-pending');
+    const monthLabel = formatMonthLabel(currentMonthKey);
+
+    if (thisMonthTx) {
+        paidEl?.classList.remove('hidden');
+        pendEl?.classList.add('hidden');
+        const pd = document.getElementById('assoc-mens-paid-date');
+        const pv = document.getElementById('assoc-mens-paid-value');
+        const pm = document.getElementById('assoc-mens-paid-month');
+        if (pd) pd.textContent = formatDateBR(thisMonthTx.date);
+        if (pv) pv.textContent = formatCurrency(thisMonthTx.value);
+        if (pm) pm.textContent = monthLabel;
+    } else {
+        paidEl?.classList.add('hidden');
+        pendEl?.classList.remove('hidden');
+        const pendMonth = document.getElementById('assoc-mens-pending-month');
+        if (pendMonth) pendMonth.textContent = monthLabel;
+    }
+}
+
+// ── ABA: MEU CADASTRO ──
+function renderAssocCadastro(session) {
+    const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—'; };
+    setTxt('assoc-cad-name',   session.name);
+    setTxt('assoc-cad-unit',   session.unit);
+    const statusMap = { ativo: 'Ativo', inadimplente: 'Inadimplente', inativo: 'Inativo' };
+    setTxt('assoc-cad-status', statusMap[session.status] || session.status);
+    setTxt('assoc-cad-joined', session.joinedAt ? formatDateBR(session.joinedAt) : '—');
+    const emailInp = document.getElementById('assoc-cad-email');
+    const phoneInp = document.getElementById('assoc-cad-phone');
+    if (emailInp) emailInp.value = session.email || '';
+    if (phoneInp) phoneInp.value = session.phone || '';
+    document.getElementById('assoc-cad-feedback')?.classList.add('hidden');
+}
+
+document.getElementById('assoc-cadastro-save-btn')?.addEventListener('click', async () => {
+    const session = getAssocSession();
+    if (!session) return;
+    const email = document.getElementById('assoc-cad-email')?.value.trim() || undefined;
+    const phone = document.getElementById('assoc-cad-phone')?.value.trim() || undefined;
+    const btn = document.getElementById('assoc-cadastro-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
+    const fb = document.getElementById('assoc-cad-feedback');
+    try {
+        await convexMutation('associates:updateAssociateContact', { id: session._id, email, phone });
+        const updated = { ...session, email: email || session.email, phone: phone || session.phone };
+        setAssocSession(updated);
+        if (fb) { fb.textContent = '✓ Dados salvos com sucesso.'; fb.classList.remove('hidden'); }
+        showToast('Cadastro atualizado!', 'success');
+    } catch (err) {
+        if (fb) { fb.textContent = `Erro: ${err.message}`; fb.classList.remove('hidden'); }
+        showToast('Erro ao salvar.', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar alterações'; }
+    }
+});
+
+// ── ABA: RESERVAS ──
+const AREA_LABEL = { salao:'Salão de Festas', piscina:'Piscina', churrasqueira:'Churrasqueira', quadra:'Quadra Esportiva', academia:'Academia', outro:'Outro' };
+const AREA_EMOJI = { salao:'🎉', piscina:'🏊', churrasqueira:'🍖', quadra:'⚽', academia:'💪', outro:'📍' };
+
+async function loadAssocReservas(session) {
+    const list   = document.getElementById('assoc-rsv-list');
+    const emptyEl = document.getElementById('assoc-rsv-empty');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        const unit = session.unit || '';
+        const reservations = unit ? (await convexQuery('reservations:getReservationsByUnit', { unit }) || []) : [];
+        if (!reservations.length) {
+            if (list) list.innerHTML = '';
+            emptyEl?.classList.remove('hidden');
+        } else {
+            emptyEl?.classList.add('hidden');
+            const statusCfg = {
+                pendente:   { cls: 'bg-yellow-500/20 text-yellow-400',   label: 'Pendente' },
+                confirmada: { cls: 'bg-emerald-500/20 text-emerald-400', label: 'Confirmada' },
+                cancelada:  { cls: 'bg-red-500/20 text-red-400',          label: 'Cancelada' },
+            };
+            if (list) list.innerHTML = reservations.map(r => {
+                const sc = statusCfg[r.status] || statusCfg.pendente;
+                const emoji = AREA_EMOJI[r.area] || '📍';
+                const label = AREA_LABEL[r.area] || r.area;
+                return `<div class="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-4">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <span class="text-sm font-semibold text-white">${emoji} ${label}</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${sc.cls}">${sc.label}</span>
+                    </div>
+                    <div class="text-xs text-emerald-600 flex flex-wrap gap-3">
+                        <span>📅 ${formatDateBR(r.date)}</span>
+                        <span>🕐 ${r.startTime}–${r.endTime}</span>
+                    </div>
+                    ${r.notes ? `<p class="text-emerald-700 text-xs mt-2 italic">${r.notes}</p>` : ''}
+                </div>`;
+            }).join('');
+        }
+    } catch (e) {
+        console.error('Erro ao carregar reservas:', e);
+        if (list) list.innerHTML = '<p class="text-red-400 text-sm">Erro ao carregar reservas.</p>';
+    }
+}
+
+document.getElementById('assoc-rsv-submit-btn')?.addEventListener('click', async () => {
+    const session = getAssocSession();
+    if (!session) return;
+    const area      = document.getElementById('assoc-rsv-area')?.value || '';
+    const date      = document.getElementById('assoc-rsv-date')?.value || '';
+    const startTime = document.getElementById('assoc-rsv-start')?.value || '';
+    const endTime   = document.getElementById('assoc-rsv-end')?.value || '';
+    const notes     = document.getElementById('assoc-rsv-notes')?.value.trim() || undefined;
+
+    if (!area || !date || !startTime || !endTime) {
+        showToast('Preencha área, data e horários.', 'error'); return;
+    }
+    if (startTime >= endTime) {
+        showToast('Horário de início deve ser anterior ao término.', 'error'); return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (date < today) { showToast('A data não pode ser no passado.', 'error'); return; }
+
+    const btn = document.getElementById('assoc-rsv-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+    try {
+        await convexMutation('reservations:createReservation', {
+            area, unit: session.unit || '', residentName: session.name,
+            date, startTime, endTime, status: 'pendente', notes,
+        });
+        showToast('Solicitação enviada! Aguarde confirmação da administração.', 'success', 5000);
+        document.getElementById('assoc-rsv-area').value = '';
+        document.getElementById('assoc-rsv-date').value = '';
+        document.getElementById('assoc-rsv-start').value = '';
+        document.getElementById('assoc-rsv-end').value = '';
+        document.getElementById('assoc-rsv-notes').value = '';
+        // Recarrega lista (reseta flag para forçar reload)
+        assocTabLoaded['reservas'] = false;
+        await loadAssocReservas(session);
+        assocTabLoaded['reservas'] = true;
+    } catch (err) {
+        showToast('Erro ao enviar: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitação'; }
+    }
+});
+
+// ── ABA: COMUNICADOS ──
+async function loadAssocComunicados() {
+    const list   = document.getElementById('assoc-ann-list');
+    const emptyEl = document.getElementById('assoc-ann-empty');
+    if (list) list.innerHTML = '<p class="text-emerald-700 text-sm animate-pulse">Carregando...</p>';
+    try {
+        const anns = (await convexQuery('announcements:getActiveAnnouncements')) || [];
+        if (!anns.length) {
+            if (list) list.innerHTML = '';
+            emptyEl?.classList.remove('hidden');
+            return;
+        }
+        emptyEl?.classList.add('hidden');
+        const typeCfg = {
+            urgente:    { emoji:'🔴', label:'Urgente',    border:'border-red-500/30',     badge:'bg-red-500/20 text-red-400' },
+            info:       { emoji:'🔵', label:'Info',       border:'border-blue-500/30',    badge:'bg-blue-500/20 text-blue-400' },
+            manutencao: { emoji:'🟡', label:'Manutenção', border:'border-yellow-500/30',  badge:'bg-yellow-500/20 text-yellow-400' },
+            evento:     { emoji:'🟢', label:'Evento',     border:'border-emerald-500/30', badge:'bg-emerald-500/20 text-emerald-400' },
+        };
+        if (list) list.innerHTML = anns.map(a => {
+            const cfg = typeCfg[a.type] || typeCfg.info;
+            return `<div class="bg-emerald-900/20 border ${cfg.border} rounded-2xl p-4 md:p-5">
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${cfg.badge}">${cfg.emoji} ${cfg.label}</span>
+                </div>
+                <h4 class="font-semibold text-white text-base mb-1">${a.title}</h4>
+                <p class="text-emerald-200/70 text-sm leading-relaxed whitespace-pre-line">${a.content}</p>
+                <p class="text-emerald-700 text-xs mt-3">${new Date(a.createdAt).toLocaleDateString('pt-BR')}</p>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        console.error('Erro ao carregar comunicados:', e);
+        if (list) list.innerHTML = '<p class="text-red-400 text-sm">Erro ao carregar comunicados.</p>';
+    }
+}
+
+// ── ABA: SUPORTE ──
+function renderAssocSuporte(session) {
+    document.getElementById('assoc-sup-title').value       = '';
+    document.getElementById('assoc-sup-description').value = '';
+    document.getElementById('assoc-sup-area').value        = '';
+    document.getElementById('assoc-sup-priority').value    = 'media';
+    document.getElementById('assoc-sup-feedback')?.classList.add('hidden');
+}
+
+document.getElementById('assoc-sup-submit-btn')?.addEventListener('click', async () => {
+    const session = getAssocSession();
+    if (!session) return;
+    const title       = document.getElementById('assoc-sup-title')?.value.trim() || '';
+    const description = document.getElementById('assoc-sup-description')?.value.trim() || undefined;
+    const area        = document.getElementById('assoc-sup-area')?.value.trim() || undefined;
+    const priority    = document.getElementById('assoc-sup-priority')?.value || 'media';
+
+    if (!title || title.length < 5) { showToast('Informe um título com ao menos 5 caracteres.', 'error'); return; }
+
+    const notes = `[Chamado via Portal] Reportado por: ${session.name}${session.unit ? ' (Unidade ' + session.unit + ')' : ''}`;
+    const btn = document.getElementById('assoc-sup-submit-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+    try {
+        await convexMutation('maintenances:createMaintenance', {
+            title, description, area, priority, status: 'aberto', notes,
+        });
+        showToast('Chamado aberto com sucesso!', 'success');
+        renderAssocSuporte(session);
+        const fb = document.getElementById('assoc-sup-feedback');
+        if (fb) { fb.textContent = '✓ Chamado enviado. A administração irá analisar em breve.'; fb.classList.remove('hidden'); }
+    } catch (err) {
+        showToast('Erro ao abrir chamado: ' + err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Enviar chamado'; }
+    }
+});
+
+// ── Toast helper (simples) ──
+function showToast(message, type = 'success', duration = 3500) {
+    const id = 'assoc-toast-' + Date.now();
+    const bg = type === 'error' ? 'bg-red-900/90 border-red-700/50 text-red-200' :
+               type === 'success' ? 'bg-emerald-900/90 border-emerald-700/50 text-emerald-200' :
+               'bg-slate-900/90 border-slate-700/50 text-slate-200';
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-xl border text-sm font-medium shadow-lg ${bg} transition-all`;
+    div.textContent = message;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), duration);
+}
 
 // ─── AUTENTICAÇÃO MOCKADA ─────────────────────────────────────────────────────
 // Temporário — substituir por autenticação real na Fase 2
