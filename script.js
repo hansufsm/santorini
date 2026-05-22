@@ -777,22 +777,61 @@ document.getElementById('back-to-search')?.addEventListener('click', () => {
     document.getElementById('portal-results-step')?.classList.add('hidden');
 });
 
-document.getElementById('portal-search-btn')?.addEventListener('click', () => {
-    const search = document.getElementById('portal-search-input')?.value.trim().toLowerCase() || '';
-    if (!search) return;
+document.getElementById('portal-search-input')?.addEventListener('input', (e) => {
+    // Aceita só dígitos, máx 5
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+});
 
-    const userTxs = appState.rawTransactions.filter(t => t.value > 0 && t.name.toLowerCase().includes(search));
+document.getElementById('portal-search-btn')?.addEventListener('click', async () => {
+    const prefix = document.getElementById('portal-search-input')?.value.trim() || '';
+    const portalError = document.getElementById('portal-error');
 
-    if (!userTxs.length) {
-        document.getElementById('portal-error')?.classList.remove('hidden');
+    if (prefix.length < 5) {
+        if (portalError) portalError.textContent = 'Digite os 5 primeiros dígitos do CPF.';
+        portalError?.classList.remove('hidden');
         return;
     }
 
-    document.getElementById('portal-error')?.classList.add('hidden');
-    document.getElementById('portal-search-step')?.classList.add('hidden');
-    document.getElementById('portal-results-step')?.classList.remove('hidden');
-    // Passa o nome real encontrado como "own" → associado vê o próprio nome sem máscara
-    renderUserPortal(userTxs, userTxs[0].name);
+    const btn = document.getElementById('portal-search-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Buscando…'; }
+
+    try {
+        // 1. Busca associado pelo prefix do CPF no Convex
+        const matches = await convexQuery('associates:searchAssociate', { search: prefix });
+
+        // Filtra apenas quem tem cpfPrefix começando com o input
+        const associate = (matches || []).find(a => a.cpfPrefix && a.cpfPrefix.startsWith(prefix));
+
+        if (!associate) {
+            if (portalError) portalError.textContent = 'CPF não encontrado. Verifique os dígitos ou fale com a administração.';
+            portalError?.classList.remove('hidden');
+            return;
+        }
+
+        // 2. Filtra transações locais pelo nome do associado
+        const name = associate.name;
+        const userTxs = appState.rawTransactions.filter(
+            t => t.value > 0 && t.name.toLowerCase() === name.toLowerCase()
+        );
+
+        if (!userTxs.length) {
+            if (portalError) portalError.textContent = 'Nenhuma contribuição encontrada para este CPF.';
+            portalError?.classList.remove('hidden');
+            return;
+        }
+
+        portalError?.classList.add('hidden');
+        document.getElementById('portal-search-step')?.classList.add('hidden');
+        document.getElementById('portal-results-step')?.classList.remove('hidden');
+        renderUserPortal(userTxs, name);
+
+    } catch (err) {
+        console.error('Erro no portal:', err);
+        if (portalError) portalError.textContent = 'Erro ao consultar. Tente novamente.';
+        portalError?.classList.remove('hidden');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Consultar'; }
+    }
 });
 
 // ─── AUTENTICAÇÃO VIA CONVEX ──────────────────────────────────────────────────
@@ -1121,7 +1160,7 @@ document.getElementById('associates-csv-input')?.addEventListener('change', asyn
             associates.push({
                 name,
                 cpf:       cpfRaw || undefined,
-                cpfPrefix: cpfRaw ? cpfRaw.substring(0, 4) : undefined,
+                cpfPrefix: cpfRaw ? cpfRaw.substring(0, 5) : undefined,
                 email:     iEmail >= 0 ? cols[iEmail]?.trim() || undefined : undefined,
                 phone:     iTel   >= 0 ? cols[iTel]?.trim()   || undefined : undefined,
                 joinedAt,

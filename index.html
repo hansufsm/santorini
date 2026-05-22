@@ -723,10 +723,12 @@
                 
                 <div class="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1">
                     <div id="portal-search-step">
-                        <p class="text-emerald-100/70 mb-6">Para visualizar seu extrato individual, digite os 4 primeiros dígitos do seu CPF ou seu nome completo.</p>
+                        <p class="text-emerald-100/70 mb-2">Para visualizar seu extrato individual, informe os <strong class="text-emerald-400">5 primeiros dígitos do seu CPF</strong>.</p>
+                        <p class="text-emerald-700 text-xs mb-6">Ex.: CPF 123.456.789-00 → digite <span class="font-mono text-emerald-600">12345</span></p>
                         <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                            <input type="text" id="portal-search-input" placeholder="Ex: 1234 ou Nome Completo"
-                                   class="flex-1 bg-emerald-950/50 border border-emerald-800/50 text-white rounded-xl px-4 py-2.5 sm:px-6 sm:py-3 outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                            <input type="text" id="portal-search-input" placeholder="5 primeiros dígitos do CPF"
+                                   inputmode="numeric" maxlength="5" pattern="[0-9]{5}"
+                                   class="flex-1 bg-emerald-950/50 border border-emerald-800/50 text-white rounded-xl px-4 py-2.5 sm:px-6 sm:py-3 outline-none focus:ring-2 focus:ring-emerald-500 transition-all tracking-widest text-lg font-mono">
                             <button id="portal-search-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 sm:px-8 sm:py-3 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 sm:w-auto">
                                 Consultar
                             </button>

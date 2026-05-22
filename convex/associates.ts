@@ -20,21 +20,16 @@ export const importAssociates = mutation({
   handler: async (ctx, { associates }) => {
     let inserted = 0, updated = 0;
     const now = Date.now();
+
+    // Carrega todos os associados uma única vez e monta índices em memória
+    const existing = await ctx.db.query("associates").collect();
+    const byCpf  = new Map(existing.filter(r => r.cpf).map(r => [r.cpf!, r]));
+    const byName = new Map(existing.map(r => [r.name.toLowerCase(), r]));
+
     for (const a of associates) {
-      // Busca por CPF (se disponível) ou nome exato
-      let existing = null;
-      if (a.cpf) {
-        const all = await ctx.db.query("associates").withIndex("by_name").collect();
-        existing = all.find((r) => r.cpf === a.cpf) ?? null;
-      }
-      if (!existing) {
-        existing = await ctx.db
-          .query("associates")
-          .withIndex("by_name", (q) => q.eq("name", a.name))
-          .first();
-      }
-      if (existing) {
-        await ctx.db.patch(existing._id, { ...a, updatedAt: now });
+      const found = (a.cpf ? byCpf.get(a.cpf) : null) ?? byName.get(a.name.toLowerCase()) ?? null;
+      if (found) {
+        await ctx.db.patch(found._id, { ...a, updatedAt: now });
         updated++;
       } else {
         await ctx.db.insert("associates", { ...a, createdAt: now, updatedAt: now });
