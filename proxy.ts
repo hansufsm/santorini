@@ -9,17 +9,19 @@ const COOKIE_NAME = "santorini_session";
 
 // Papéis com acesso ao painel administrativo
 const ADMIN_ROLES = ["diretoria", "sysadmin"];
+const PUBLIC_FILE = /\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp|css|js|map|txt|xml|json)$/i;
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Rotas que nunca precisam de autenticação (deixa passar direto)
+  // Rotas e assets públicos que nunca precisam de autenticação.
   const isPublic =
     pathname === "/" ||
     pathname === "/login" ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/") ||
-    pathname === "/favicon.ico";
+    pathname === "/favicon.ico" ||
+    PUBLIC_FILE.test(pathname);
 
   if (isPublic) {
     return NextResponse.next();
@@ -66,6 +68,7 @@ export const config = {
      * - _next/static  (arquivos estáticos compilados)
      * - _next/image   (otimização de imagens)
      * - favicon.ico   (ícone do site)
+     * Arquivos públicos com extensão também são liberados pela regra isPublic acima.
      */
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],

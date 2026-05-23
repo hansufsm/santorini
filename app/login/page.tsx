@@ -151,28 +151,28 @@ export default function LoginPage() {
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
       <div className="w-full max-w-sm">
 
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🏖️</div>
-          <h1 className="text-xl font-bold text-white">AMRTS Santorini</h1>
-          <p className="text-sm text-gray-400 mt-1">Acesse sua área</p>
+          <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>AMRTS Santorini</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Acesse sua área</p>
         </div>
 
         {/* Card do formulário */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="rounded-2xl p-6 shadow-2xl border" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-main)" }}>
 
           {/* Seletor de aba */}
-          <div className="flex gap-1 mb-6 bg-gray-800 rounded-lg p-1">
+          <div className="flex gap-1 mb-6 rounded-lg p-1" style={{ backgroundColor: "var(--bg-toggle)" }}>
             <button
               type="button"
               onClick={() => { setTab("cpf"); setError(""); }}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
                 tab === "cpf"
                   ? "bg-emerald-600 text-white"
-                  : "text-gray-400 hover:text-white"
+                  : "text-emerald-200/70 hover:text-white"
               }`}
             >
               Associado / Morador
@@ -183,7 +183,7 @@ export default function LoginPage() {
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
                 tab === "senha"
                   ? "bg-emerald-600 text-white"
-                  : "text-gray-400 hover:text-white"
+                  : "text-emerald-200/70 hover:text-white"
               }`}
             >
               Diretoria / Admin
@@ -194,7 +194,7 @@ export default function LoginPage() {
           {tab === "cpf" && (
             <form onSubmit={handleCpfLogin} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm text-emerald-200/80 mb-1">
                   Seu CPF
                 </label>
                 <input
@@ -205,7 +205,7 @@ export default function LoginPage() {
                   onChange={(e) => setCpf(formatCPF(e.target.value))}
                   maxLength={14}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 text-lg tracking-widest"
+                  className="w-full bg-emerald-950/60 border border-emerald-800/70 rounded-lg px-4 py-3 text-white placeholder-emerald-900 focus:outline-none focus:border-emerald-400 text-lg tracking-widest"
                 />
               </div>
               {error && (
@@ -225,7 +225,7 @@ export default function LoginPage() {
           {tab === "senha" && (
             <form onSubmit={handlePasswordLogin} className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm text-emerald-200/80 mb-1">
                   E-mail
                 </label>
                 <input
@@ -234,11 +234,11 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-emerald-950/60 border border-emerald-800/70 rounded-lg px-4 py-3 text-white placeholder-emerald-900 focus:outline-none focus:border-emerald-400"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">
+                <label className="block text-sm text-emerald-200/80 mb-1">
                   Senha
                 </label>
                 <input
@@ -247,7 +247,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-emerald-950/60 border border-emerald-800/70 rounded-lg px-4 py-3 text-white placeholder-emerald-900 focus:outline-none focus:border-emerald-400"
                 />
               </div>
               {error && (
@@ -265,7 +265,7 @@ export default function LoginPage() {
         </div>
 
         {/* Nota de rodapé */}
-        <p className="text-center text-xs text-gray-500 mt-6">
+        <p className="text-center text-xs text-emerald-200/50 mt-6">
           Problemas para acessar? Contate a administração.
         </p>
       </div>

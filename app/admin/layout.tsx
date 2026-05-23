@@ -50,8 +50,8 @@ export default function AdminLayout({
 
   if (loading || !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 animate-pulse">Carregando…</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-page)" }}>
+        <p className="text-emerald-200/70 animate-pulse">Carregando…</p>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export default function AdminLayout({
         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
           active
             ? "bg-emerald-600/20 text-emerald-300"
-            : "text-gray-400 hover:text-white hover:bg-gray-800"
+            : "text-emerald-200/70 hover:text-white hover:bg-emerald-900/50"
         }`}
       >
         {label}
@@ -78,13 +78,13 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex" style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
 
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex flex-col w-56 bg-gray-900 border-r border-gray-800 p-4">
+      <aside className="hidden md:flex flex-col w-56 border-r p-4" style={{ backgroundColor: "var(--bg-drawer)", borderColor: "var(--border-main)" }}>
         <div className="flex items-center gap-2 mb-8 px-1">
           <span className="text-xl">🏖️</span>
-          <span className="font-bold text-white text-sm">Santorini Admin</span>
+          <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>Santorini Admin</span>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -96,7 +96,7 @@ export default function AdminLayout({
           {session.role === "sysadmin" && (
             <>
               <div className="pt-4 pb-2 px-1">
-                <p className="text-xs text-gray-600 uppercase tracking-widest">Sistema</p>
+                <p className="text-xs text-emerald-700 uppercase tracking-widest">Sistema</p>
               </div>
               {SYSADMIN_ITEMS.map((item) => (
                 <NavLink key={item.href} {...item} />
@@ -106,12 +106,12 @@ export default function AdminLayout({
         </nav>
 
         {/* Usuário logado */}
-        <div className="border-t border-gray-800 pt-4 mt-4">
-          <p className="text-xs text-gray-400 truncate px-1">{session.name}</p>
+        <div className="border-t pt-4 mt-4" style={{ borderColor: "var(--border-main)" }}>
+          <p className="text-xs text-emerald-200/70 truncate px-1">{session.name}</p>
           <p className="text-xs text-emerald-500 capitalize px-1 mb-2">{session.role}</p>
           <button
             onClick={() => { logout(); router.push("/login"); }}
-            className="w-full text-left text-xs text-gray-500 hover:text-white px-1 py-1 transition-colors"
+            className="w-full text-left text-xs text-emerald-200/60 hover:text-white px-1 py-1 transition-colors"
           >
             Sair →
           </button>
@@ -122,18 +122,18 @@ export default function AdminLayout({
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Topbar mobile */}
-        <header className="md:hidden bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-          <span className="font-bold text-white text-sm">🏖️ Santorini Admin</span>
+        <header className="md:hidden border-b px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--bg-nav)", borderColor: "var(--border-main)" }}>
+          <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>🏖️ Santorini Admin</span>
           <button
             onClick={() => { logout(); router.push("/login"); }}
-            className="text-sm text-gray-400 hover:text-white"
+            className="text-sm text-emerald-200/70 hover:text-white"
           >
             Sair
           </button>
         </header>
 
         {/* Nav mobile — horizontal scroll */}
-        <nav className="md:hidden bg-gray-900 border-b border-gray-800 px-2 py-2 flex gap-1 overflow-x-auto">
+        <nav className="md:hidden border-b px-2 py-2 flex gap-1 overflow-x-auto" style={{ backgroundColor: "var(--bg-drawer)", borderColor: "var(--border-main)" }}>
           {[...NAV_ITEMS, ...(session.role === "sysadmin" ? SYSADMIN_ITEMS : [])].map((item) => {
             const isActive = item.href === "/admin"
               ? pathname === "/admin"
@@ -145,7 +145,7 @@ export default function AdminLayout({
                 className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   isActive
                     ? "bg-emerald-600/30 text-emerald-300"
-                    : "text-gray-400 hover:text-white"
+                    : "text-emerald-200/70 hover:text-white"
                 }`}
               >
                 {item.label}

@@ -56,24 +56,24 @@ export default function PortalLayout({
   // Enquanto verifica a sessão, mostrar tela de carregamento
   if (loading || !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 animate-pulse">Carregando…</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--bg-page)" }}>
+        <p className="text-emerald-200/70 animate-pulse">Carregando…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
 
       {/* Topo: nome do usuário + logout */}
-      <header className="bg-gray-900 border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between">
+      <header className="border-b px-4 sm:px-6 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--bg-nav)", borderColor: "var(--border-main)" }}>
         <div className="flex items-center gap-3 min-w-0">
           <span className="text-xl">🏖️</span>
           <div className="min-w-0">
-            <p className="font-semibold text-white text-sm truncate">{session.name}</p>
+            <p className="font-semibold text-sm truncate" style={{ color: "var(--text-primary)" }}>{session.name}</p>
             <div className="flex items-center gap-2 mt-0.5">
               {session.unit && (
-                <span className="text-xs text-gray-400">Unidade {session.unit}</span>
+                <span className="text-xs text-emerald-200/70">Unidade {session.unit}</span>
               )}
               <RoleBadge role={session.role} />
             </div>
@@ -81,14 +81,14 @@ export default function PortalLayout({
         </div>
         <button
           onClick={() => { logout(); router.push("/login"); }}
-          className="text-sm text-gray-400 hover:text-white transition-colors ml-4 flex-shrink-0"
+          className="text-sm text-emerald-200/70 hover:text-white transition-colors ml-4 flex-shrink-0"
         >
           Sair
         </button>
       </header>
 
       {/* Abas de navegação — rolam horizontalmente no mobile */}
-      <nav className="bg-gray-900 border-b border-gray-800 px-2 sm:px-6">
+      <nav className="border-b px-2 sm:px-6" style={{ backgroundColor: "var(--bg-drawer)", borderColor: "var(--border-main)" }}>
         <div className="flex gap-1 overflow-x-auto py-2 scrollbar-hide">
           {TABS.map((tab) => {
             // Verificar se o associado pode ver o extrato financeiro
@@ -105,7 +105,7 @@ export default function PortalLayout({
                 className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                   isActive
                     ? "bg-emerald-600/30 text-emerald-300"
-                    : "text-gray-400 hover:text-white hover:bg-gray-800"
+                    : "text-emerald-200/70 hover:text-white hover:bg-emerald-900/50"
                 }`}
               >
                 {tab.label}

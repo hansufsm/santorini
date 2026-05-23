@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className="h-full">
-      <body className={`${geist.className} bg-gray-950 text-gray-100 min-h-screen antialiased`}>
+      <body className={`${geist.className} min-h-screen antialiased`} style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
         {/* ConvexClientProvider: conecta ao banco Convex em tempo real */}
         <ConvexClientProvider>
           {/* AuthProvider: gerencia sessão do usuário logado */}
