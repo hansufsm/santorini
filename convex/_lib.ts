@@ -11,6 +11,22 @@ export const ROLE_HIERARCHY = ["morador", "associado", "diretoria", "sysadmin"] 
 export type Role = (typeof ROLE_HIERARCHY)[number];
 
 /**
+ * Usuários criados antes da introdução de `status` usam o campo legado
+ * `active: boolean`. Durante a migração, tratamos `active: true` como
+ * `status: "ativo"` para que o deploy não bloqueie o login do sysadmin.
+ */
+export function getEffectiveUserStatus(user: any): "ativo" | "inativo" {
+  if (user.status === "ativo" || user.status === "inativo") {
+    return user.status;
+  }
+  return user.active === true ? "ativo" : "inativo";
+}
+
+export function isUserActive(user: any): boolean {
+  return getEffectiveUserStatus(user) === "ativo" && user.deletedAt === undefined;
+}
+
+/**
  * Verifica se o sessionToken é válido e se o usuário tem o papel mínimo exigido.
  * Lança erro se a sessão for inválida ou o papel insuficiente.
  * Retorna o usuário autenticado para uso pelo chamador.
@@ -33,7 +49,7 @@ export async function requireRole(
   // Buscar o usuário da sessão
   const user = await db.get(session.userId);
 
-  if (!user || user.status !== "ativo" || user.deletedAt !== undefined) {
+  if (!user || !isUserActive(user)) {
     throw new Error("Usuário inativo ou não encontrado.");
   }
 

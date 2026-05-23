@@ -16,7 +16,7 @@
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import type { Role } from "./_lib";
+import { getEffectiveUserStatus, isUserActive, type Role } from "./_lib";
 
 // Tempo de vida da sessão: 8 horas em milissegundos
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
@@ -72,7 +72,7 @@ export const loginWithCpf = mutation({
 
     // Filtrar apenas os usuários ativos e não inativados
     const activeUser = linkedUsers.find(
-      (u: any) => u.status === "ativo" && u.deletedAt === undefined
+      (u: any) => isUserActive(u)
     );
 
     let userId: any;
@@ -151,11 +151,19 @@ export const loginWithPassword = mutation({
     if (!user || user.deletedAt !== undefined) {
       return { success: false as const, error: "Credenciais inválidas." };
     }
-    if (user.status !== "ativo") {
+    if (!isUserActive(user)) {
       return { success: false as const, error: "Usuário inativo. Contate o administrador." };
     }
     if (!user.passwordHash || user.passwordHash !== passwordHash) {
       return { success: false as const, error: "Credenciais inválidas." };
+    }
+
+    // Migração silenciosa: registros antigos tinham `active: true`, mas não `status`.
+    if (!user.status) {
+      await ctx.db.patch(user._id, {
+        status: getEffectiveUserStatus(user),
+        updatedAt: Date.now(),
+      });
     }
 
     // Criar token de sessão
@@ -177,7 +185,7 @@ export const loginWithPassword = mutation({
         email: user.email ?? "",
         unit: user.unit ?? "",
         role: user.role as Role,
-        status: user.status,
+        status: getEffectiveUserStatus(user),
       },
     };
   },
@@ -223,7 +231,7 @@ export const getSession = query({
 
     // Buscar dados do usuário
     const user = await ctx.db.get(session.userId);
-    if (!user || user.status !== "ativo" || user.deletedAt !== undefined) {
+    if (!user || !isUserActive(user)) {
       return null;
     }
 
@@ -241,7 +249,7 @@ export const getSession = query({
       phone: associateData?.phone ?? "",
       unit: user.unit ?? associateData?.unit ?? "",
       role: user.role as Role,
-      status: user.status,
+      status: getEffectiveUserStatus(user),
       associateId: (user.associateId as string) ?? undefined,
       joinedAt: associateData?.joinedAt ?? "",
       cpfPrefix: associateData?.cpfPrefix ?? "",
@@ -283,7 +291,7 @@ export const seedFirstSysadmin = mutation({
       .collect();
 
     const activeSysadmins = existingSysadmins.filter(
-      (u: any) => u.status === "ativo" && u.deletedAt === undefined
+      (u: any) => isUserActive(u)
     );
 
     if (activeSysadmins.length >= 2) {
