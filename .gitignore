@@ -1,5 +1,8 @@
 extratos-infinite/
 *.csv
+
+# Imagens originais (usar versões WebP otimizadas em public/)
+public/*.png
 .DS_Store
 Thumbs.db
 .vscode/
