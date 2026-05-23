@@ -250,6 +250,13 @@ export default function LoginPage() {
         <p className="text-center text-xs text-gray-500 mt-6">
           Problemas para acessar? Contate a administração.
         </p>
+
+        {/* Link para a página inicial pública */}
+        <div className="text-center mt-3">
+          <a href="/" className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
+            ← Voltar à Página Inicial
+          </a>
+        </div>
       </div>
     </div>
   );

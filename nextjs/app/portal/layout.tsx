@@ -68,7 +68,10 @@ export default function PortalLayout({
       {/* Topo: nome do usuário + logout */}
       <header className="bg-gray-900 border-b border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-xl">🏖️</span>
+          {/* Link para a Página Inicial pública */}
+          <Link href="/" className="text-gray-400 hover:text-white transition-colors flex-shrink-0 text-sm" title="Página Inicial">
+            🏖️
+          </Link>
           <div className="min-w-0">
             <p className="font-semibold text-white text-sm truncate">{session.name}</p>
             <div className="flex items-center gap-2 mt-0.5">
@@ -79,12 +82,18 @@ export default function PortalLayout({
             </div>
           </div>
         </div>
-        <button
-          onClick={() => { logout(); router.push("/login"); }}
-          className="text-sm text-gray-400 hover:text-white transition-colors ml-4 flex-shrink-0"
-        >
-          Sair
-        </button>
+        <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+          {/* Link visível para a Página Inicial */}
+          <Link href="/" className="hidden sm:block text-xs text-gray-500 hover:text-gray-300 transition-colors">
+            ← Início
+          </Link>
+          <button
+            onClick={() => { logout(); router.push("/login"); }}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Sair
+          </button>
+        </div>
       </header>
 
       {/* Abas de navegação — rolam horizontalmente no mobile */}

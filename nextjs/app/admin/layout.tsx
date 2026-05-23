@@ -105,10 +105,17 @@ export default function AdminLayout({
           )}
         </nav>
 
-        {/* Usuário logado */}
+        {/* Usuário logado + link para página inicial */}
         <div className="border-t border-gray-800 pt-4 mt-4">
           <p className="text-xs text-gray-400 truncate px-1">{session.name}</p>
           <p className="text-xs text-emerald-500 capitalize px-1 mb-2">{session.role}</p>
+          {/* Link para o dashboard público */}
+          <Link
+            href="/"
+            className="block w-full text-left text-xs text-gray-500 hover:text-gray-300 px-1 py-1 transition-colors"
+          >
+            ← Página Inicial
+          </Link>
           <button
             onClick={() => { logout(); router.push("/login"); }}
             className="w-full text-left text-xs text-gray-500 hover:text-white px-1 py-1 transition-colors"
@@ -123,7 +130,13 @@ export default function AdminLayout({
 
         {/* Topbar mobile */}
         <header className="md:hidden bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-          <span className="font-bold text-white text-sm">🏖️ Santorini Admin</span>
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-white text-sm">🏖️ Santorini Admin</span>
+            {/* Link para página inicial no mobile */}
+            <Link href="/" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+              ← Início
+            </Link>
+          </div>
           <button
             onClick={() => { logout(); router.push("/login"); }}
             className="text-sm text-gray-400 hover:text-white"
