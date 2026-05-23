@@ -22,23 +22,40 @@ Se o deploy do Convex não for feito após mudanças em `convex/`:
 - Índices novos não existem → `Server Error` nas queries que os usam
 - Funções antigas continuam rodando → comportamento inconsistente com o frontend
 
-### Opção A — Deploy automático via GitHub Actions (recomendado)
+### Opção A — Deploy junto com o Vercel (mais simples, recomendado)
+
+O build command da Vercel pode executar `npx convex deploy` antes de `next build`, deployando os dois serviços em uma única operação. A chave é configurada nas variáveis de ambiente da Vercel (mesma tela onde está `NEXT_PUBLIC_CONVEX_URL`).
+
+**Configuração única (fazer uma vez):**
+
+1. Acesse o [painel Convex](https://dashboard.convex.dev) → seu projeto → **Settings → Deploy Keys**
+2. Clique em **Generate Production Deploy Key** e copie a chave (começa com `prod:...`)
+3. Na Vercel → **Project Settings → Environment Variables**, adicione:
+   - Nome: `CONVEX_DEPLOY_KEY`  ·  Valor: a chave copiada  ·  Environments: todos
+4. Na Vercel → **Project Settings → General → Build & Development Settings → Build Command**, troque para:
+   ```
+   npm run build:full
+   ```
+   *(equivale a `npx convex deploy --typecheck disable && next build`)*
+5. Salve e faça um novo deploy
+
+A partir daí, cada push em `main` deploya o Convex e o Next.js juntos na mesma pipeline.
+
+### Opção B — Deploy automático via GitHub Actions
 
 O arquivo `.github/workflows/convex-deploy.yml` dispara `npx convex deploy` automaticamente sempre que arquivos em `convex/**` mudam no branch `main`.
 
 **Configuração única (fazer uma vez):**
 
-1. Acesse o [painel Convex](https://dashboard.convex.dev) → seu projeto → **Settings → Deploy Keys**
-2. Clique em **Generate Production Deploy Key** e copie a chave gerada
-3. No GitHub → **Settings → Secrets and variables → Actions → New repository secret**:
-   - Nome: `CONVEX_DEPLOY_KEY`
-   - Valor: a chave copiada do passo 2
-4. Pronto. A partir daí, cada push em `main` com mudanças em `convex/` fará o deploy automaticamente
+1. Acesse o [painel Convex](https://dashboard.convex.dev) → **Settings → Deploy Keys → Generate Production Deploy Key**
+2. No GitHub → **Settings → Secrets and variables → Actions → New repository secret**:
+   - Nome: `CONVEX_DEPLOY_KEY`  ·  Valor: a chave copiada
+3. Pronto. A partir daí, cada push em `main` com mudanças em `convex/` fará o deploy
 
 **Para forçar um re-deploy manual pelo GitHub UI:**
 GitHub → Actions → "Deploy Convex Backend" → Run workflow → Branch: main → Run
 
-### Opção B — Deploy manual (localmente)
+### Opção C — Deploy manual (localmente)
 
 ```bash
 # Primeira vez: autenticar

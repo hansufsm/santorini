@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "convex:dev": "npx convex dev --configure=existing --team hans-rogerio-zimmermann --project santorini",
-    "convex:deploy": "npx convex deploy --typecheck disable"
+    "convex:deploy": "npx convex deploy --typecheck disable",
+    "build:full": "npx convex deploy --typecheck disable && next build"
   },
   "repository": {
     "type": "git",

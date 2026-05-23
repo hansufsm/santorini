@@ -6,9 +6,13 @@
 
 **Problema:** o backend Convex precisa de um comando `npx convex deploy` separado sempre que arquivos em `convex/` mudam. Sem esse passo, o Vercel sobe o frontend atualizado mas o backend continua com o código antigo, causando erros "Server Error" no login e nas queries (tabelas e índices novos não existem no banco em produção).
 
-**Decisão:** criar `.github/workflows/convex-deploy.yml` que dispara `npx convex deploy --typecheck disable` automaticamente no push para `main` quando `convex/**` muda. Requer o secret `CONVEX_DEPLOY_KEY` configurado uma única vez no GitHub (Settings → Secrets and variables → Actions).
+**Decisão — Opção A (Vercel build command):** alterar o Build Command da Vercel para `npm run build:full` (`npx convex deploy --typecheck disable && next build`) e adicionar `CONVEX_DEPLOY_KEY` nas variáveis de ambiente da Vercel. Deploy do Convex e do Next.js ocorrem na mesma pipeline, sem configuração extra no GitHub.
 
-**Alternativa considerada:** deploy manual (`npx convex deploy` localmente). Descartada como solução permanente por ser propensa a esquecimento — toda mudança no backend exigiria lembrar de rodar o comando separadamente do push.
+**Opção B (GitHub Actions):** `.github/workflows/convex-deploy.yml` dispara deploy do Convex separadamente a cada push em `convex/**`. Requer configurar `CONVEX_DEPLOY_KEY` como secret no GitHub — mais trabalhoso para quem não tem familiaridade com GitHub Secrets.
+
+**Opção A é recomendada** por usar a mesma interface (Vercel) onde `NEXT_PUBLIC_CONVEX_URL` já está configurado.
+
+**Descartada:** deploy manual (`npx convex deploy` localmente) — propensa a esquecimento.
 
 ### Correções de UX
 
