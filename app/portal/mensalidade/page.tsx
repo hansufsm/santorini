@@ -22,13 +22,33 @@ function monthLabel(key: string): string {
 export default function MensalidadePage() {
   const { session } = useAuth();
 
+  const canViewFinancialData = session?.role === "associado" && Boolean(session?.associateId);
+
   const { data, loading, error } = useConvexQuery<HistoryData>(
     "transactions:getAssociateHistory",
-    { search: session?.name ?? "" },
-    !session
+    { search: "", associateId: canViewFinancialData ? session?.associateId : undefined },
+    !session || !canViewFinancialData
   );
 
   if (!session) return null;
+
+  if (!canViewFinancialData) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-bold text-white">Mensalidade</h2>
+          <p className="text-sm text-emerald-100/60 mt-1">Área financeira protegida</p>
+        </div>
+        <section className="rounded-2xl border border-emerald-400/15 bg-emerald-950/60 p-6">
+          <p className="text-sm font-bold text-white">Acesso restrito ao associado contribuinte</p>
+          <p className="mt-2 text-sm leading-relaxed text-emerald-100/65">
+            Esta conta não possui vínculo financeiro confirmado. Para proteger os moradores, nenhum status, valor ou histórico de contribuição é exibido aqui.
+          </p>
+        </section>
+      </div>
+    );
+  }
+
   if (loading) return <div className="text-gray-400 text-center py-12">Carregando…</div>;
   if (error) return <div className="text-red-400 text-center py-12">Erro: {error}</div>;
 
@@ -65,7 +85,7 @@ export default function MensalidadePage() {
       {/* Status do mês atual */}
       <div className={`rounded-xl p-5 border ${paidThisMonth ? "bg-emerald-900/30 border-emerald-600" : "bg-yellow-900/30 border-yellow-600"}`}>
         <p className="text-2xl font-bold text-white">
-          {paidThisMonth ? "✅ Em dia" : "⚠️ Pendente"}
+          {paidThisMonth ? "Em dia" : "Pendente"}
         </p>
         <p className="text-sm text-gray-300 mt-2">
           {paidThisMonth
@@ -81,7 +101,7 @@ export default function MensalidadePage() {
 
       {/* Histórico dos últimos 12 meses */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-gray-300 mb-4">📅 Histórico — Últimos 12 meses</h3>
+        <h3 className="text-sm font-medium text-gray-300 mb-4">Histórico — Últimos 12 meses</h3>
         <div className="space-y-2">
           {months.map((key) => {
             const paid = !!monthMap[key];
@@ -90,7 +110,7 @@ export default function MensalidadePage() {
             return (
               <div key={key} className={`flex justify-between items-center px-3 py-2 rounded-lg ${isCurrent ? "bg-gray-800" : ""}`}>
                 <span className="text-sm text-gray-300">
-                  {isCurrent && <span className="text-xs text-emerald-400 mr-2">▶</span>}
+                  {isCurrent && <span className="text-xs text-emerald-400 mr-2">Atual</span>}
                   {monthLabel(key)}
                 </span>
                 <span className={`text-sm font-medium ${paid ? "text-emerald-400" : "text-gray-600"}`}>

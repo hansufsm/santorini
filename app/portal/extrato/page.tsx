@@ -28,13 +28,33 @@ type HistoryData = {
 export default function ExtratoPage() {
   const { session } = useAuth();
 
+  const canViewFinancialData = session?.role === "associado" && Boolean(session?.associateId);
+
   const { data, loading, error } = useConvexQuery<HistoryData>(
     "transactions:getAssociateHistory",
-    { search: session?.name ?? "" },
-    !session
+    { search: "", associateId: canViewFinancialData ? session?.associateId : undefined },
+    !session || !canViewFinancialData
   );
 
   if (!session) return null;
+
+  if (!canViewFinancialData) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-bold text-white">Extrato Financeiro</h2>
+          <p className="text-sm text-emerald-100/60 mt-1">Área financeira protegida</p>
+        </div>
+        <section className="rounded-2xl border border-emerald-400/15 bg-emerald-950/60 p-6">
+          <p className="text-sm font-bold text-white">Acesso restrito ao associado contribuinte</p>
+          <p className="mt-2 text-sm leading-relaxed text-emerald-100/65">
+            Para preservar a privacidade, este extrato só é exibido quando a conta tem vínculo de associado contribuinte confirmado.
+          </p>
+        </section>
+      </div>
+    );
+  }
+
   if (loading) return <div className="text-gray-400 text-center py-12">Carregando extrato…</div>;
   if (error) return <div className="text-red-400 text-center py-12">Erro: {error}</div>;
 

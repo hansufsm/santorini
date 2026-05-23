@@ -2,23 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useConvexQuery } from "@/lib/convex";
-import { formatCurrency } from "@/lib/utils";
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-
-type Summary = {
-  totalReceived: number;
-  totalSent: number;
-  netBalance: number;
-  receivedCount: number;
-  sentCount: number;
-};
-
-type AssocSummary = {
-  ativos: number;
-};
-
 // ─── Ícones SVG ───────────────────────────────────────────────────────────────
 
 function Icon({ d, className = "h-5 w-5" }: { d: string | string[]; className?: string }) {
@@ -112,11 +95,8 @@ export default function HomePage() {
     localStorage.setItem("snt-layout", next ? "wide" : "boxed");
   }
 
-  // Dados do Convex
-  const { data: summary, loading: loadingS } = useConvexQuery<Summary>("transactions:getSummary", {});
-  const { data: assoc,   loading: loadingA } = useConvexQuery<AssocSummary>("associates:getAssociatesSummary", {});
-  const loading = loadingS || loadingA;
-  const fmt = (v?: number) => v !== undefined ? formatCurrency(v) : "—";
+  // Página pública: não consulta nem exibe valores financeiros, dados pessoais
+  // ou histórico de moradores. Informações detalhadas ficam atrás do login.
 
   const maxW = isWide ? "max-w-[1400px]" : "max-w-7xl";
 
@@ -311,33 +291,33 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Cards de estatísticas */}
+        {/* Cards públicos sem dados financeiros ou pessoais */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
-          <StatCard label="Total Contribuições"
-            value={loading ? "..." : fmt(summary?.totalReceived)}
-            sub={`${summary?.receivedCount ?? 0} contribuições`}
+          <StatCard label="Financeiro"
+            value="Privado"
+            sub="Acesso apenas para usuários autorizados"
             gradient="bg-gradient-to-br from-[#065f46] to-[#10b981]"
             subColor="text-emerald-200/70" />
-          <StatCard label="Despesas Pagas"
-            value={loading ? "..." : fmt(summary?.totalSent)}
-            sub={`${summary?.sentCount ?? 0} pagamentos`}
-            gradient="bg-gradient-to-br from-[#991b1b] to-[#ef4444]"
-            subColor="text-red-200/70" />
-          <StatCard label="Saldo em Caixa"
-            value={loading ? "..." : fmt(summary?.netBalance)}
-            sub="Disponível para imprevistos"
+          <StatCard label="Contribuições"
+            value="Seguro"
+            sub="Dados individuais protegidos por login"
             gradient="bg-gradient-to-br from-[#064e3b] to-[#059669]"
+            subColor="text-emerald-200/70" />
+          <StatCard label="Transparência"
+            value="Controlada"
+            sub="Relatórios detalhados só na área autenticada"
+            gradient="bg-gradient-to-br from-[#065f46] to-[#047857]"
             subColor="text-emerald-200/70" />
           <div className="rounded-2xl p-4 md:p-6 shadow-xl border
             transition-transform duration-200 hover:-translate-y-1"
             style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-main)" }}>
             <p className="text-xs md:text-sm font-medium mb-1" style={{ color: "var(--text-accent)" }}>
-              Associados
+              Comunidade
             </p>
             <h3 className="text-xl md:text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
-              {loading ? "..." : (assoc?.ativos ?? "—")}
+              Protegida
             </h3>
-            <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>Membros ativos</p>
+            <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>Sem exposição pública de moradores</p>
           </div>
         </div>
 
@@ -350,8 +330,8 @@ export default function HomePage() {
               Transparência financeira
             </h4>
             <p className="text-sm max-w-lg" style={{ color: "var(--text-muted)" }}>
-              Valores públicos e anonimizados. Associados autenticados acessam o extrato
-              completo com nomes e histórico detalhado.
+              Por segurança, esta página não exibe valores financeiros nem dados de moradores.
+              Associados autorizados acessam apenas suas próprias informações após login.
             </p>
           </div>
           <Link href="/login"
