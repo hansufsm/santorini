@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useConvexQuery } from "@/lib/convex";
 import { formatCurrency } from "@/lib/utils";
@@ -280,11 +281,13 @@ export default function HomePage() {
           shadow-2xl group border"
           style={{ borderColor: "var(--border-main)" }}>
           {/* Imagem real do empreendimento com zoom suave no hover */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/santorini.webp"
             alt="Vista aérea do Residencial Santorini"
-            className="absolute inset-0 w-full h-full object-cover object-center
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1400px"
+            className="object-cover object-center
               transition-transform duration-700 ease-in-out group-hover:scale-105"
           />
           {/* Overlay gradiente esmeralda sobre a foto */}
