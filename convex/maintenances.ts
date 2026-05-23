@@ -8,7 +8,7 @@
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./auth";
+import { requireRole } from "./_lib";
 
 // Retorna todos os chamados não inativados
 export const getAllMaintenances = query({

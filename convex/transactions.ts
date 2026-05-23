@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./auth";
+import { requireRole } from "./_lib";
 
 export const importTransactions = mutation({
   args: {

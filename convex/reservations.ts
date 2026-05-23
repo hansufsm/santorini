@@ -8,7 +8,7 @@
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./auth";
+import { requireRole } from "./_lib";
 
 // Retorna todas as reservas não inativadas (painel admin)
 export const getAllReservations = query({
