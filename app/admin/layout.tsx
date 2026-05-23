@@ -154,7 +154,7 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <main className="flex-1 p-4 sm:p-6 max-w-5xl">
+        <main className="flex-1 w-full max-w-7xl p-4 sm:p-6 xl:p-8">
           {children}
         </main>
       </div>
