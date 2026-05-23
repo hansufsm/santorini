@@ -16,6 +16,9 @@ convex/_generated/
 /out/
 /build
 next-env.d.ts
+
+# Diretório legado (Next.js foi movido para a raiz do repo)
+nextjs/
 *.tsbuildinfo
 
 # Dependências
