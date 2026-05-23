@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { AppFooter } from "@/components/app-footer";
 
 // Definição das abas do portal
 const TABS = [
@@ -127,6 +128,7 @@ export default function PortalLayout({
       {/* Conteúdo da aba */}
       <main className="flex-1 p-4 sm:p-6 max-w-4xl mx-auto w-full">
         {children}
+        <AppFooter />
       </main>
     </div>
   );

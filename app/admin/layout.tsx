@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { AppFooter } from "@/components/app-footer";
 
 // Itens do menu lateral
 const NAV_ITEMS = [
@@ -169,6 +170,7 @@ export default function AdminLayout({
 
         <main className="flex-1 w-full max-w-7xl p-4 sm:p-6 xl:p-8">
           {children}
+          <AppFooter />
         </main>
       </div>
     </div>

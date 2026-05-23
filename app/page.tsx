@@ -374,7 +374,7 @@ export default function HomePage() {
       {/* ─── Rodapé ──────────────────────────────────────────────────────── */}
       <footer className="border-t mt-4"
         style={{ borderColor: "var(--border-main)" }}>
-        <div className={`${maxW} mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row
+        <div className={`${maxW} mx-auto px-4 sm:px-6 pt-5 pb-3 flex flex-col sm:flex-row
           items-center justify-between gap-3 text-xs`}
           style={{ color: "var(--text-dim)" }}>
           <p>AMRTS Santorini &copy; {new Date().getFullYear()} — Gestão Residencial</p>
@@ -388,6 +388,13 @@ export default function HomePage() {
             </a>
           </div>
         </div>
+        {/* Linha de versão — só aparece em produção (Vercel injeta o hash do commit) */}
+        {process.env.NEXT_PUBLIC_GIT_COMMIT && (
+          <p className={`${maxW} mx-auto px-4 sm:px-6 pb-4 text-center font-mono`}
+            style={{ color: "var(--text-very-dim)", fontSize: "0.7rem" }}>
+            v{process.env.NEXT_PUBLIC_GIT_COMMIT}&nbsp;&nbsp;—&nbsp;&nbsp;{process.env.NEXT_PUBLIC_BUILD_TIME}
+          </p>
+        )}
       </footer>
     </div>
   );
