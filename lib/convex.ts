@@ -11,6 +11,7 @@ export async function convexQuery<T = unknown>(
   path: string,
   args: Record<string, unknown> = {}
 ): Promise<T> {
+  if (!CONVEX_URL) throw new Error("NEXT_PUBLIC_CONVEX_URL não configurada.");
   const res = await fetch(`${CONVEX_URL}/api/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -26,6 +27,7 @@ export async function convexMutation<T = unknown>(
   path: string,
   args: Record<string, unknown> = {}
 ): Promise<T> {
+  if (!CONVEX_URL) throw new Error("NEXT_PUBLIC_CONVEX_URL não configurada.");
   const res = await fetch(`${CONVEX_URL}/api/mutation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
