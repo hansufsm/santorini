@@ -1,5 +1,22 @@
 # Changelog — Sistema Santorini
 
+## [Infra] — 2026-05-23
+
+### CI/CD — Deploy automático do Convex via GitHub Actions
+
+**Problema:** o backend Convex precisa de um comando `npx convex deploy` separado sempre que arquivos em `convex/` mudam. Sem esse passo, o Vercel sobe o frontend atualizado mas o backend continua com o código antigo, causando erros "Server Error" no login e nas queries (tabelas e índices novos não existem no banco em produção).
+
+**Decisão:** criar `.github/workflows/convex-deploy.yml` que dispara `npx convex deploy --typecheck disable` automaticamente no push para `main` quando `convex/**` muda. Requer o secret `CONVEX_DEPLOY_KEY` configurado uma única vez no GitHub (Settings → Secrets and variables → Actions).
+
+**Alternativa considerada:** deploy manual (`npx convex deploy` localmente). Descartada como solução permanente por ser propensa a esquecimento — toda mudança no backend exigiria lembrar de rodar o comando separadamente do push.
+
+### Correções de UX
+
+- Substituído `<img src="/santorini.webp">` por `<Image fill priority>` do `next/image` no hero da frontpage — resolve a imagem não aparecer no App Router do Next.js
+- Melhorado `DEPLOY.md`: explica a distinção Vercel vs Convex, checklist de deploy do zero, e instruções para configurar o `CONVEX_DEPLOY_KEY`
+
+---
+
 ## [Fase 2B] — 2026-05-22
 
 ### Frontend Next.js — Portal e Admin completos
