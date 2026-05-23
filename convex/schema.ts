@@ -261,7 +261,9 @@ export default defineSchema({
       v.literal("associado"),
       v.literal("morador")
     ),
-    status: v.union(v.literal("ativo"), v.literal("inativo")),
+    // Opcional para aceitar registros legados criados antes da migração de status.
+    status: v.optional(v.union(v.literal("ativo"), v.literal("inativo"))),
+    active: v.optional(v.boolean()),                    // legado: active=true equivale a status="ativo"
     associateId: v.optional(v.id("associates")),        // link ao registro financeiro (Associado)
     parentAssociateId: v.optional(v.id("associates")), // link ao titular da unidade (Morador)
     unit: v.optional(v.string()),

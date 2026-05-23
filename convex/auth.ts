@@ -6,19 +6,20 @@
  *   2. Email + senha     — para Diretoria e Sysadmin
  *
  * Cada login gera um token aleatório que fica salvo na tabela "sessions".
- * O cliente guarda esse token no sessionStorage e o envia em cada chamada
- * que exige autenticação.
+ * O cliente guarda esse token no cookie e o envia em cada chamada que
+ * exige autenticação.
+ *
+ * NOTA: requireRole foi movido para _lib.ts para que auth.ts exporte
+ * apenas funções Convex (mutation/query), evitando que o Convex trate
+ * este arquivo como módulo helper em vez de módulo de funções.
  */
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getEffectiveUserStatus, isUserActive, type Role } from "./_lib";
 
 // Tempo de vida da sessão: 8 horas em milissegundos
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
-
-// Hierarquia de papéis (índice maior = mais permissões)
-const ROLE_HIERARCHY = ["morador", "associado", "diretoria", "sysadmin"] as const;
-type Role = (typeof ROLE_HIERARCHY)[number];
 
 // ─── Helper interno: gerar token seguro ──────────────────────────────────────
 
@@ -29,48 +30,6 @@ function generateToken(): string {
   return Array.from(arr)
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-}
-
-// ─── Helper exportado: verificar papel mínimo ────────────────────────────────
-//
-// Usado por outros módulos (users.ts, etc.) para proteger mutations.
-// Recebe ctx.db, o token da sessão e o papel mínimo exigido.
-// Lança erro se a sessão for inválida ou o papel insuficiente.
-
-export async function requireRole(
-  db: any,
-  sessionToken: string,
-  minRole: Role
-) {
-  // Buscar sessão pelo token
-  const session = await db
-    .query("sessions")
-    .withIndex("by_token", (q: any) => q.eq("token", sessionToken))
-    .first();
-
-  if (!session || session.expiresAt < Date.now()) {
-    throw new Error("Sessão expirada ou inválida. Faça login novamente.");
-  }
-
-  // Buscar o usuário da sessão
-  const user = await db.get(session.userId);
-
-  if (!user || user.status !== "ativo" || user.deletedAt !== undefined) {
-    throw new Error("Usuário inativo ou não encontrado.");
-  }
-
-  // Verificar se o papel do usuário é suficiente
-  const userRank = ROLE_HIERARCHY.indexOf(user.role as Role);
-  const minRank = ROLE_HIERARCHY.indexOf(minRole);
-
-  if (userRank < minRank) {
-    throw new Error(
-      `Permissão insuficiente. Papel atual: ${user.role}. Necessário: ${minRole}.`
-    );
-  }
-
-  // Retorna o usuário para que o chamador possa usar seus dados (ex: _id, role)
-  return user;
 }
 
 // ─── Login com CPF (Associados e Moradores) ───────────────────────────────────
@@ -113,7 +72,7 @@ export const loginWithCpf = mutation({
 
     // Filtrar apenas os usuários ativos e não inativados
     const activeUser = linkedUsers.find(
-      (u: any) => u.status === "ativo" && u.deletedAt === undefined
+      (u: any) => isUserActive(u)
     );
 
     let userId: any;
@@ -192,11 +151,19 @@ export const loginWithPassword = mutation({
     if (!user || user.deletedAt !== undefined) {
       return { success: false as const, error: "Credenciais inválidas." };
     }
-    if (user.status !== "ativo") {
+    if (!isUserActive(user)) {
       return { success: false as const, error: "Usuário inativo. Contate o administrador." };
     }
     if (!user.passwordHash || user.passwordHash !== passwordHash) {
       return { success: false as const, error: "Credenciais inválidas." };
+    }
+
+    // Migração silenciosa: registros antigos tinham `active: true`, mas não `status`.
+    if (!user.status) {
+      await ctx.db.patch(user._id, {
+        status: getEffectiveUserStatus(user),
+        updatedAt: Date.now(),
+      });
     }
 
     // Criar token de sessão
@@ -218,7 +185,7 @@ export const loginWithPassword = mutation({
         email: user.email ?? "",
         unit: user.unit ?? "",
         role: user.role as Role,
-        status: user.status,
+        status: getEffectiveUserStatus(user),
       },
     };
   },
@@ -264,7 +231,7 @@ export const getSession = query({
 
     // Buscar dados do usuário
     const user = await ctx.db.get(session.userId);
-    if (!user || user.status !== "ativo" || user.deletedAt !== undefined) {
+    if (!user || !isUserActive(user)) {
       return null;
     }
 
@@ -282,7 +249,7 @@ export const getSession = query({
       phone: associateData?.phone ?? "",
       unit: user.unit ?? associateData?.unit ?? "",
       role: user.role as Role,
-      status: user.status,
+      status: getEffectiveUserStatus(user),
       associateId: (user.associateId as string) ?? undefined,
       joinedAt: associateData?.joinedAt ?? "",
       cpfPrefix: associateData?.cpfPrefix ?? "",
@@ -296,10 +263,10 @@ export const getSession = query({
 // para criar o primeiro sysadmin antes de desabilitar as credenciais hardcoded.
 //
 // Parâmetros:
-//   name        — nome do sysadmin
-//   email       — email de login
+//   name         — nome do sysadmin
+//   email        — email de login
 //   passwordHash — SHA-256 hex da senha desejada
-//   guardKey    — deve ser exatamente "SANTORINI_SEED_2026" (evita uso acidental)
+//   guardKey     — deve ser exatamente "SANTORINI_SEED_2026" (evita uso acidental)
 //
 // Exemplo de como gerar o hash da senha no terminal:
 //   echo -n "SuaSenha123" | sha256sum
@@ -324,7 +291,7 @@ export const seedFirstSysadmin = mutation({
       .collect();
 
     const activeSysadmins = existingSysadmins.filter(
-      (u: any) => u.status === "ativo" && u.deletedAt === undefined
+      (u: any) => isUserActive(u)
     );
 
     if (activeSysadmins.length >= 2) {

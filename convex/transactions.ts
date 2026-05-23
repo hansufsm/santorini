@@ -1,6 +1,23 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./auth";
+import { requireRole } from "./_lib";
+
+function normalizeAssociateName(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function matchesAssociateName(transactionName: string, possibleNames: string[]) {
+  const txName = normalizeAssociateName(transactionName);
+  return possibleNames.some((rawName) => {
+    const name = normalizeAssociateName(rawName);
+    return name.length >= 3 && (txName === name || txName.includes(name) || name.includes(txName));
+  });
+}
 
 export const importTransactions = mutation({
   args: {
@@ -121,15 +138,32 @@ export const getMonthlyFlow = query({
 });
 
 export const getAssociateHistory = query({
-  args: { search: v.string() },
-  handler: async (ctx, { search }) => {
-    const term = search.toLowerCase().trim();
+  args: { search: v.string(), associateId: v.optional(v.id("associates")) },
+  handler: async (ctx, { associateId }) => {
+    // Regra de privacidade: histórico financeiro do portal só pode ser resolvido
+    // por vínculo explícito de associado. Nunca usar nome digitado ou nome da
+    // sessão como fallback, pois isso poderia expor contribuições de terceiros.
+    if (!associateId) return null;
+
+    const associate = await ctx.db.get(associateId);
+    if (!associate || associate.status !== "ativo") return null;
+
     const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    const userTxs = received.filter((t) => t.name.toLowerCase().includes(term)).sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+    const userTxs = received
+      .filter((t) => matchesAssociateName(t.name, [associate.name]))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
     if (!userTxs.length) return null;
     const total = userTxs.reduce((acc, t) => acc + t.value, 0);
     const months = new Set(userTxs.map((t) => t.date.slice(0, 7))).size;
-    return { name: userTxs[0].name, total, monthsActive: months, lastDate: userTxs[0].date, transactions: userTxs };
+    return {
+      name: associate.name,
+      unit: associate.unit ?? null,
+      total,
+      monthsActive: months,
+      lastDate: userTxs[0].date,
+      paidThisMonth: userTxs.some((t) => t.date.startsWith(new Date().toISOString().slice(0, 7))),
+      transactions: userTxs,
+    };
   },
 });
 

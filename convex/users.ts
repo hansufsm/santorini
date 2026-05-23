@@ -13,7 +13,7 @@
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./auth";
+import { getEffectiveUserStatus, isUserActive, requireRole } from "./_lib";
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
@@ -45,7 +45,7 @@ export const getAllUsers = query({
       name: u.name,
       email: u.email,
       role: u.role,
-      status: u.status,
+      status: getEffectiveUserStatus(u),
       unit: u.unit,
       associateId: u.associateId,
       parentAssociateId: u.parentAssociateId,
@@ -69,7 +69,7 @@ export const getSysadminCount = query({
 
     // Contar apenas os ativos e não inativados
     return all.filter(
-      (u: any) => u.status === "ativo" && u.deletedAt === undefined
+      (u: any) => isUserActive(u)
     ).length;
   },
 });
@@ -122,7 +122,7 @@ export const createUser = mutation({
         .collect();
 
       const activeCount = existingSysadmins.filter(
-        (u: any) => u.status === "ativo" && u.deletedAt === undefined
+        (u: any) => isUserActive(u)
       ).length;
 
       if (activeCount >= 2) {
@@ -227,8 +227,7 @@ export const deactivateUser = mutation({
 
       const remainingActive = allSysadmins.filter(
         (u: any) =>
-          u.status === "ativo" &&
-          u.deletedAt === undefined &&
+          isUserActive(u) &&
           u._id !== id // excluir o que estamos inativando
       ).length;
 
@@ -279,7 +278,7 @@ export const reactivateUser = mutation({
         .collect();
 
       const activeCount = allSysadmins.filter(
-        (u: any) => u.status === "ativo" && u.deletedAt === undefined
+        (u: any) => isUserActive(u)
       ).length;
 
       if (activeCount >= 2) {

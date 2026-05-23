@@ -1,11 +1,15 @@
 {
   "name": "santorini",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Dashboard de gestão financeira e societária — Residencial Santorini",
-  "main": "script.js",
+  "private": true,
   "scripts": {
-    "dev": "npx convex dev",
-    "deploy": "npx convex deploy --typecheck disable"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "convex:dev": "npx convex dev --configure=existing --team hans-rogerio-zimmermann --project santorini",
+    "convex:deploy": "npx convex deploy --typecheck disable",
+    "build:full": "npx convex deploy --typecheck disable && next build"
   },
   "repository": {
     "type": "git",
@@ -15,6 +19,20 @@
   "author": "Hans Rogério Zimmermann",
   "license": "ISC",
   "dependencies": {
-    "convex": "^1.39.1"
+    "@convex-dev/react-query": "^0.1.0",
+    "convex": "^1.39.1",
+    "lucide-react": "^1.16.0",
+    "next": "16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

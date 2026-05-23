@@ -1,5 +1,82 @@
 # Changelog — Sistema Santorini
 
+## [Sessão 2026-05-23] — Diagnóstico, correções de infraestrutura e UX
+
+### Bug crítico — `auth:loginWithCpf` / `auth:loginWithPassword` não encontrados
+
+**Causa raiz identificada:** `convex/auth.ts` exportava simultaneamente funções Convex
+(`export const loginWithCpf = mutation({...})`) e uma função TypeScript pura
+(`export async function requireRole(...)`). O bundler do Convex trata arquivos com
+exports mistos como módulos de helper interno e silenciosamente não registra nenhuma
+das funções públicas. Os queries de outros módulos funcionavam porque esses arquivos
+só exportavam funções Convex puras.
+
+**Correção:**
+- `convex/_lib.ts` criado com `requireRole` + tipo `Role` (prefixo `_` = helper, nunca exposto como módulo de funções)
+- `convex/auth.ts` reescrito para exportar **apenas** `mutation`/`query`
+- Todos os módulos que importavam `requireRole` de `./auth` atualizados para `./_lib`
+
+### Bug — Imagem do hero não aparecia na frontpage
+
+**Causa:** uso de `<img src="/santorini.webp">` simples em vez do componente `<Image>` do Next.js,
+que é o mecanismo correto para arquivos estáticos no App Router.
+
+**Correção:** substituído por `<Image fill priority sizes="...">` do `next/image`.
+
+### Infraestrutura — Deploy do Convex
+
+**Problema:** o Convex é um serviço independente do Vercel. Cada mudança em `convex/`
+exige `npx convex deploy` separado — sem isso, o frontend atualiza mas o backend
+continua com o código antigo, causando "Server Error" no login.
+
+**Soluções documentadas e implementadas:**
+
+| Opção | Descrição | Status |
+|-------|-----------|--------|
+| A — Vercel build command | `npm run build:full` (`convex deploy + next build`). `CONVEX_DEPLOY_KEY` nas env vars da Vercel — mesma interface já conhecida. | **Recomendada** |
+| B — GitHub Actions | `.github/workflows/convex-deploy.yml` dispara no push quando `convex/**` muda. Requer secret no GitHub. | Disponível |
+| C — Manual | `npx convex deploy --typecheck disable` no Codespace. | Fallback |
+
+**Hook de aviso:** `.claude/settings.json` com `PostToolUse/Bash` — detecta `git push`
+com mudanças em `convex/` e exibe lembrete automático para rodar o deploy.
+
+### Produto — Roadmap criado
+
+`ROADMAP.md` criado com:
+- **Fase 3:** redirect pós-login por papel; portal do associado com conteúdo acionável;
+  dashboard admin com gráficos equivalentes ao sistema legado
+- **Fase 4:** relatório de inadimplência por mês (corrente e histórico)
+- **Fase 5+:** backlog (push notifications, votações, upload de documentos, pagamentos, PWA, PDF, auditoria, multi-condomínio)
+
+### UX — Frontpage
+
+- Foto aérea real do Residencial Santorini adicionada ao hero (`public/santorini.webp`, 177 KB otimizado de 2,7 MB PNG via WebP q82)
+- Efeito zoom suave no hover (`group-hover:scale-105`, 700 ms) sobre a foto
+- Overlay gradiente esmeralda semitransparente preserva legibilidade do texto
+
+---
+
+## [Infra] — 2026-05-23
+
+### CI/CD — Deploy automático do Convex via GitHub Actions
+
+**Problema:** o backend Convex precisa de um comando `npx convex deploy` separado sempre que arquivos em `convex/` mudam. Sem esse passo, o Vercel sobe o frontend atualizado mas o backend continua com o código antigo, causando erros "Server Error" no login e nas queries (tabelas e índices novos não existem no banco em produção).
+
+**Decisão — Opção A (Vercel build command):** alterar o Build Command da Vercel para `npm run build:full` (`npx convex deploy --typecheck disable && next build`) e adicionar `CONVEX_DEPLOY_KEY` nas variáveis de ambiente da Vercel. Deploy do Convex e do Next.js ocorrem na mesma pipeline, sem configuração extra no GitHub.
+
+**Opção B (GitHub Actions):** `.github/workflows/convex-deploy.yml` dispara deploy do Convex separadamente a cada push em `convex/**`. Requer configurar `CONVEX_DEPLOY_KEY` como secret no GitHub — mais trabalhoso para quem não tem familiaridade com GitHub Secrets.
+
+**Opção A é recomendada** por usar a mesma interface (Vercel) onde `NEXT_PUBLIC_CONVEX_URL` já está configurado.
+
+**Descartada:** deploy manual (`npx convex deploy` localmente) — propensa a esquecimento.
+
+### Correções de UX
+
+- Substituído `<img src="/santorini.webp">` por `<Image fill priority>` do `next/image` no hero da frontpage — resolve a imagem não aparecer no App Router do Next.js
+- Melhorado `DEPLOY.md`: explica a distinção Vercel vs Convex, checklist de deploy do zero, e instruções para configurar o `CONVEX_DEPLOY_KEY`
+
+---
+
 ## [Fase 2B] — 2026-05-22
 
 ### Frontend Next.js — Portal e Admin completos
