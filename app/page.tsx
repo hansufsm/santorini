@@ -279,9 +279,20 @@ export default function HomePage() {
         <div className="relative h-40 sm:h-52 md:h-72 rounded-3xl overflow-hidden mb-6 md:mb-8
           shadow-2xl group border"
           style={{ borderColor: "var(--border-main)" }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-[#064e3b] via-[#065f46] to-[#022c22]" />
-          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-emerald-500/10
-            blur-3xl group-hover:bg-emerald-400/15 transition-all duration-700" />
+          {/* Imagem de fundo com zoom suave no hover */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=75"
+            alt="Vista aérea Santorini"
+            className="absolute inset-0 w-full h-full object-cover object-center
+              transition-transform duration-700 ease-in-out group-hover:scale-105"
+          />
+          {/* Overlay gradiente esmeralda sobre a foto */}
+          <div className="absolute inset-0 bg-gradient-to-br
+            from-[#022c22]/85 via-[#064e3b]/75 to-[#065f46]/60" />
+          {/* Brilhos decorativos */}
+          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-emerald-500/15
+            blur-3xl group-hover:bg-emerald-400/20 transition-all duration-700" />
           <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-emerald-400/10 blur-2xl" />
           <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-7 md:p-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
