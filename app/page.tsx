@@ -279,11 +279,11 @@ export default function HomePage() {
         <div className="relative h-40 sm:h-52 md:h-72 rounded-3xl overflow-hidden mb-6 md:mb-8
           shadow-2xl group border"
           style={{ borderColor: "var(--border-main)" }}>
-          {/* Imagem de fundo com zoom suave no hover */}
+          {/* Imagem real do empreendimento com zoom suave no hover */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://images.unsplash.com/photo-1570168007204-dfb528c6958f?auto=format&fit=crop&w=1200&q=75"
-            alt="Vista aérea Santorini"
+            src="/santorini.webp"
+            alt="Vista aérea do Residencial Santorini"
             className="absolute inset-0 w-full h-full object-cover object-center
               transition-transform duration-700 ease-in-out group-hover:scale-105"
           />
