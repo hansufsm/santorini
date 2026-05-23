@@ -1,4 +1,4 @@
-# AMRTS Santorini — Dashboard de Gestão Condominial
+# AMRTS Santorini — Dashboard de Gestão Residencial
 
 Dashboard interativo para gestão financeira e societária do Residencial Santorini.  
 **v3.0** — Dados persistidos no **Convex** · Hospedado no **GitHub Pages**.

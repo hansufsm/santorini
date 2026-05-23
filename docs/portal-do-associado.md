@@ -113,7 +113,7 @@ Tipos de comunicado:
 - 🔴 **Urgente** — situação que exige atenção imediata
 - 🔵 **Info** — informação geral
 - 🟡 **Manutenção** — obras ou manutenções programadas
-- 🟢 **Evento** — eventos do condomínio
+- 🟢 **Evento** — eventos do residencial
 
 ---
 

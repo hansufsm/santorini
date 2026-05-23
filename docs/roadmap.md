@@ -134,7 +134,7 @@ Associado autenticado
 | Integração com boleto bancário (auto-reconciliação de pagamentos) | Alta |
 | Chatbot para associados (perguntas sobre regras, disponibilidade) | Alta |
 | App mobile nativo (React Native / Flutter) | Muito alta |
-| Mapa interativo do condomínio (reservas por área visual) | Média |
+| Mapa interativo do residencial (reservas por área visual) | Média |
 | Sorteio de vagas de garagem / unidades | Baixa |
 | Enquetes rápidas para associados | Média |
 | Dashboard de consumo de água/energia por unidade | Alta |

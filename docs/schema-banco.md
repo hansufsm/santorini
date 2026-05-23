@@ -35,7 +35,7 @@ by_date_detail   → ["date", "detail"]
 
 ## Tabela: `associates`
 
-Cadastro de associados do condomínio.
+Cadastro de associados do residencial.
 
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
@@ -225,7 +225,7 @@ Chamados de manutenção.
 |-------|------|-------------|-----------|
 | `title` | `string` | ✅ | Título do chamado |
 | `description` | `string?` | — | Descrição detalhada |
-| `area` | `string?` | — | Área do condomínio |
+| `area` | `string?` | — | Área do residencial |
 | `priority` | `"baixa" \| "media" \| "alta" \| "urgente"` | ✅ | Prioridade |
 | `status` | `"aberto" \| "em_andamento" \| "concluido" \| "cancelado"` | ✅ | Status |
 | `scheduledDate` | `string?` | — | Data agendada `yyyy-mm-dd` |

@@ -151,7 +151,7 @@ Cadastre prestadores de serviço com:
 
 Acesse pelo drawer lateral → **Patrimônio** (admin).
 
-Inventário de bens do condomínio:
+Inventário de bens do residencial:
 - Nome, categoria, descrição
 - Data e valor de aquisição
 - Localização

@@ -1,5 +1,5 @@
 /**
- * announcements.ts — Comunicados do condomínio
+ * announcements.ts — Comunicados do residencial
  *
  * Política de exclusão: comunicados nunca são deletados permanentemente.
  * A função "deleteAnnouncement" agora faz soft delete (preenche deletedAt).

@@ -11,7 +11,7 @@
     "type": "git",
     "url": "https://github.com/zionsti/santorini"
   },
-  "keywords": ["convex", "dashboard", "condominio"],
+  "keywords": ["convex", "dashboard", "residencial"],
   "author": "Hans Rogério Zimmermann",
   "license": "ISC",
   "dependencies": {
