@@ -18,17 +18,30 @@ const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL!;
 
 async function convexMutation(path: string, args: Record<string, unknown>) {
   if (!CONVEX_URL) {
-    throw new Error("NEXT_PUBLIC_CONVEX_URL não configurada. Defina a variável de ambiente na Vercel e faça um novo deploy.");
+    throw new Error(
+      "Variável NEXT_PUBLIC_CONVEX_URL não definida. Configure em Vercel → Settings → Environment Variables e faça um novo deploy."
+    );
   }
-  const res = await fetch(`${CONVEX_URL}/api/mutation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ path, args, format: "json" }),
-  });
-  if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(`${CONVEX_URL}/api/mutation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path, args }),
+    });
+  } catch (networkErr) {
+    // Falha de rede ou CORS — fetch nem chegou ao servidor
+    throw new Error(
+      `Falha de rede ao conectar ao backend (${CONVEX_URL}). ` +
+      `Verifique se o backend Convex está deployado (npx convex deploy) e se a URL está correta.`
+    );
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Erro HTTP ${res.status} do Convex: ${body.slice(0, 200)}`);
+  }
   const json = await res.json();
-  // Convex retorna { value: ... } para resultado bem-sucedido
-  if (json.status === "error") throw new Error(json.errorMessage || "Erro desconhecido");
+  if (json.status === "error") throw new Error(json.errorMessage || "Erro desconhecido no backend");
   return json.value;
 }
 
@@ -91,8 +104,9 @@ export default function LoginPage() {
       // Redirecionar conforme papel
       router.push("/portal/inicio");
     } catch (err) {
-      setError("Erro ao conectar. Tente novamente.");
-      console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      console.error("[login CPF]", err);
     } finally {
       setLoading(false);
     }
@@ -126,8 +140,9 @@ export default function LoginPage() {
       // Diretoria e Sysadmin vão para o painel admin
       router.push("/admin");
     } catch (err) {
-      setError("Erro ao conectar. Tente novamente.");
-      console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg);
+      console.error("[login senha]", err);
     } finally {
       setLoading(false);
     }
