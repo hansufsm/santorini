@@ -307,11 +307,6 @@ export default function HomePage() {
                   Gestão de contribuições e acompanhamento financeiro do condomínio.
                 </p>
               </div>
-              <div className="bg-emerald-900/40 backdrop-blur-md border border-emerald-700/30
-                rounded-2xl px-4 py-2.5 text-center shrink-0">
-                <span className="block text-[10px] text-emerald-400 uppercase font-semibold tracking-wide">Status</span>
-                <span className="text-emerald-300 font-bold text-sm">Em Dia</span>
-              </div>
             </div>
           </div>
         </div>
