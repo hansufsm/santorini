@@ -17,6 +17,9 @@ const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL!;
 // ─── Helper: chamar mutation Convex via HTTP ──────────────────────────────────
 
 async function convexMutation(path: string, args: Record<string, unknown>) {
+  if (!CONVEX_URL) {
+    throw new Error("NEXT_PUBLIC_CONVEX_URL não configurada. Defina a variável de ambiente na Vercel e faça um novo deploy.");
+  }
   const res = await fetch(`${CONVEX_URL}/api/mutation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
