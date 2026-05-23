@@ -9,6 +9,13 @@ const geist = Geist({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "AMRTS Santorini — Gestão Residencial",
   description: "Sistema de Gestão Financeira e Societária — Residencial Santorini",
+  icons: {
+    icon: [
+      { url: "/logo-amtrs-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo-amtrs-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/logo-amtrs-180.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

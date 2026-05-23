@@ -83,8 +83,12 @@ export default function AdminLayout({
 
       {/* Sidebar desktop */}
       <aside className="hidden md:flex flex-col w-56 border-r p-4" style={{ backgroundColor: "var(--bg-drawer)", borderColor: "var(--border-main)" }}>
-        <div className="flex items-center gap-2 mb-8 px-1">
-          <span className="text-xl">🏖️</span>
+        <div className="flex items-center gap-3 mb-8 px-1">
+          <img
+            src="/logo-amtrs-48.png"
+            alt="Logo AMRTS Santorini"
+            className="h-9 w-9 rounded-xl object-cover ring-1 ring-emerald-300/30 shadow-sm"
+          />
           <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>Santorini Admin</span>
         </div>
 
@@ -132,7 +136,14 @@ export default function AdminLayout({
         {/* Topbar mobile */}
         <header className="md:hidden border-b px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--bg-nav)", borderColor: "var(--border-main)" }}>
           <div className="flex items-center gap-3">
-            <span className="font-bold text-sm" style={{ color: "var(--text-primary)" }}>🏖️ Santorini Admin</span>
+            <span className="flex items-center gap-2 font-bold text-sm" style={{ color: "var(--text-primary)" }}>
+              <img
+                src="/logo-amtrs-32.png"
+                alt="Logo AMRTS Santorini"
+                className="h-7 w-7 rounded-lg object-cover ring-1 ring-emerald-300/30"
+              />
+              Santorini Admin
+            </span>
             {/* Link para página inicial no mobile */}
             <Link href="/" className="text-xs text-emerald-200/50 hover:text-emerald-200 transition-colors">
               ← Início

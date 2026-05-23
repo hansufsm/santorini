@@ -119,8 +119,11 @@ export default function HomePage() {
         {/* Header */}
         <div className="p-4 flex items-center gap-3 border-b"
           style={{ borderColor: "var(--border-main)" }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0"
-            style={{ backgroundColor: "var(--bg-card)" }}>🏖️</div>
+          <img
+            src="/logo-amtrs-48.png"
+            alt="Logo AMRTS Santorini"
+            className="h-10 w-10 rounded-xl object-cover shrink-0 ring-1 ring-emerald-300/30 shadow-sm"
+          />
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm leading-none" style={{ color: "var(--text-primary)" }}>
               AMRTS <span style={{ color: "var(--text-accent)" }} className="italic">Santorini</span>
@@ -201,10 +204,17 @@ export default function HomePage() {
               title="Menu" aria-label="Abrir menu">
               <Icon d={IC.menu} className="h-5 w-5" />
             </button>
-            <span className="text-base md:text-lg font-bold tracking-tight"
+            <span className="flex items-center gap-2 text-base md:text-lg font-bold tracking-tight"
               style={{ color: "var(--text-primary)" }}>
-              AMRTS{" "}
-              <span style={{ color: "var(--text-accent)" }} className="italic">Santorini</span>
+              <img
+                src="/logo-amtrs-32.png"
+                alt="Logo AMRTS Santorini"
+                className="h-7 w-7 rounded-lg object-cover ring-1 ring-emerald-300/30"
+              />
+              <span>
+                AMRTS{" "}
+                <span style={{ color: "var(--text-accent)" }} className="italic">Santorini</span>
+              </span>
             </span>
           </div>
 

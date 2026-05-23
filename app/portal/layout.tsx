@@ -69,9 +69,13 @@ export default function PortalLayout({
       {/* Topo: nome do usuário + logout */}
       <header className="border-b px-4 sm:px-6 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--bg-nav)", borderColor: "var(--border-main)" }}>
         <div className="flex items-center gap-3 min-w-0">
-          {/* Emoji clicável leva à Página Inicial pública */}
-          <Link href="/" className="text-emerald-200/70 hover:text-white transition-colors flex-shrink-0 text-xl" title="Página Inicial">
-            🏖️
+          {/* Logo clicável leva à Página Inicial pública */}
+          <Link href="/" className="flex-shrink-0" title="Página Inicial">
+            <img
+              src="/logo-amtrs-48.png"
+              alt="Logo AMRTS Santorini"
+              className="h-10 w-10 rounded-xl object-cover ring-1 ring-emerald-300/30 shadow-sm hover:ring-emerald-200/60 transition"
+            />
           </Link>
           <div className="min-w-0">
             <p className="font-semibold text-sm truncate" style={{ color: "var(--text-primary)" }}>{session.name}</p>

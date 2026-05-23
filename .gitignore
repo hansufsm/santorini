@@ -3,6 +3,8 @@ extratos-infinite/
 
 # Imagens originais (usar versões WebP otimizadas em public/)
 public/*.png
+!public/logo-amtrs-*.png
+!public/logo-amtrs-icon.png
 .DS_Store
 Thumbs.db
 .vscode/
