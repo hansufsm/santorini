@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **AMRTS Santorini** is a residential condominium management dashboard for a Brazilian homeowners association. It has two frontends sharing one Convex serverless backend:
 
-- **`/nextjs/`** — Modern full-featured portal (Next.js 16 App Router + TypeScript + Tailwind CSS 4). This is the primary frontend.
+- **Root (`/app/`, `/lib/`, `/components/`)** — Modern full-featured portal (Next.js 16 App Router + TypeScript + Tailwind CSS 4). This is the primary frontend.
 - **`/index.html` + `/script.js`** — Legacy SPA (pure HTML + Tailwind + Chart.js + PapaParse), deployed to GitHub Pages. Still maintained for backward compatibility.
 - **`/convex/`** — Shared serverless backend (Convex): schema, auth, and all CRUD functions.
 
@@ -19,7 +19,6 @@ UI text, code comments, and documentation are in **Portuguese (Brazilian)**.
 ### Next.js Frontend
 
 ```bash
-cd nextjs
 npm install
 npm run dev       # Dev server at http://localhost:3000
 npm run build     # Production build
@@ -34,10 +33,10 @@ NEXT_PUBLIC_CONVEX_URL=https://tough-kangaroo-90.convex.cloud
 
 ```bash
 # Run locally (hot-reload, connects to existing project)
-npx convex dev --configure=existing --team hans-rogerio-zimmermann --project santorini
+npm run convex:dev
 
 # Deploy backend to production
-npx convex deploy --typecheck disable
+npm run convex:deploy
 ```
 
 > Deploy the backend whenever any file under `convex/` changes. The GitHub Pages frontend is auto-deployed on push to `main` via GitHub Actions.
@@ -62,7 +61,7 @@ The backend is entirely serverless (Convex cloud). All functions run in `convex/
 
 The Convex-generated type file (`_generated/`) is **not committed**. It is produced at runtime by `npx convex dev` or `npx convex deploy`.
 
-### Next.js Frontend (`/nextjs/`)
+### Next.js Frontend (raiz do repositório)
 
 **⚠️ This project uses Next.js 16, which has breaking changes from prior versions.** Before writing Next.js code, check `node_modules/next/dist/docs/` for current APIs and conventions.
 

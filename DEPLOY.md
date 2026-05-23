@@ -16,7 +16,7 @@
 2. Conecte sua conta GitHub e selecione este repositório (`zionsti/santorini`)
 3. Na tela de configuração, ajuste:
    - **Framework Preset:** Next.js
-   - **Root Directory:** `nextjs` ← **OBRIGATÓRIO**
+   - **Root Directory:** `/` (raiz do repositório — padrão, não alterar)
    - **Build Command:** `npm run build` (padrão)
    - **Output Directory:** `.next` (padrão)
 
