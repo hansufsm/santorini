@@ -1,396 +1,92 @@
-# 🔌 API Backend — Referência Convex
+# API Backend Convex
 
-Todas as funções são chamadas via HTTP POST para `https://tough-kangaroo-90.convex.cloud/api/`.
+O backend do Santorini usa funções Convex para queries e mutations. A interface web moderna chama essas funções pelo cliente Convex, enquanto a versão estática pode usar a API HTTP pública do Convex quando necessário.
 
+## Convenção HTTP da versão estática
+
+```http
+POST /api/query
+POST /api/mutation
 ```
-POST /api/query    → leitura (sem efeitos colaterais)
-POST /api/mutation → escrita (insere, atualiza, deleta)
-```
 
-**Corpo da requisição:**
+O corpo de requisição segue o formato conceitual abaixo.
+
 ```json
-{ "path": "modulo:nomeDaFuncao", "args": { ... } }
-```
-
-**Resposta (sempre HTTP 200):**
-```json
-{ "status": "success", "value": <resultado> }
-{ "status": "error",   "errorMessage": "..." }
-```
-
-> ⚠️ O Convex retorna HTTP 200 mesmo para erros de aplicação. Sempre verificar `data.status`.
-
----
-
-## transactions.ts
-
-### `transactions:importTransactions` `mutation`
-
-Importa lote de transações com upsert por chave de deduplicação.
-
-```typescript
-args: {
-  transactions: Array<{
-    date: string           // "yyyy-mm-dd"
-    time: string           // "hh:mm:ss"
-    type: string           // ex: "Pix"
-    name: string           // nome do pagador/recebedor
-    detail: string         // "Recebido" | "Enviado"
-    value: number          // positivo = crédito, negativo = débito
-    originalValue: string  // string original do CSV
-    transactionKey: string // chave de dedup: "date|time|value|detail"
-  }>
-}
-returns: { inserted: number, updated: number, skipped: number, total: number }
-```
-
-**Deduplicação:** `transactionKey` igual + nome/tipo diferente → `patch`. Igual → `skip`. Novo → `insert`.
-
----
-
-### `transactions:clearAllTransactions` `mutation`
-
-Apaga TODAS as transações. Use antes de reimportar CSV com dados corrigidos.
-
-```typescript
-args: {}
-returns: { deleted: number }
-```
-
----
-
-### `transactions:getAllTransactions` `query`
-
-Retorna todas as transações ordenadas por data decrescente.
-
-```typescript
-args: {}
-returns: Transaction[]
-```
-
----
-
-### `transactions:getAvailableMonths` `query`
-
-Lista os meses com transações registradas.
-
-```typescript
-args: {}
-returns: string[]  // ["2026-05", "2026-04", ...] — decrescente
-```
-
----
-
-### `transactions:getSummary` `query`
-
-Resumo financeiro consolidado (todos os períodos).
-
-```typescript
-args: {}
-returns: {
-  totalReceived: number
-  totalSent: number
-  netBalance: number
-  contributorsCount: number
-  receivedCount: number
-  sentCount: number
-  totalTransactions: number
+{
+  "path": "modulo:nomeDaFuncao",
+  "args": {}
 }
 ```
 
----
-
-### `transactions:getTopContributors` `query`
-
-Ranking de maiores contribuintes por valor acumulado.
-
-```typescript
-args: { limit?: number }  // padrão: 5
-returns: Array<{ name: string, total: number }>
-```
-
----
-
-### `transactions:getMonthlyFlow` `query`
-
-Fluxo mensal de entradas e saídas.
-
-```typescript
-args: { months?: number }  // se definido: últimos N meses
-returns: Array<{ month: string, received: number, sent: number }>
-```
-
----
-
-### `transactions:getAssociateHistory` `query`
-
-Histórico de contribuições de um associado (busca por substring do nome).
-
-```typescript
-args: { search: string }
-returns: {
-  name: string
-  total: number
-  monthsActive: number
-  lastDate: string
-  transactions: Transaction[]
-} | null
-```
-
----
-
-### `transactions:getDefaulters` `query`
-
-Associados ativos sem pagamento no mês especificado.
-
-```typescript
-args: { monthKey: string }  // "yyyy-mm"
-returns: Array<{
-  id: Id<"associates">
-  name: string
-  unit?: string
-  status: "ativo" | "inativo" | "inadimplente"
-  lastPaymentDate: string | null
-}>
-```
-
----
-
-## associates.ts
-
-### `associates:importAssociates` `mutation`
-
-Import em lote com upsert — carrega toda a tabela uma vez e usa Maps em memória (O(n), sem N+1).
-
-> ⚠️ Esta versão corrigida ainda não está em produção — requer `npx convex deploy`.  
-> O frontend usa `createAssociate`/`updateAssociate` individualmente como alternativa compatível.
-
-```typescript
-args: {
-  associates: Array<{
-    name: string
-    unit?: string
-    cpf?: string        // somente dígitos
-    cpfPrefix?: string  // 5 primeiros dígitos
-    email?: string
-    phone?: string
-    joinedAt?: string   // "yyyy-mm-dd"
-    leftAt?: string     // "yyyy-mm-dd"
-    notes?: string
-    status: "ativo" | "inativo" | "inadimplente"
-  }>
-}
-returns: { inserted: number, updated: number, total: number }
-```
-
----
-
-### `associates:clearAllAssociates` `mutation` ⚠️ requer deploy
-
-Apaga TODOS os associados. Use antes de reimportar CSV com dados corrigidos.
-
-```typescript
-args: {}
-returns: { deleted: number }
-```
-
----
-
-### `associates:createAssociate` `mutation`
-
-Cria um único associado. Disponível em todas as versões de produção.
-
-```typescript
-args: {
-  name: string
-  unit: string          // obrigatório; use '' se não houver unidade
-  cpf?: string
-  cpfPrefix?: string
-  phone?: string
-  email?: string
-  status: "ativo" | "inativo" | "inadimplente"
-  joinedAt?: string
-  notes?: string
-}
-returns: Id<"associates">
-```
-
----
-
-### `associates:updateAssociate` `mutation`
-
-Atualiza campos de um associado existente (todos opcionais).
-
-```typescript
-args: {
-  id: Id<"associates">  // obrigatório
-  name?: string
-  unit?: string
-  cpf?: string
-  cpfPrefix?: string
-  phone?: string
-  email?: string
-  status?: "ativo" | "inativo" | "inadimplente"
-  joinedAt?: string
-  notes?: string
-}
-returns: void
-```
-
----
-
-### `associates:updateAssociateStatus` `mutation`
-
-Atalho para atualizar apenas o status.
-
-```typescript
-args: {
-  id: Id<"associates">
-  status: "ativo" | "inativo" | "inadimplente"
-}
-returns: void
-```
-
----
-
-### `associates:getAllAssociates` `query`
-
-Retorna todos os associados ordenados por nome (pt-BR).
-
-> ⚠️ Versão em produção ordena por `unit` (quebra se unit for undefined). Deploy necessário para a versão corrigida.  
-> O frontend usa `try/catch` como fallback se esta query falhar.
-
-```typescript
-args: {}
-returns: Associate[]
-```
-
----
-
-### `associates:getAssociatesByStatus` `query`
-
-Filtra por status usando índice `by_status`.
-
-```typescript
-args: { status: "ativo" | "inativo" | "inadimplente" }
-returns: Associate[]
-```
-
----
-
-### `associates:searchAssociate` `query`
-
-Busca por substring de nome, prefixo de CPF (5 dígitos) ou unidade.
-
-```typescript
-args: { search: string }
-returns: Associate[]
-```
-
----
-
-### `associates:getAssociatesSummary` `query`
-
-Contagem de associados por status.
-
-```typescript
-args: {}
-returns: { total: number, ativos: number, inativos: number, inadimplentes: number }
-```
-
----
-
-## users.ts
-
-### `users:getUserByEmail` `query`
-
-Busca usuário por e-mail (usado na autenticação).
-
-```typescript
-args: { email: string }
-returns: User | null
-```
-
----
-
-### `users:createUser` `mutation`
-
-Cria novo usuário admin.
-
-```typescript
-args: {
-  name: string
-  email: string
-  passwordHash: string  // SHA-256 hex (calculado no browser)
-  role: "sysadmin" | "admin" | "viewer"
-}
-returns: Id<"users">
-```
-
----
-
-### `users:getAllUsers` `query`
-
-Lista todos os usuários (verificação de permissão feita no frontend).
-
-```typescript
-args: {}
-returns: User[]
-```
-
----
-
-### `users:updateUser` `mutation`
-
-Atualiza dados de um usuário.
-
-```typescript
-args: {
-  id: Id<"users">
-  name?: string
-  email?: string
-  passwordHash?: string
-  role?: "sysadmin" | "admin" | "viewer"
-  active?: boolean
-}
-returns: void
-```
-
----
-
-### `users:deleteUser` `mutation`
-
-Remove um usuário permanentemente.
-
-```typescript
-args: { id: Id<"users"> }
-returns: void
-```
-
----
-
-## Demais módulos (padrão CRUD)
-
-Os módulos abaixo seguem o padrão `create*`, `update*`, `delete*`, `getAll*`, `get*ById`.  
-Consulte o código-fonte em `convex/` para assinaturas detalhadas.
-
-| Módulo | Arquivo | Entidade |
-|--------|---------|---------|
-| Comunicados | `announcements.ts` | `announcements` |
-| Documentos | `documents.ts` | `documents` |
-| Assembleias | `assemblies.ts` | `assemblies` + `votes` |
-| Fornecedores | `suppliers.ts` | `suppliers` |
-| Patrimônio | `assets.ts` | `assets` |
-| Reservas | `reservations.ts` | `reservations` |
-| Manutenção | `maintenances.ts` | `maintenances` |
-| Visitantes | `visitors.ts` | `visitors` |
-
----
-
-## Legenda de estado das funções
-
-| Ícone | Significado |
-|-------|------------|
-| (sem ícone) | Em produção e funcionando |
-| ⚠️ requer deploy | Código local pronto; `npx convex deploy` pendente |
-| ❌ descontinuada | Não usar — manter por compatibilidade |
+O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-sucedida; por isso, clientes devem verificar o status lógico do retorno, e não apenas o código HTTP.
+
+## Módulos atuais
+
+| Módulo | Função principal |
+|---|---|
+| `transactions.ts` | Importar transações, consultar resumo, fluxo mensal, contribuintes e inadimplência. |
+| `associates.ts` | Criar, atualizar, importar e consultar associados. |
+| `auth.ts` | Login por senha ou CPF, criação e restauração de sessão. |
+| `users.ts` | Gestão de usuários e papéis. |
+| `announcements.ts` | Comunicados. |
+| `documents.ts` | Documentos institucionais. |
+| `assemblies.ts` | Assembleias e registros correlatos. |
+| `reservations.ts` | Reservas. |
+| `maintenances.ts` | Manutenção. |
+| `assets.ts` | Patrimônio. |
+| `suppliers.ts` | Fornecedores e prestadores. |
+| `visitors.ts` | Visitantes. |
+
+## Funções financeiras essenciais
+
+| Função | Tipo | Uso |
+|---|---|---|
+| `transactions:importTransactions` | mutation | Importa CSV financeiro com deduplicação por chave de transação. |
+| `transactions:clearAllTransactions` | mutation | Remove transações em lote, com uso restrito. |
+| `transactions:getAllTransactions` | query | Lista transações. |
+| `transactions:getAvailableMonths` | query | Retorna meses disponíveis. |
+| `transactions:getSummary` | query | Consolida entradas, saídas e saldo. |
+| `transactions:getTopContributors` | query | Ranking de contribuintes. |
+| `transactions:getMonthlyFlow` | query | Fluxo mensal. |
+| `transactions:getAssociateHistory` | query | Histórico de um associado. |
+| `transactions:getDefaulters` | query | Inadimplentes por mês. |
+
+## Funções de associados e usuários
+
+| Função | Tipo | Uso |
+|---|---|---|
+| `associates:importAssociates` | mutation | Importação em lote de associados. |
+| `associates:createAssociate` | mutation | Criação individual. |
+| `associates:updateAssociate` | mutation | Atualização individual. |
+| `associates:clearAllAssociates` | mutation | Limpeza em lote com uso restrito. |
+| `auth:loginWithPassword` | mutation | Login administrativo. |
+| `auth:loginWithCpf` | mutation | Login simplificado de associado quando aplicável. |
+| `auth:getSession` | query | Restaura sessão pelo token. |
+| `users:*` | query/mutation | Gestão de usuários e papéis. |
+
+## API planejada para Feedback Comunitário
+
+| Função | Tipo | Responsabilidade |
+|---|---|---|
+| `feedbacks:createFeedback` | mutation | Gravar feedback enviado por usuário autenticado ou visitante permitido. |
+| `feedbacks:listFeedbacks` | query | Listar registros para painel administrativo, filtrando por associação, categoria e status. |
+| `feedbacks:getFeedback` | query | Obter detalhes de um feedback específico. |
+| `feedbacks:updateFeedbackStatus` | mutation | Atualizar status e metadados de triagem. |
+
+O contrato inicial de criação deve aceitar categoria e mensagem do usuário, combinadas com metadados de contexto enviados pelo frontend. O backend deve validar tamanho de mensagem, categoria permitida e associação de destino antes de inserir o registro.
+
+## Cuidados operacionais
+
+| Cuidado | Motivo |
+|---|---|
+| Validar `data.status` em chamadas HTTP | Erros de aplicação podem vir em HTTP 200. |
+| Evitar mutations destrutivas sem confirmação | Dados financeiros e cadastrais exigem rastreabilidade. |
+| Usar soft delete em registros sensíveis | Preserva auditoria e reduz risco operacional. |
+| Filtrar por `associationId` em novos módulos | Prepara o produto para SaaS multiassociação. |
+| Documentar novas funções | Evita divergência entre frontend, backend e suporte. |
+
+## Referências internas
+
+[1]: ../convex "Diretório de funções Convex"
+[2]: schema-banco.md "Schema do banco"
+[3]: feedback-comunitario.md "Feedback Comunitário"

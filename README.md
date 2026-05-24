@@ -1,6 +1,6 @@
 # AMRTS Santorini — Dashboard de Gestão Residencial
 
-Dashboard interativo para gestão financeira e societária do Residencial Santorini.  
+Dashboard interativo para gestão financeira e societária do Residencial Santorini.
 **v3.0** — Dados persistidos no **Convex** · Hospedado no **GitHub Pages**.
 
 ---
@@ -51,6 +51,19 @@ santorini/
 ```
 
 ---
+
+
+## Documentação do projeto
+
+A documentação oficial está organizada na pasta [`docs/`](docs/index.md). Ela inclui visão geral, registro de decisões, modelo de negócio SaaS, roadmap, identidade visual, portal do associado, Feedback Comunitário, arquitetura técnica, backend Convex, schema do banco, operações e troubleshooting.
+
+| Documento | Finalidade |
+|---|---|
+| [`docs/index.md`](docs/index.md) | Índice principal e convenções de manutenção documental. |
+| [`docs/feedback-comunitario.md`](docs/feedback-comunitario.md) | Especificação do módulo global de feedback em seis etapas. |
+| [`docs/modelo-negocio.md`](docs/modelo-negocio.md) | Registro do modelo SaaS por assinatura mensal. |
+| [`docs/registro-decisoes.md`](docs/registro-decisoes.md) | Memória de decisões de produto, UX e negócio. |
+| [`docs/identidade-visual.md`](docs/identidade-visual.md) | Uso da logo AMRTS, favicons e padrões visuais. |
 
 ## ✅ Módulos implementados
 
@@ -111,7 +124,7 @@ João Inativo,987.654.321-00,joao@email.com,(55) 88888-0000,01/01/2023,01/06/202
 
 ## 🚀 Deploy do Convex (backend)
 
-> **Necessário sempre que arquivos em `convex/` forem alterados.**  
+> **Necessário sempre que arquivos em `convex/` forem alterados.**
 > O GitHub Pages hospeda apenas o frontend; o backend roda no Convex.
 
 ```bash
@@ -120,7 +133,7 @@ npx convex deploy --typecheck disable
 # Informe o deploy key quando solicitado
 ```
 
-**Deploy key:** painel Convex → Settings → Deploy Keys  
+**Deploy key:** painel Convex → Settings → Deploy Keys
 Após usar, **rotacione a chave** para manter a segurança.
 
 ---
@@ -145,7 +158,7 @@ npx convex dev --configure=existing --team hans-rogerio-zimmermann --project san
 
 ## 📦 Deploy do frontend
 
-A cada `git push` na branch `main`, o GitHub Actions publica automaticamente.  
+A cada `git push` na branch `main`, o GitHub Actions publica automaticamente.
 O site atualiza em ~1 minuto.
 
 ```bash

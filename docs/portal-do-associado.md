@@ -1,178 +1,72 @@
-# Portal do Associado — Guia Completo
+# Portal do Associado
 
-> **Versão 2.1** · Implementado em Mai/2026
+O Portal do Associado é a área dedicada para que associados e moradores acessem informações relevantes sem depender do painel administrativo. A decisão aprovada é evoluir o portal como **página dedicada**, e não como modal principal, permitindo navegação, conteúdo recorrente e ampliação gradual de módulos.
 
-O Portal do Associado é a área de autoatendimento do sistema AMRTS Santorini. Permite que cada morador acesse suas informações financeiras, cadastrais e operacionais de forma segura e autônoma, sem depender da administração para consultas de rotina.
+## Princípio de produto
 
----
+> O associado deve encontrar uma área que tenha coisas para ele consumir: contribuições, comunicados, reservas, suporte, mensalidade e informações da própria unidade.
 
-## 1. Como Acessar
+A experiência deve ser simples, responsiva e contextual. O usuário autenticado não deve ser obrigado a refazer login ao retornar para a página inicial ou navegar entre áreas do sistema, desde que sua sessão ainda esteja válida.
 
-1. Acesse `https://zionsti.github.io/santorini`
-2. Clique no botão **"Área do Associado"** (canto superior direito)
-3. Digite seu **CPF completo** (11 dígitos, com ou sem pontuação)
-4. Clique em **"Acessar minha área"**
+## Rotas atuais
 
-> ⚠️ O CPF precisa estar cadastrado pelo administrador para que o acesso funcione.  
-> Se não conseguir entrar, contate a administração para verificar o cadastro.
+| Rota | Finalidade |
+|---|---|
+| `/portal` | Entrada do portal e redirecionamento contextual. |
+| `/portal/inicio` | Página inicial do associado. |
+| `/portal/extrato` | Histórico financeiro e contribuições do associado. |
+| `/portal/mensalidade` | Informações de mensalidade/contribuição. |
+| `/portal/comunicados` | Comunicados direcionados à comunidade. |
+| `/portal/reservas` | Consulta ou solicitação de reservas, conforme evolução. |
+| `/portal/suporte` | Canal de suporte ou orientação. |
+| `/portal/cadastro` | Cadastro ou atualização de dados, conforme permissões. |
 
-### Sessão e Logout
+## Perfis e permissões
 
-- A sessão é mantida enquanto a aba do navegador estiver aberta (sessionStorage)
-- Ao fechar a aba ou o navegador, a sessão é encerrada automaticamente
-- Para sair manualmente, clique no botão **"Sair"** no canto superior direito do portal
+| Perfil | Acesso esperado | Observação |
+|---|---|---|
+| Associado | Consulta dados financeiros próprios e informações da unidade. | Deve estar vinculado a `associateId`. |
+| Morador | Acessa comunicados, reservas e suporte, sem histórico financeiro do titular quando não autorizado. | Pode estar vinculado a `parentAssociateId`. |
+| Diretoria | Acessa painel administrativo e pode visualizar dados gerenciais. | Não deve depender do portal para gestão. |
+| Sysadmin | Acesso técnico/administrativo amplo. | Papel restrito e controlado. |
 
----
+## Experiência planejada
 
-## 2. Seções do Portal
+A página dedicada deve priorizar uma visão inicial clara, com cartões de resumo e ações frequentes. O portal deve comunicar valor ao associado mesmo quando ele não estiver buscando extrato financeiro, reforçando a percepção de transparência e utilidade.
 
-### 🏠 Início
+| Seção | Conteúdo recomendado |
+|---|---|
+| Saudação contextual | Nome do usuário, unidade e status básico. |
+| Resumo financeiro | Última contribuição, total pago e situação quando aplicável. |
+| Comunicados recentes | Avisos ativos e informações da diretoria. |
+| Ações rápidas | Reservas, suporte, mensalidade e atualização cadastral. |
+| Feedback Comunitário | Acesso pelo botão global, com contexto da rota. |
 
-Visão geral da sua situação como associado:
+## Substituição do modal como solução principal
 
-| Card | Descrição |
-|------|-----------|
-| **Total Contribuído** | Soma de todas as suas contribuições registradas no sistema |
-| **Meses Ativos** | Quantidade de meses diferentes em que você tem pagamentos registrados |
-| **Última Contribuição** | Data do seu pagamento mais recente |
-| **Próxima Estimada** | Estimativa do próximo mês de contribuição (baseada na última) |
+O uso de modal pode continuar útil para ações rápidas, mas não deve ser a arquitetura principal do portal. Uma página dedicada é mais adequada para crescimento do produto, acessibilidade, URLs compartilháveis, analytics, suporte e navegação mobile.
 
-Abaixo dos cards, um **gráfico de linha** mostra o valor de suas contribuições nos últimos 6 meses.
+| Critério | Modal | Página dedicada |
+|---|---:|---:|
+| Conteúdo extenso | Limitado | Adequado |
+| Navegação direta por URL | Fraca | Forte |
+| Escalabilidade de módulos | Baixa | Alta |
+| Acessibilidade | Exige mais cuidado | Mais previsível |
+| Experiência mobile | Pode ficar apertada | Melhor controle de layout |
 
----
+## Diretrizes de autenticação
 
-### 📋 Extrato
+A sessão do usuário é armazenada em cookie pelo módulo `lib/auth.tsx`, com validade de oito horas. A experiência esperada é restaurar a sessão ao montar a aplicação e evitar pedidos redundantes de login quando houver cookie válido.
 
-Histórico completo de todos os seus pagamentos registrados.
+| Situação | Comportamento esperado |
+|---|---|
+| Usuário autenticado acessa a página inicial | Deve receber contexto ou redirecionamento adequado, sem novo login obrigatório. |
+| Sessão expirada | Deve ser direcionado ao login com mensagem clara. |
+| Logout | Cookie deve ser limpo e estado global atualizado. |
+| Troca de sessão | Interface deve reagir ao evento de mudança de sessão. |
 
-**Como usar:**
-- Use o **seletor de mês** (canto superior direito) para navegar entre períodos
-- Os botões **← Anterior** e **Próximo →** alternam entre meses cronologicamente
-- Cada linha mostra: data, hora, tipo de transação e valor
-- A última linha de cada mês exibe o **subtotal do período**
+## Referências internas
 
-> O extrato mostra apenas os pagamentos identificados com seu nome. Caso algum pagamento esteja faltando, pode ser um problema de identificação — contate a administração.
-
----
-
-### 💳 Mensalidade
-
-Mostra o status do pagamento do **mês atual**:
-
-- ✅ **Em dia** — Exibe a data e o valor do pagamento registrado neste mês
-- ⚠️ **Em aberto** — Nenhum pagamento registrado para o mês atual
-
-**Dados de pagamento (PIX)**  
-Esta seção exibirá a chave PIX e demais informações para efetuar o pagamento quando configuradas pela administração.
-
----
-
-### 👤 Meu Cadastro
-
-Seus dados cadastrais divididos em dois blocos:
-
-**Dados fixos** (somente leitura — alterados apenas pelo admin):
-- Nome completo
-- Unidade residencial
-- Status (Ativo / Inadimplente / Inativo)
-- Data de adesão
-
-**Dados de contato** (editáveis por você):
-- E-mail
-- Telefone
-
-Para atualizar seu contato: edite os campos e clique em **"Salvar alterações"**. A mudança é aplicada imediatamente no banco de dados.
-
----
-
-### 📅 Reservas
-
-**Solicitar nova reserva:**
-
-1. Selecione a **área** desejada (Salão de Festas, Piscina, Churrasqueira, Quadra, Academia, Outro)
-2. Escolha a **data**
-3. Defina o **horário de início** e **término**
-4. Adicione **observações** se necessário (número de pessoas, equipamentos, etc.)
-5. Clique em **"Enviar solicitação"**
-
-> ℹ️ A reserva é criada com status **Pendente**. A administração confirma ou recusa. Você verá o status atualizado na lista abaixo do formulário.
-
-**Minhas reservas:**  
-Lista de todas as reservas associadas à sua unidade, com status colorido:
-- 🟡 **Pendente** — aguardando confirmação
-- 🟢 **Confirmada** — aprovada pela administração
-- 🔴 **Cancelada** — recusada ou cancelada
-
----
-
-### 📢 Comunicados
-
-Lista de todos os comunicados **ativos** publicados pela administração, ordenados do mais recente para o mais antigo.
-
-Tipos de comunicado:
-- 🔴 **Urgente** — situação que exige atenção imediata
-- 🔵 **Info** — informação geral
-- 🟡 **Manutenção** — obras ou manutenções programadas
-- 🟢 **Evento** — eventos do residencial
-
----
-
-### 🔧 Suporte
-
-Abra um chamado de manutenção ou solicitação para a administração:
-
-| Campo | Descrição |
-|-------|-----------|
-| **Título** *(obrigatório)* | Descrição curta do problema (mínimo 5 caracteres) |
-| **Descrição** | Detalhes adicionais sobre o problema |
-| **Local** | Onde está o problema (ex: "Garagem Bloco B", "Corredor 3") |
-| **Prioridade** | Baixa / Média / Alta / Urgente |
-
-Ao enviar, o chamado aparece no painel de **Manutenção** do admin com:
-- Seu nome e unidade registrados automaticamente nas notas
-- Status inicial: **Aberto**
-
----
-
-## 3. Segurança e Privacidade
-
-- O CPF é usado **apenas para identificação** durante o login e não fica armazenado na sessão
-- A sessão armazena: nome, unidade, e-mail, telefone, status e data de adesão
-- Você só tem acesso às **suas próprias** informações — não é possível ver dados de outros associados
-- A autenticação não expõe o CPF na resposta da API — apenas campos não sensíveis são retornados
-
----
-
-## 4. Requisitos para Administradores
-
-Para que um associado consiga usar o portal, seu cadastro precisa ter:
-
-| Campo | Obrigatório | Notas |
-|-------|-------------|-------|
-| `nome` | ✅ | Exatamente como aparece nos extratos CSV |
-| `cpf` | ✅ | 11 dígitos, com ou sem formatação |
-| `unidade` | ✅ | Número/código da unidade |
-| `status` | ✅ | `ativo`, `inativo` ou `inadimplente` |
-| `email` | ❌ | Pode ser adicionado/editado pelo próprio associado |
-| `telefone` | ❌ | Pode ser adicionado/editado pelo próprio associado |
-| `joinedAt` | ❌ | Data de adesão (ISO: YYYY-MM-DD) |
-
-> O nome cadastrado deve corresponder **exatamente** ao nome presente nos extratos do InfinitePay para que as transações sejam vinculadas corretamente ao associado.
-
----
-
-## 5. Funções Convex do Portal
-
-| Função | Tipo | Descrição |
-|--------|------|-----------|
-| `associates:authenticateAssociate` | query | Autentica pelo CPF completo; retorna campos seguros |
-| `associates:updateAssociateContact` | mutation | Atualiza e-mail e telefone pelo `_id` da sessão |
-| `transactions:getAllTransactions` | query | Todas as transações (filtradas no frontend por nome) |
-| `reservations:getReservationsByUnit` | query | Reservas de uma unidade específica |
-| `reservations:createReservation` | mutation | Cria reserva com status `pendente` |
-| `announcements:getActiveAnnouncements` | query | Comunicados com `active: true` |
-| `maintenances:createMaintenance` | mutation | Cria chamado com status `aberto` |
-
----
-
-*AMRTS Santorini · Portal do Associado v2.1 · Mai/2026*
+[1]: ../lib/auth.tsx "Módulo de autenticação do frontend"
+[2]: roadmap.md "Roadmap do produto"
+[3]: feedback-comunitario.md "Feedback Comunitário"

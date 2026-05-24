@@ -1,280 +1,82 @@
-# 🗄️ Schema do Banco de Dados — Convex
-
-Projeto: `tough-kangaroo-90`  
-Arquivo: `convex/schema.ts`
-
----
-
-## Tabela: `transactions`
-
-Histórico financeiro importado do InfinitePay (CSV).
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `_id` | `Id<"transactions">` | auto | ID único gerado pelo Convex |
-| `_creationTime` | `number` | auto | Timestamp de criação (ms) |
-| `date` | `string` | ✅ | Data no formato `yyyy-mm-dd` |
-| `time` | `string` | ✅ | Hora no formato `hh:mm:ss` |
-| `type` | `string` | ✅ | Tipo da transação (ex: "Pix") |
-| `name` | `string` | ✅ | Nome do pagador/recebedor |
-| `detail` | `string` | ✅ | "Recebido" ou "Enviado" |
-| `value` | `number` | ✅ | Valor em reais (positivo = crédito, negativo = débito) |
-| `originalValue` | `string` | ✅ | String original do CSV |
-| `transactionKey` | `string` | ✅ | Chave de deduplicação: `date|time|value|detail` |
-| `importedAt` | `number` | ✅ | Timestamp do import (ms) |
-
-**Índices:**
-```
-by_date          → ["date"]
-by_key           → ["transactionKey"]
-by_detail        → ["detail"]
-by_date_detail   → ["date", "detail"]
-```
-
----
-
-## Tabela: `associates`
-
-Cadastro de associados do residencial.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `_id` | `Id<"associates">` | auto | ID único |
-| `name` | `string` | ✅ | Nome completo |
-| `unit` | `string?` | — | Número da unidade/apartamento |
-| `cpf` | `string?` | — | CPF completo (somente dígitos) — acesso admin |
-| `cpfPrefix` | `string?` | — | 5 primeiros dígitos do CPF — portal público |
-| `phone` | `string?` | — | Telefone |
-| `email` | `string?` | — | E-mail |
-| `status` | `"ativo" \| "inativo" \| "inadimplente"` | ✅ | Status atual |
-| `joinedAt` | `string?` | — | Data de adesão `yyyy-mm-dd` |
-| `leftAt` | `string?` | — | Data de desligamento `yyyy-mm-dd` |
-| `notes` | `string?` | — | Observações livres |
-| `createdAt` | `number` | ✅ | Timestamp de criação (ms) |
-| `updatedAt` | `number` | ✅ | Timestamp da última atualização (ms) |
-
-**Índices:**
-```
-by_status     → ["status"]
-by_unit       → ["unit"]
-by_name       → ["name"]
-by_cpf_prefix → ["cpfPrefix"]
-```
-
----
-
-## Tabela: `announcements`
-
-Comunicados e mural de avisos.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `title` | `string` | ✅ | Título do comunicado |
-| `content` | `string` | ✅ | Corpo do comunicado (texto livre) |
-| `type` | `"info" \| "urgente" \| "manutencao" \| "evento"` | ✅ | Categoria |
-| `active` | `boolean` | ✅ | Se `false`, não aparece para o público |
-| `createdAt` | `number` | ✅ | ms |
-| `updatedAt` | `number` | ✅ | ms |
-
-**Índices:** `by_active → ["active"]`, `by_type → ["type"]`
-
----
-
-## Tabela: `documents`
-
-Documentos e atas (links externos).
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `title` | `string` | ✅ | Nome do documento |
-| `description` | `string?` | — | Descrição breve |
-| `category` | `"ata" \| "regulamento" \| "contrato" \| "outro"` | ✅ | Categoria |
-| `fileUrl` | `string` | ✅ | URL externa (Google Drive, Dropbox, etc.) |
-| `date` | `string` | ✅ | Data do documento `yyyy-mm-dd` |
-| `createdAt` | `number` | ✅ | ms |
-
-**Índices:** `by_category → ["category"]`, `by_date → ["date"]`
-
----
-
-## Tabela: `assemblies`
-
-Assembleias ordinárias e extraordinárias.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `date` | `string` | ✅ | Data `yyyy-mm-dd` |
-| `type` | `"ordinaria" \| "extraordinaria"` | ✅ | Tipo |
-| `location` | `string?` | — | Local |
-| `agenda` | `string` | ✅ | Pauta |
-| `minutes` | `string?` | — | Ata resumida |
-| `attendees` | `number?` | — | Número de presentes |
-| `status` | `"agendada" \| "realizada" \| "cancelada"` | ✅ | Status |
-| `createdAt` | `number` | ✅ | ms |
-| `updatedAt` | `number` | ✅ | ms |
-
-**Índices:** `by_date → ["date"]`, `by_status → ["status"]`
-
----
-
-## Tabela: `votes`
-
-Votações aninhadas a uma assembleia.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `assemblyId` | `Id<"assemblies">` | ✅ | FK para assembleia |
-| `title` | `string` | ✅ | Título da votação |
-| `options` | `Array<{ label: string, count: number }>` | ✅ | Opções com contagem |
-| `result` | `string?` | — | Resultado final textual |
-| `createdAt` | `number` | ✅ | ms |
-
-**Índices:** `by_assembly → ["assemblyId"]`
-
----
-
-## Tabela: `users`
-
-Usuários do painel administrativo.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `name` | `string` | ✅ | Nome de exibição |
-| `email` | `string` | ✅ | E-mail (único — usado como login) |
-| `passwordHash` | `string` | ✅ | SHA-256 hex da senha |
-| `role` | `"sysadmin" \| "admin" \| "viewer"` | ✅ | Nível de acesso |
-| `active` | `boolean` | ✅ | Conta habilitada |
-| `createdAt` | `number` | ✅ | ms |
-| `updatedAt` | `number` | ✅ | ms |
-
-**Índices:** `by_email → ["email"]`, `by_role → ["role"]`
-
----
-
-## Tabela: `suppliers`
-
-Fornecedores e prestadores de serviço.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `name` | `string` | ✅ | Razão social ou nome |
-| `category` | `string` | ✅ | Ex: "Limpeza", "Segurança", "TI" |
-| `cnpj` | `string?` | — | CNPJ |
-| `contact` | `string?` | — | Nome do contato |
-| `phone` | `string?` | — | Telefone |
-| `email` | `string?` | — | E-mail |
-| `contractStart` | `string?` | — | Início do contrato `yyyy-mm-dd` |
-| `contractEnd` | `string?` | — | Fim do contrato `yyyy-mm-dd` |
-| `monthlyValue` | `number?` | — | Valor mensal em reais |
-| `status` | `"ativo" \| "inativo"` | ✅ | Status |
-| `notes` | `string?` | — | Observações |
-| `createdAt` | `number` | ✅ | ms |
-| `updatedAt` | `number` | ✅ | ms |
-
-**Índices:** `by_status`, `by_category`, `by_name`
-
----
-
-## Tabela: `assets`
-
-Patrimônio / inventário de bens.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `name` | `string` | ✅ | Nome do bem |
-| `category` | `string` | ✅ | Ex: "Equipamento", "Mobiliário" |
-| `description` | `string?` | — | Descrição |
-| `acquisitionDate` | `string?` | — | Data de aquisição `yyyy-mm-dd` |
-| `acquisitionValue` | `number?` | — | Valor de aquisição |
-| `location` | `string?` | — | Localização física |
-| `status` | `"ativo" \| "inativo" \| "manutencao"` | ✅ | Estado |
-| `notes` | `string?` | — | Observações |
-| `createdAt` | `number` | ✅ | ms |
-| `updatedAt` | `number` | ✅ | ms |
-
-**Índices:** `by_status`, `by_category`
-
----
-
-## Tabela: `reservations`
-
-Agendamento de áreas comuns.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `area` | `string` | ✅ | Ex: "Salão de Festas", "Churrasqueira" |
-| `unit` | `string` | ✅ | Unidade do morador |
-| `residentName` | `string` | ✅ | Nome do responsável |
-| `date` | `string` | ✅ | Data `yyyy-mm-dd` |
-| `startTime` | `string` | ✅ | Hora de início `hh:mm` |
-| `endTime` | `string` | ✅ | Hora de término `hh:mm` |
-| `status` | `"pendente" \| "confirmada" \| "cancelada"` | ✅ | Status |
-| `notes` | `string?` | — | Observações |
-| `createdAt` | `number` | ✅ | ms |
-| `updatedAt` | `number` | ✅ | ms |
-
-**Índices:** `by_date`, `by_area`, `by_status`, `by_unit`
-
----
-
-## Tabela: `maintenances`
-
-Chamados de manutenção.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `title` | `string` | ✅ | Título do chamado |
-| `description` | `string?` | — | Descrição detalhada |
-| `area` | `string?` | — | Área do residencial |
-| `priority` | `"baixa" \| "media" \| "alta" \| "urgente"` | ✅ | Prioridade |
-| `status` | `"aberto" \| "em_andamento" \| "concluido" \| "cancelado"` | ✅ | Status |
-| `scheduledDate` | `string?` | — | Data agendada `yyyy-mm-dd` |
-| `completedDate` | `string?` | — | Data de conclusão `yyyy-mm-dd` |
-| `cost` | `number?` | — | Custo em reais |
-| `notes` | `string?` | — | Observações |
-| `createdAt` | `number` | ✅ | ms |
-| `updatedAt` | `number` | ✅ | ms |
-
-**Índices:** `by_status`, `by_priority`
-
----
-
-## Tabela: `visitors`
-
-Registro de acesso de visitantes.
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `name` | `string` | ✅ | Nome do visitante |
-| `document` | `string?` | — | CPF, RG ou outro documento |
-| `unit` | `string` | ✅ | Unidade visitada |
-| `residentName` | `string?` | — | Nome do morador responsável |
-| `date` | `string` | ✅ | Data `yyyy-mm-dd` |
-| `entryTime` | `string` | ✅ | Hora de entrada `hh:mm` |
-| `exitTime` | `string?` | — | Hora de saída `hh:mm` (vazio = ainda presente) |
-| `purpose` | `string?` | — | Finalidade da visita |
-| `vehicle` | `string?` | — | Placa do veículo |
-| `status` | `"presente" \| "saiu"` | ✅ | Status atual |
-| `createdAt` | `number` | ✅ | ms |
-
-**Índices:** `by_date`, `by_unit`, `by_status`
-
----
-
-## Diagrama de relacionamentos
-
-```
-assemblies ──< votes         (1 assembleia → N votações)
-associates                   (independente — cruzado com transactions no frontend)
-transactions                 (independente)
-users                        (independente)
-announcements                (independente)
-documents                    (independente)
-suppliers                    (independente)
-assets                       (independente)
-reservations                 (independente)
-maintenances                 (independente)
-visitors                     (independente)
-```
-
-> Convex não tem JOINs nativos. Relacionamentos são resolvidos no handler TypeScript ou no frontend.
+# Schema do Banco de Dados
+
+O banco Convex do Santorini organiza dados financeiros, usuários, associados, comunicação, governança e módulos operacionais. A política predominante é preservar histórico e evitar exclusão definitiva de dados sensíveis por meio de `deletedAt` quando aplicável.
+
+## Tabelas atuais
+
+| Tabela | Finalidade | Índices principais |
+|---|---|---|
+| `transactions` | Transações financeiras importadas de CSV da InfinitePay. | `by_date`, `by_key`, `by_detail`, `by_date_detail`. |
+| `associates` | Titulares financeiros e dados cadastrais. | `by_status`, `by_unit`, `by_name`, `by_cpf_prefix`. |
+| `announcements` | Comunicados publicados para a comunidade. | `by_active`, `by_type`. |
+| `documents` | Documentos institucionais, atas, regulamentos e contratos. | `by_category`, `by_date`. |
+| `assemblies` | Assembleias ordinárias e extraordinárias. | `by_date`, `by_status`. |
+| `votes` | Votações vinculadas a assembleias. | `by_assembly`. |
+| `suppliers` | Fornecedores e prestadores. | `by_status`, `by_category`, `by_name`. |
+| `assets` | Patrimônio da associação. | `by_status`, `by_category`. |
+| `reservations` | Reservas de áreas comuns. | `by_date`, `by_area`, `by_status`, `by_unit`. |
+| `maintenances` | Chamados e registros de manutenção. | `by_status`, `by_priority`. |
+| `visitors` | Controle operacional de visitantes. | `by_date`, `by_unit`, `by_status`. |
+| `users` | Usuários e papéis do sistema. | `by_email`, `by_role`, `by_status`, `by_associate`, `by_parent_associate`. |
+| `sessions` | Sessões autenticadas. | `by_token`, `by_user`. |
+
+## Papéis de usuário
+
+| Papel | Escopo |
+|---|---|
+| `sysadmin` | Administração técnica e máxima permissão. Deve ser restrito. |
+| `diretoria` | Gestão administrativa da associação. |
+| `associado` | Titular financeiro com acesso ao próprio histórico. |
+| `morador` | Usuário vinculado à unidade, sem acesso financeiro completo quando não autorizado. |
+
+## Política de exclusão
+
+Registros operacionais e sensíveis devem usar soft delete quando houver risco de perda de histórico, auditoria ou rastreabilidade. Sessões são exceção: podem ser removidas de fato no logout ou expiração operacional.
+
+| Tabela | Usa `deletedAt` | Observação |
+|---|---:|---|
+| `transactions` | Sim | Protege histórico financeiro. |
+| `associates` | Sim | Evita perda cadastral. |
+| `announcements` | Sim | Permite desativação sem perder histórico. |
+| `reservations` | Sim | Mantém rastreabilidade de agenda. |
+| `maintenances` | Sim | Mantém histórico de chamados. |
+| `users` | Sim | Evita apagar usuários de auditoria. |
+| `sessions` | Não | Pode ser removida como controle de autenticação. |
+
+## Tabela planejada: `feedbacks`
+
+A tabela `feedbacks` é planejada para o MVP do Feedback Comunitário. Ela deve nascer preparada para multiassociação por meio de `associationId`, ainda que a implantação inicial use apenas a AMRTS.
+
+| Campo | Tipo conceitual | Obrigatório | Observação |
+|---|---|---:|---|
+| `associationId` | string/id | Sim | Identifica a associação cliente. |
+| `category` | string union | Sim | `sugestao`, `problema`, `elogio`, `duvida` ou `outro`. |
+| `message` | string | Sim | Texto enviado pelo usuário. |
+| `url` | string | Sim | URL completa de origem. |
+| `route` | string | Sim | Rota interna de origem. |
+| `userId` | id opcional | Não | Usuário autenticado, quando houver. |
+| `userRole` | string opcional | Não | Papel da sessão no momento do envio. |
+| `status` | string union | Sim | `novo`, `em_analise`, `resolvido` ou `arquivado`. |
+| `createdAt` | number | Sim | Timestamp de criação. |
+| `updatedAt` | number | Sim | Timestamp de atualização. |
+| `screenshotUrl` | string opcional | Não | Futuro, com consentimento explícito. |
+
+Índices recomendados para a etapa inicial são `by_association`, `by_status`, `by_category` e `by_created_at`. Para operação SaaS, a query administrativa deve combinar filtro por associação e status antes de retornar registros ao painel.
+
+## Evolução para multiassociação
+
+As tabelas atuais foram concebidas para a implantação AMRTS. A evolução SaaS deve introduzir isolamento lógico por associação em etapas controladas, evitando migração ampla antes de necessidade comercial validada.
+
+| Etapa | Ação |
+|---:|---|
+| 1 | Novas tabelas, como `feedbacks`, já devem incluir `associationId`. |
+| 2 | Configurar tabela futura de associações/clientes com nome, logo, plano e status. |
+| 3 | Migrar usuários para carregar associação corrente. |
+| 4 | Migrar tabelas financeiras e operacionais com scripts auditáveis. |
+| 5 | Revisar todas as queries para exigir filtro por associação. |
+
+## Referências internas
+
+[1]: ../convex/schema.ts "Schema Convex atual"
+[2]: feedback-comunitario.md "Feedback Comunitário"
+[3]: arquitetura.md "Arquitetura técnica"

@@ -1,157 +1,74 @@
-# 🗺️ Roadmap — AMRTS Santorini Dashboard
+# Roadmap do Produto Santorini
 
-## Fases concluídas
+O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencial e comunitário para a AMRTS, com preparação gradual para operação SaaS multiassociação. Ele consolida entregas já realizadas, decisões recentes e próximas etapas aprovadas.
 
-### ✅ Fase 1 — Fundação (2026-05-22)
-Infraestrutura base e módulo financeiro.
+## Visão por fases
 
-| # | Funcionalidade | Status |
-|---|---------------|--------|
-| 1.1 | Dashboard HTML responsivo (mobile-first) | ✅ |
-| 1.2 | Integração com Convex (HTTP API) | ✅ |
-| 1.3 | Importação de extrato CSV InfinitePay | ✅ |
-| 1.4 | Deduplicação por chave `data|hora|valor|tipo` | ✅ |
-| 1.5 | Gráfico de fluxo mensal (Chart.js) | ✅ |
-| 1.6 | Ranking de contribuintes (Contribuintes Assíduos) | ✅ |
-| 1.7 | Resumo financeiro (cards de stats) | ✅ |
-| 1.8 | Filtros por mês e tipo de transação | ✅ |
-| 1.9 | Cadastro de associados (CRUD) | ✅ |
-| 1.10 | Lista de inadimplentes por mês | ✅ |
-| 1.11 | Login admin com SHA-256 + sessionStorage | ✅ |
-| 1.12 | Tema claro/escuro e layout boxed/wide | ✅ |
+| Fase | Tema | Estado | Resultado |
+|---:|---|---:|---|
+| 1 | Base financeira e associados | Concluída | Importação de transações, associados e indicadores iniciais. |
+| 2 | Comunicação e governança | Concluída | Comunicados, documentos, assembleias e organização institucional. |
+| 3 | Operações, portal e privacidade | Em evolução | Portal, usuários, permissões, reservas, manutenção e módulos operacionais. |
+| 4 | UX, identidade e sessão | Implementada em parte | Logo AMRTS, favicon, toggles pill e melhoria de persistência de sessão. |
+| 5 | Feedback Comunitário | Aprovada para implementação | Canal global de escuta com painel administrativo. |
+| 6 | SaaS multiassociação | Planejada | Isolamento por `associationId`, parametrização de marca e planos. |
 
----
+## Entregas recentes registradas
 
-### ✅ Fase 2 — Comunicação e Governança (2026-05-22)
+| Entrega | Estado | Documentação relacionada |
+|---|---:|---|
+| Logo oficial AMRTS aplicada em menus e ícones | Implementada | [Identidade visual](identidade-visual.md). |
+| Favicon, Apple Touch Icon e variações de logo | Implementada | [Identidade visual](identidade-visual.md). |
+| Toggles Wide/Boxed em formato pill na topbar desktop | Implementada | [Identidade visual](identidade-visual.md). |
+| Persistência de sessão administrativa na versão estática | Implementada | [Portal do Associado](portal-do-associado.md). |
+| Login com redirecionamento automático quando já autenticado | Implementada | [Portal do Associado](portal-do-associado.md). |
+| Modelo comercial de assinatura mensal | Aprovado | [Modelo de negócio SaaS](modelo-negocio.md). |
+| Plano de Feedback Comunitário em seis etapas | Aprovado | [Feedback Comunitário](feedback-comunitario.md). |
 
-| # | Funcionalidade | Status |
-|---|---------------|--------|
-| 2.1 | Drawer lateral de navegação | ✅ |
-| 2.2 | Módulo: Comunicados e Mural (4 tipos) | ✅ |
-| 2.3 | Módulo: Documentos e Atas (links externos) | ✅ |
-| 2.4 | Módulo: Assembleias (ord./extraord.) | ✅ |
-| 2.5 | Votações aninhadas a assembleias | ✅ |
-| 2.6 | Menu hamburguer mobile | ✅ |
+## Próxima prioridade: Feedback Comunitário
 
----
+A próxima implementação recomendada é a Etapa 1 do Feedback Comunitário. O MVP deve ser pequeno, rastreável e global, com persistência no Convex e base de dados preparada para multiassociação.
 
-### ✅ Fase 3 — Operações e Privacidade (2026-05-22)
+| Item | Escopo mínimo |
+|---|---|
+| Componente global | Botão flutuante no canto inferior direito em todas as páginas. |
+| Formulário | Categoria e mensagem. |
+| Contexto automático | URL, rota, timestamp e perfil do usuário. |
+| Persistência | Tabela `feedbacks` com `associationId`. |
+| Resposta ao usuário | Confirmação de envio e tratamento de erro. |
+| Administração | Rota futura `/admin/feedbacks`. |
 
-| # | Funcionalidade | Status |
-|---|---------------|--------|
-| 3.1 | Módulo: Fornecedores e contratos | ✅ |
-| 3.2 | Módulo: Patrimônio / inventário | ✅ |
-| 3.3 | Módulo: Reservas de áreas comuns | ✅ |
-| 3.4 | Módulo: Manutenção preventiva/corretiva | ✅ |
-| 3.5 | Módulo: Controle de acesso / visitantes | ✅ |
-| 3.6 | Gestão de usuários admin (sysadmin/admin/viewer) | ✅ |
-| 3.7 | Anonimização pública ("Associado 042" / "Despesa 07") | ✅ |
-| 3.8 | Portal do Associado por CPF (5 dígitos) | ✅ |
-| 3.9 | Importação CSV de associados (upsert, lotes) | ✅ |
-| 3.10 | Limpeza e reimportação de histórico financeiro | ✅ |
-| 3.11 | Timeout com AbortController em todas as chamadas | ✅ |
-| 3.12 | Import em lotes de 50 + timeout estendido (2 min) | ✅ |
+## Backlog priorizado
 
----
+| Prioridade | Item | Justificativa |
+|---:|---|---|
+| Alta | Implementar MVP de Feedback Comunitário | Cria canal de escuta e insumo para priorização. |
+| Alta | Criar painel administrativo de feedbacks | Sem triagem, os registros perdem valor operacional. |
+| Alta | Consolidar Portal do Associado como área dedicada | Aumenta valor percebido pelos moradores e reduz suporte manual. |
+| Média | Evoluir gestor de patrimônio | Organiza bens comuns e manutenção. |
+| Média | Estruturar divulgação de serviços | Cria utilidade comunitária e engajamento. |
+| Média | Preparar `associationId` nas novas tabelas | Reduz retrabalho na expansão SaaS. |
+| Baixa | Screenshot opcional no feedback | Deve vir somente após validar uso do MVP. |
+| Baixa | PWA e notificações | Úteis, mas dependem de base funcional estável. |
 
-## Em desenvolvimento
+## Critérios de priorização
 
-| # | Funcionalidade | Prioridade | Observação |
-|---|---------------|-----------|-----------|
-| — | Deploy Convex pendente (schema unit opcional + importAssociates fixado) | 🔴 Crítico | Executar `npx convex deploy` para desbloquear import de associados |
+As próximas entregas devem ser priorizadas por impacto comunitário, redução de trabalho manual da diretoria, risco técnico, valor comercial para futuras associações e capacidade de demonstrar evolução contínua no plano de assinatura.
 
----
+| Critério | Pergunta orientadora |
+|---|---|
+| Valor para associado | A funcionalidade aumenta transparência ou utilidade cotidiana? |
+| Valor para diretoria | Reduz planilhas, retrabalho, dúvidas ou atendimento manual? |
+| Escala SaaS | Pode ser reutilizada por outras associações com pouca adaptação? |
+| Risco | Exige alteração sensível em banco, autenticação ou privacidade? |
+| Mensurabilidade | Gera dados que ajudam a decidir os próximos passos? |
 
-## Fase 4 — Segurança e Comunicação em Tempo Real (planejada)
+## Relação com documentação raiz
 
-### 🆘 Botão do Pânico (prioridade alta)
+O arquivo `ROADMAP.md` na raiz pode continuar funcionando como resumo executivo ou histórico de fases. Este documento em `docs/roadmap.md` deve ser a referência detalhada para produto, pois está ligado aos demais documentos funcionais e técnicos da pasta `docs`.
 
-**Descrição:** Botão de emergência acessível a associados autenticados que:
-1. Captura geolocalização via `navigator.geolocation.getCurrentPosition()`
-2. Monta link do Google Maps: `https://maps.google.com/?q={lat},{lng}`
-3. Envia alerta a todos os associados que optaram por receber notificações
-4. Registra o evento no histórico (quem acionou, quando, coordenadas)
-5. Permite cancelar / marcar como falso alarme
+## Referências internas
 
-**Dependências a definir:**
-- Canal de notificação: **Web Push** (PWA, sem custo), **SMS** (Twilio/Zenvia) ou **E-mail** (Resend/SendGrid)
-- Tabela `alerts` no schema Convex
-- Tabela `alert_opt_in` ou campo `receiveAlerts: boolean` em `associates`
-- Rate limiting: máximo X acionamentos por hora por usuário
-
-**Mockup do fluxo:**
-```
-Associado autenticado
-  → clica "🆘 Emergência"
-  → browser solicita permissão de geolocalização
-  → se concedida: captura lat/lng
-  → POST Convex: createAlert({ userId, lat, lng, timestamp })
-  → Convex dispara notificação para todos os opt-in
-  → Link: https://maps.google.com/?q=-27.1234,-52.5678
-  → Associado vê botão "Cancelar alarme" por 5 minutos
-```
-
----
-
-### 📬 4.2 — Notificações por E-mail (média prioridade)
-
-- Integração com **Resend** ou **SendGrid** via Convex HTTP Action
-- Casos de uso: inadimplência, comunicados urgentes, confirmação de reserva
-- Opt-in por associado no portal
-
----
-
-### 📱 4.3 — PWA (Progressive Web App) (média prioridade)
-
-- `manifest.json` para instalação no celular
-- Service Worker para cache offline básico
-- Ícone de app na tela inicial (Android/iOS)
-- Push notifications nativas (Web Push API)
-
----
-
-### 📊 4.4 — Relatórios e Exportação (baixa prioridade)
-
-- Exportar tabela de inadimplentes para CSV/PDF
-- Relatório mensal em PDF (resumo financeiro + assembleias + manutenções)
-- Exportar histórico do associado
-
----
-
-### 🔐 4.5 — Segurança aprimorada (baixa prioridade)
-
-- Substituir SHA-256 por bcrypt/argon2 (requer endpoint de servidor intermediário)
-- Recuperação de senha por e-mail
-- Registro de auditoria (log de ações admin)
-- 2FA opcional para administradores
-
----
-
-## Ideias futuras (backlog)
-
-| Ideia | Complexidade |
-|-------|-------------|
-| Integração com boleto bancário (auto-reconciliação de pagamentos) | Alta |
-| Chatbot para associados (perguntas sobre regras, disponibilidade) | Alta |
-| App mobile nativo (React Native / Flutter) | Muito alta |
-| Mapa interativo do residencial (reservas por área visual) | Média |
-| Sorteio de vagas de garagem / unidades | Baixa |
-| Enquetes rápidas para associados | Média |
-| Dashboard de consumo de água/energia por unidade | Alta |
-
----
-
-## Como propor uma funcionalidade
-
-Abra uma **issue** no GitHub:  
-https://github.com/zionsti/santorini/issues/new
-
-Inclua:
-1. Descrição da funcionalidade
-2. Quem se beneficia (admins, associados, todos)
-3. Prioridade sugerida (crítica / alta / média / baixa)
-4. Qualquer detalhe de comportamento esperado
-
----
-
-*Última atualização: 2026-05-22*
+[1]: feedback-comunitario.md "Feedback Comunitário"
+[2]: modelo-negocio.md "Modelo de negócio SaaS"
+[3]: registro-decisoes.md "Registro de decisões do produto"

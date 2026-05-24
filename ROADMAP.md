@@ -116,3 +116,7 @@ Lógica:
 - Privacidade: CPF completo só para admins; portal expõe apenas `cpfPrefix`
 - Soft delete universal: nunca usar `db.delete()`, sempre `deletedAt = Date.now()`
 - Senhas armazenadas como SHA-256; nunca trafegar em texto puro
+
+## Documentação complementar
+
+A versão organizada e detalhada do roadmap está em [`docs/roadmap.md`](docs/roadmap.md), integrada aos documentos de modelo de negócio, Feedback Comunitário, portal do associado e registro de decisões.

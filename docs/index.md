@@ -1,74 +1,62 @@
-# 📚 Documentação — AMRTS Santorini Dashboard
+# Documentação do App Santorini
 
-**Versão:** 3.1  
-**Projeto:** Dashboard de gestão financeira e societária do Residencial Santorini  
-**Stack:** HTML5 + Tailwind CSS + Chart.js · Convex (banco serverless) · GitHub Pages  
-**URL pública:** https://zionsti.github.io/santorini  
-**Repositório:** https://github.com/zionsti/santorini
+**Projeto:** AMRTS Santorini — Dashboard de gestão residencial e financeira
+**Cliente inicial:** Associação de Moradores do Residencial Terra de Santorini (AMRTS)
+**Modelo de produto:** SaaS por assinatura mensal, com Plano Básico de US$20/mês
+**Repositório:** [zionsti/santorini](https://github.com/zionsti/santorini)
+**Versão pública estática:** [zionsti.github.io/santorini](https://zionsti.github.io/santorini/)
+**Última atualização documental:** 2026-05-23
 
----
+Esta pasta reúne a documentação oficial do app Santorini. O objetivo é manter, em um único ponto do repositório, a memória técnica, operacional e estratégica do produto, incluindo decisões recentes de UX, identidade visual, modelo SaaS, portal do associado e evolução do módulo de **Feedback Comunitário**.
 
-## Índice geral
+> A documentação deve ser tratada como parte do produto. Sempre que uma decisão funcional, comercial, técnica ou operacional for aprovada, ela deve ser registrada nesta pasta antes ou junto da implementação correspondente.
 
-| Documento | Público-alvo | Conteúdo |
-|-----------|-------------|---------|
-| [Guia do Usuário](guia-usuario.md) | Moradores, Admins | Como usar cada módulo do dashboard |
-| [Arquitetura Técnica](arquitetura.md) | Desenvolvedores | Stack, fluxo de dados, decisões de design |
-| [API Backend (Convex)](api-backend.md) | Desenvolvedores | Mutations e queries disponíveis |
-| [Schema do Banco](schema-banco.md) | Desenvolvedores | Tabelas, campos, índices, relacionamentos |
-| [Guia de Operações](operacoes.md) | Admins, DevOps | Deploy, imports, backup, troubleshooting |
-| [Solução de Problemas](troubleshooting.md) | Admins | Erros conhecidos e como resolver |
-| [Roadmap](roadmap.md) | Todos | Funcionalidades planejadas e concluídas |
+## Mapa da documentação
 
----
+| Documento | Público principal | Finalidade |
+|---|---|---|
+| [Visão geral e índice](index.md) | Diretoria, produto e desenvolvimento | Ponto de entrada para toda a documentação do app. |
+| [Registro de decisões do produto](registro-decisoes.md) | Produto, diretoria e desenvolvimento | Consolida decisões aprovadas, motivação e impacto esperado. |
+| [Modelo de negócio SaaS](modelo-negocio.md) | Diretoria, comercial e produto | Documenta assinatura mensal, Plano Básico, multiassociação e premissas comerciais. |
+| [Roadmap](roadmap.md) | Todos os envolvidos | Organiza entregas concluídas, próximas fases e backlog priorizado. |
+| [Feedback Comunitário](feedback-comunitario.md) | Produto, UX e desenvolvimento | Especifica o módulo global de feedback e suas seis etapas aprovadas. |
+| [Portal do Associado](portal-do-associado.md) | Produto, suporte e desenvolvimento | Define a experiência dedicada do associado, substituindo o uso de modal como solução principal. |
+| [Identidade visual](identidade-visual.md) | Produto, design e desenvolvimento | Registra uso da logo AMRTS, favicons, ícones e aplicação nos menus. |
+| [Arquitetura técnica](arquitetura.md) | Desenvolvimento | Explica a arquitetura Next.js, Convex, versão estática e estratégia de evolução. |
+| [API Backend Convex](api-backend.md) | Desenvolvimento | Referência das principais funções serverless e contratos de chamada. |
+| [Schema do banco](schema-banco.md) | Desenvolvimento | Documenta tabelas atuais, índices e tabelas planejadas. |
+| [Guia do usuário](guia-usuario.md) | Administração e associados | Explica uso dos principais módulos do sistema. |
+| [Operações e deploy](operacoes.md) | Administração técnica e DevOps | Registra rotinas de deploy, sincronização, backup e validação. |
+| [Solução de problemas](troubleshooting.md) | Suporte e desenvolvimento | Centraliza sintomas, causas prováveis e procedimentos de diagnóstico. |
 
-## Início rápido
+## Estado atual do produto
 
-### Para o administrador
-1. Acesse https://zionsti.github.io/santorini
-2. Clique em `≡` (drawer lateral) → **Login Admin**
-3. Use suas credenciais para autenticar
-4. Importe os dados: CSV de transações e/ou CSV de associados
+| Área | Estado documentado | Observação |
+|---|---:|---|
+| Versão estática no GitHub Pages | Em produção | Mantida como publicação pública e referência operacional. |
+| Aplicação Next.js | Em evolução ativa | Estrutura com rotas públicas, administrativas e portal do associado. |
+| Backend Convex | Em uso | Responsável por persistência e funções serverless. |
+| Identidade visual AMRTS | Implementada | Logo oficial aplicada como favicon, Apple Touch Icon e marca nos menus. |
+| Sessão administrativa | Melhorada | Usuário autenticado não deve ser solicitado a logar novamente ao retornar à página inicial. |
+| Toggles Wide/Boxed | Implementados na topbar desktop | Padrão visual em formato pill. |
+| Feedback Comunitário | Aprovado para implementação | MVP documentado e dividido em seis etapas. |
+| Modelo SaaS multiassociação | Planejado | Estrutura documental considera `associationId` e escalabilidade para novas associações. |
 
-### Para o associado
-1. Acesse https://zionsti.github.io/santorini
-2. Clique em **Área do Associado**
-3. Digite os **5 primeiros dígitos do seu CPF**
-4. Veja seu histórico de contribuições
+## Convenções de manutenção documental
 
-### Para o desenvolvedor
-```bash
-git clone https://github.com/zionsti/santorini.git
-cd santorini
-npm install
-npx convex dev --configure=existing --team hans-rogerio-zimmermann --project santorini
-# Abrir index.html no browser (Live Server recomendado)
-```
+A documentação deve permanecer objetiva, rastreável e versionada. Novos módulos devem receber pelo menos um documento funcional, um registro de decisão quando alterarem produto ou UX, e atualização do roadmap. Mudanças de banco, API, autenticação, deploy ou segurança precisam ser refletidas nos documentos técnicos antes do fechamento da tarefa.
 
----
+| Tipo de alteração | Documentos a revisar |
+|---|---|
+| Nova funcionalidade de usuário | `roadmap.md`, documento funcional específico e `guia-usuario.md`. |
+| Nova tabela ou alteração Convex | `schema-banco.md`, `api-backend.md` e `arquitetura.md`, quando impactar fluxo. |
+| Decisão comercial | `modelo-negocio.md` e `registro-decisoes.md`. |
+| Alteração visual ou de marca | `identidade-visual.md` e documentos de UX relacionados. |
+| Deploy, CI/CD ou ambiente | `operacoes.md`, `troubleshooting.md` e `DEPLOY.md`, se aplicável. |
 
-## Status do sistema
+## Referências internas
 
-| Componente | Estado |
-|-----------|--------|
-| Frontend (GitHub Pages) | ✅ Online |
-| Backend (Convex) | Verificar em https://dashboard.convex.dev |
-| Deploy automático (frontend) | ✅ GitHub Actions — push → Pages em ~1 min |
-| Deploy backend pendente | ⚠️ `npx convex deploy` necessário para `clearAllAssociates` e melhorias de schema |
-
----
-
-## Histórico de versões resumido
-
-| Versão | Data | Destaques |
-|--------|------|-----------|
-| 1.0 | 2026-05-22 | Fase 1: financeiro + associados + login |
-| 2.0 | 2026-05-22 | Fase 2: comunicados + documentos + assembleias |
-| 3.0 | 2026-05-22 | Fase 3: 6 módulos operacionais + privacidade + portal CPF |
-| 3.1 | 2026-05-22 | Estabilização: import robusto, menus, troubleshooting |
-
-Ver [CHANGELOG.md](../CHANGELOG.md) para o histórico completo.
-
----
-
-*Última atualização: 2026-05-22*
+[1]: ../README.md "README principal do repositório"
+[2]: ../ROADMAP.md "Roadmap raiz do repositório"
+[3]: ../CHANGELOG.md "Changelog do projeto"
+[4]: ../DEPLOY.md "Guia de deploy do projeto"

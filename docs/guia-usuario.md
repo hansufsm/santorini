@@ -216,14 +216,14 @@ Disponíveis no drawer lateral:
 
 ## Perguntas frequentes
 
-**P: Os dados são atualizados automaticamente?**  
+**P: Os dados são atualizados automaticamente?**
 R: Não em tempo real — clique em **Atualizar** ou recarregue a página para buscar os dados mais recentes do Convex.
 
-**P: Perdi minha senha de admin. Como recupero?**  
+**P: Perdi minha senha de admin. Como recupero?**
 R: Entre em contato com o sysadmin do sistema para redefinição via painel Convex.
 
-**P: Meu CPF de 5 dígitos não encontra meu registro.**  
+**P: Meu CPF de 5 dígitos não encontra meu registro.**
 R: Verifique se seu cadastro foi importado (o admin precisa importar o CSV de associados). Certifique-se de digitar apenas números, sem pontos ou traços.
 
-**P: Posso acessar pelo celular?**  
+**P: Posso acessar pelo celular?**
 R: Sim. O dashboard é responsivo (mobile-first) e funciona bem em smartphones Android e iOS.
