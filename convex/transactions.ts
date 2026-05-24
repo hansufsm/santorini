@@ -17,6 +17,24 @@ type TransactionRecord = {
   deletedAt?: number;
 };
 
+type PCloudImportFileRecord = {
+  _id: Id<"pcloudImportFiles">;
+  fileKey: string;
+  fileId?: string;
+  fileName: string;
+  fileHash?: string;
+  fileSize?: number;
+  modified?: string;
+  sourceUrl: string;
+  rowsImported: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
+  status: "processed" | "failed";
+  error?: string;
+  importedAt: number;
+};
+
 const PAYMENT_PREFIX_PATTERN = /^(pix|ted|doc|transferencia|transferência|transf|pagamento|pagto)\s+/i;
 
 function stripPaymentPrefix(value: string) {
@@ -204,6 +222,66 @@ export const cleanupPaymentPrefixDuplicates = mutation({
       groupCount: groups.length,
       groups,
     };
+  },
+});
+
+export const getPCloudImportFiles = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, { sessionToken }) => {
+    await requireRole(ctx.db, sessionToken, "diretoria");
+    return await ctx.db.query("pcloudImportFiles").withIndex("by_imported_at").order("desc").collect();
+  },
+});
+
+export const markPCloudImportFile = mutation({
+  args: {
+    sessionToken: v.string(),
+    fileKey: v.string(),
+    fileId: v.optional(v.string()),
+    fileName: v.string(),
+    fileHash: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
+    modified: v.optional(v.string()),
+    sourceUrl: v.string(),
+    rowsImported: v.number(),
+    inserted: v.number(),
+    updated: v.number(),
+    skipped: v.number(),
+    status: v.union(v.literal("processed"), v.literal("failed")),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireRole(ctx.db, args.sessionToken, "diretoria");
+    const importedAt = Date.now();
+    const existing = await ctx.db
+      .query("pcloudImportFiles")
+      .withIndex("by_file_key", (q) => q.eq("fileKey", args.fileKey))
+      .first() as PCloudImportFileRecord | null;
+
+    const payload = {
+      fileKey: args.fileKey,
+      fileId: args.fileId,
+      fileName: args.fileName,
+      fileHash: args.fileHash,
+      fileSize: args.fileSize,
+      modified: args.modified,
+      sourceUrl: args.sourceUrl,
+      rowsImported: args.rowsImported,
+      inserted: args.inserted,
+      updated: args.updated,
+      skipped: args.skipped,
+      status: args.status,
+      error: args.error,
+      importedAt,
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+      return { id: existing._id, updated: true, importedAt };
+    }
+
+    const id = await ctx.db.insert("pcloudImportFiles", payload);
+    return { id, updated: false, importedAt };
   },
 });
 

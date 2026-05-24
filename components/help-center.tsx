@@ -82,6 +82,15 @@ const ADMIN_MANUALS: { title: string; badge: string; body: ReactNode }[] = [
       </>
     ),
   },
+  {
+    title: "Sincronização de CSVs do pCloud",
+    badge: "Financeiro",
+    body: (
+      <>
+        Em <Link href="/admin/transacoes" className={linkClass}>Transações</Link>, use a seção <strong>Sincronizar CSVs do pCloud</strong> para verificar uma pasta pública, conferir os arquivos encontrados e importar apenas CSVs novos. O sistema sanitiza prefixos como Pix, aplica a deduplicação do Convex e registra o arquivo processado para evitar carga repetida; use <strong>Reprocessar</strong> somente quando precisar reaplicar um CSV corrigido.
+      </>
+    ),
+  },
 ];
 
 function roleLabel(role?: string) {

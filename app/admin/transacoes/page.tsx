@@ -79,6 +79,63 @@ type CleanupResult = {
   groupCount: number;
 };
 
+type PCloudProcessedFile = {
+  _id: string;
+  fileKey: string;
+  fileId?: string;
+  fileName: string;
+  fileHash?: string;
+  fileSize?: number;
+  modified?: string;
+  sourceUrl: string;
+  rowsImported: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
+  status: "processed" | "failed";
+  error?: string;
+  importedAt: number;
+};
+
+type PCloudApiFile = {
+  fileId: string;
+  fileName: string;
+  fileHash?: string;
+  fileSize?: number;
+  modified?: string;
+  content: string;
+  skippedBySize?: boolean;
+};
+
+type PCloudApiResponse = {
+  sourceUrl: string;
+  folderName: string;
+  fileCount: number;
+  files: PCloudApiFile[];
+  error?: string;
+};
+
+type PCloudFilePreview = PCloudApiFile & {
+  fileKey: string;
+  transactions: Transaction[];
+  alreadyProcessed: boolean;
+  parseError?: string;
+};
+
+type PCloudSyncResult = {
+  filesProcessed: number;
+  rows: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
+};
+
+const DEFAULT_PCLOUD_FOLDER_URL = "https://u.pcloud.link/publink/show?code=kZ8V7I5Z6xQw6zTf7sp39QtML5sJDkzrP8xV";
+
+function buildPCloudFileKey(file: Pick<PCloudApiFile, "fileId" | "fileName" | "fileHash" | "fileSize" | "modified">) {
+  return [file.fileId || file.fileName, file.fileHash || file.fileSize || file.modified || "sem-hash"].join(":");
+}
+
 function DesktopRecommendedNotice({ className = "" }: { className?: string }) {
   return (
     <div className={`rounded-xl border border-sky-400/25 bg-sky-950/30 px-4 py-3 text-sm text-sky-100/80 ${className}`}>
@@ -189,6 +246,12 @@ export default function TransacoesPage() {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pcloudUrl, setPcloudUrl] = useState(DEFAULT_PCLOUD_FOLDER_URL);
+  const [pcloudChecking, setPcloudChecking] = useState(false);
+  const [pcloudImporting, setPcloudImporting] = useState(false);
+  const [pcloudFiles, setPcloudFiles] = useState<PCloudFilePreview[]>([]);
+  const [pcloudFolderName, setPcloudFolderName] = useState("");
+  const [pcloudResult, setPcloudResult] = useState<PCloudSyncResult | null>(null);
   const [selectedAssociateId, setSelectedAssociateId] = useState("");
 
   const selectedAssociate = associates?.find((associate) => associate._id === selectedAssociateId);
@@ -203,8 +266,16 @@ export default function TransacoesPage() {
     { sessionToken: session?.token ?? "" },
     !session
   );
+  const { data: pcloudProcessedFiles, loading: pcloudHistoryLoading } = useConvexQuery<PCloudProcessedFile[]>(
+    "transactions:getPCloudImportFiles",
+    { sessionToken: session?.token ?? "" },
+    !session
+  );
   const duplicateGroups = duplicatePreview?.groups ?? [];
   const duplicateCount = duplicatePreview?.duplicateCount ?? 0;
+  const pcloudProcessedKeys = new Set((pcloudProcessedFiles ?? []).filter((file) => file.status === "processed").map((file) => file.fileKey));
+  const pcloudReadyFiles = pcloudFiles.filter((file) => file.transactions.length > 0 && !file.alreadyProcessed && !file.parseError && !file.skippedBySize);
+  const pcloudReprocessableFiles = pcloudFiles.filter((file) => file.transactions.length > 0 && !file.parseError && !file.skippedBySize);
 
   if (!session) return null;
 
@@ -271,6 +342,117 @@ export default function TransacoesPage() {
       setError(err instanceof Error ? err.message : "Erro ao limpar duplicatas por prefixo Pix");
     } finally {
       setCleaningDuplicates(false);
+    }
+  }
+
+  async function handleCheckPCloudFolder() {
+    if (!pcloudUrl.trim()) {
+      setError("Informe o link público da pasta pCloud.");
+      return;
+    }
+
+    setPcloudChecking(true);
+    setPcloudResult(null);
+    setPcloudFiles([]);
+    setPcloudFolderName("");
+    setError(null);
+    try {
+      const response = await fetch("/api/pcloud-csv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: pcloudUrl.trim(), sessionToken: session.token }),
+      });
+      const data = await response.json() as PCloudApiResponse;
+      if (!response.ok) throw new Error(data.error || "Erro ao consultar pasta pCloud.");
+
+      const mappedFiles = data.files.map((file) => {
+        const fileKey = buildPCloudFileKey(file);
+        if (file.skippedBySize) {
+          return { ...file, fileKey, transactions: [], alreadyProcessed: pcloudProcessedKeys.has(fileKey), parseError: "Arquivo acima do limite de 5 MB." };
+        }
+
+        const rows = parseCSV(file.content);
+        if (rows.length < 2) {
+          return { ...file, fileKey, transactions: [], alreadyProcessed: pcloudProcessedKeys.has(fileKey), parseError: "CSV vazio ou sem linhas de dados." };
+        }
+
+        const headers = rows[0];
+        const transactions = rows.slice(1).map((row) => mapRow(headers, row)).filter(Boolean) as Transaction[];
+        return {
+          ...file,
+          fileKey,
+          transactions,
+          alreadyProcessed: pcloudProcessedKeys.has(fileKey),
+          parseError: transactions.length === 0 ? "Nenhuma transação válida foi encontrada no CSV." : undefined,
+        };
+      });
+
+      setPcloudFolderName(data.folderName);
+      setPcloudFiles(mappedFiles);
+      if (!mappedFiles.length) {
+        setError("Nenhum arquivo .csv foi encontrado na pasta pública do pCloud.");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao consultar pasta pCloud");
+    } finally {
+      setPcloudChecking(false);
+    }
+  }
+
+  async function handleImportPCloudFiles(reprocess = false) {
+    if (!session) return;
+    const filesToImport = (reprocess ? pcloudReprocessableFiles : pcloudReadyFiles);
+    if (!filesToImport.length) return;
+
+    if (reprocess) {
+      const confirmed = window.confirm("Reprocessar arquivos já registrados pode atualizar transações existentes, mas a deduplicação continuará ativa. Deseja continuar?");
+      if (!confirmed) return;
+    }
+
+    setPcloudImporting(true);
+    setPcloudResult(null);
+    setError(null);
+    const totals: PCloudSyncResult = { filesProcessed: 0, rows: 0, inserted: 0, updated: 0, skipped: 0 };
+
+    try {
+      for (const file of filesToImport) {
+        const importRes = await convexMutation<ImportResult>(
+          "transactions:importTransactions",
+          { transactions: file.transactions, sessionToken: session.token }
+        );
+
+        await convexMutation(
+          "transactions:markPCloudImportFile",
+          {
+            sessionToken: session.token,
+            fileKey: file.fileKey,
+            fileId: file.fileId,
+            fileName: file.fileName,
+            fileHash: file.fileHash,
+            fileSize: file.fileSize,
+            modified: file.modified,
+            sourceUrl: pcloudUrl.trim(),
+            rowsImported: file.transactions.length,
+            inserted: importRes.inserted,
+            updated: importRes.updated,
+            skipped: importRes.skipped,
+            status: "processed",
+          }
+        );
+
+        totals.filesProcessed += 1;
+        totals.rows += file.transactions.length;
+        totals.inserted += importRes.inserted;
+        totals.updated += importRes.updated;
+        totals.skipped += importRes.skipped;
+      }
+
+      setPcloudResult(totals);
+      setPcloudFiles((current) => current.map((file) => filesToImport.some((processed) => processed.fileKey === file.fileKey) ? { ...file, alreadyProcessed: true } : file));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao importar arquivos do pCloud");
+    } finally {
+      setPcloudImporting(false);
     }
   }
 
@@ -361,6 +543,125 @@ export default function TransacoesPage() {
           <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-sm text-red-300">{error}</div>
         )}
       </div>
+
+
+      {/* Sincronização pCloud */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-300">Sincronizar CSVs do pCloud</h3>
+            <p className="mt-1 max-w-3xl text-xs leading-relaxed text-gray-500">
+              Lê uma pasta pública do pCloud, baixa os arquivos `.csv`, aplica a mesma sanitização de nomes Pix da importação manual e registra cada arquivo processado para evitar cargas repetidas.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              onClick={handleCheckPCloudFolder}
+              disabled={pcloudChecking || pcloudImporting}
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pcloudChecking ? "Verificando…" : "Verificar pasta"}
+            </button>
+            <button
+              onClick={() => handleImportPCloudFiles(false)}
+              disabled={pcloudImporting || pcloudReadyFiles.length === 0}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pcloudImporting ? "Importando…" : `Importar novos (${pcloudReadyFiles.length})`}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-gray-400">Link público da pasta pCloud</label>
+          <input
+            value={pcloudUrl}
+            onChange={(event) => setPcloudUrl(event.target.value)}
+            placeholder="https://u.pcloud.link/publink/show?code=..."
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
+          />
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            Esta primeira versão usa somente o link público da pasta. Não precisa de login nem API autenticada do pCloud.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+          <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Pasta</p>
+            <p className="mt-1 truncate text-sm font-semibold text-white">{pcloudFolderName || "Não verificada"}</p>
+          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">CSVs encontrados</p>
+            <p className="mt-1 text-sm font-semibold text-white">{pcloudFiles.length}</p>
+          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Novos para importar</p>
+            <p className="mt-1 text-sm font-semibold text-emerald-300">{pcloudReadyFiles.length}</p>
+          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Histórico</p>
+            <p className="mt-1 text-sm font-semibold text-white">{pcloudHistoryLoading ? "Carregando…" : `${pcloudProcessedFiles?.length ?? 0} arquivo(s)`}</p>
+          </div>
+        </div>
+
+        {pcloudResult && (
+          <div className="rounded-lg border border-emerald-700 bg-emerald-900/30 p-4 text-sm">
+            <p className="font-medium text-emerald-300">Sincronização concluída</p>
+            <p className="mt-1 text-gray-300">
+              {pcloudResult.filesProcessed} arquivo(s), {pcloudResult.rows} linha(s): {pcloudResult.inserted} inseridos, {pcloudResult.updated} atualizados e {pcloudResult.skipped} ignorados.
+            </p>
+          </div>
+        )}
+
+        {pcloudFiles.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-gray-800">
+            <div className="hidden max-h-72 overflow-auto md:block">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-gray-800">
+                  <tr>
+                    {['Arquivo', 'Modificado', 'Linhas válidas', 'Status'].map((header) => (
+                      <th key={header} className="px-3 py-2 text-left text-gray-400">{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {pcloudFiles.map((file) => (
+                    <tr key={file.fileKey} className="border-t border-gray-800 hover:bg-gray-800/30">
+                      <td className="px-3 py-2 text-gray-300">{file.fileName}</td>
+                      <td className="px-3 py-2 text-gray-400">{file.modified || "—"}</td>
+                      <td className="px-3 py-2 text-gray-300">{file.transactions.length}</td>
+                      <td className={`px-3 py-2 font-medium ${file.parseError ? "text-red-300" : file.alreadyProcessed ? "text-amber-300" : "text-emerald-300"}`}>
+                        {file.parseError || (file.alreadyProcessed ? "Já processado" : "Novo")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="space-y-3 p-3 md:hidden">
+              {pcloudFiles.map((file) => (
+                <article key={file.fileKey} className="rounded-xl border border-gray-800 bg-gray-950/50 p-3 text-sm">
+                  <p className="font-medium text-gray-200">{file.fileName}</p>
+                  <p className="mt-1 text-xs text-gray-500">{file.transactions.length} linha(s) válidas · {file.modified || "sem data"}</p>
+                  <p className={`mt-2 text-xs font-semibold ${file.parseError ? "text-red-300" : file.alreadyProcessed ? "text-amber-300" : "text-emerald-300"}`}>
+                    {file.parseError || (file.alreadyProcessed ? "Já processado" : "Novo")}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {pcloudReprocessableFiles.length > 0 && pcloudReadyFiles.length === 0 && (
+          <button
+            onClick={() => handleImportPCloudFiles(true)}
+            disabled={pcloudImporting}
+            className="rounded-lg border border-amber-600/60 px-4 py-2 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-600/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Reprocessar arquivos já registrados
+          </button>
+        )}
+      </section>
 
       {/* Correção de duplicatas por prefixo de pagamento */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">

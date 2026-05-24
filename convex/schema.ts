@@ -34,6 +34,28 @@ export default defineSchema({
     .index("by_detail", ["detail"])
     .index("by_date_detail", ["date", "detail"]),
 
+  // ─── Arquivos CSV processados do pCloud ───────────────────────────────────
+  // Controle idempotente da sincronização por pasta pública, sem API autenticada.
+
+  pcloudImportFiles: defineTable({
+    fileKey: v.string(),
+    fileId: v.optional(v.string()),
+    fileName: v.string(),
+    fileHash: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
+    modified: v.optional(v.string()),
+    sourceUrl: v.string(),
+    rowsImported: v.number(),
+    inserted: v.number(),
+    updated: v.number(),
+    skipped: v.number(),
+    status: v.union(v.literal("processed"), v.literal("failed")),
+    error: v.optional(v.string()),
+    importedAt: v.number(),
+  })
+    .index("by_file_key", ["fileKey"])
+    .index("by_imported_at", ["importedAt"]),
+
   // ─── Associados (titulares financeiros da unidade) ────────────────────────
   // Cada associado pode ter vários Moradores vinculados na tabela users.
 
