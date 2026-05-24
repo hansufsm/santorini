@@ -381,11 +381,8 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <Link href="/login" className="transition-colors hover:opacity-80">Entrar</Link>
             <span style={{ color: "var(--text-very-dim)" }}>·</span>
-            <a href="https://github.com/zionsti/santorini/tree/main/docs"
-              target="_blank" rel="noopener noreferrer"
-              className="transition-colors hover:opacity-80">
-              Documentação
-            </a>
+            {/* Documentação temporariamente desabilitada */}
+            <span className="opacity-30 cursor-not-allowed">Documentação</span>
           </div>
         </div>
         {/* Linha de versão — só aparece em produção (Vercel injeta o hash do commit) */}
