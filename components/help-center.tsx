@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { TRILHA_VIVA_GUIDES, type UserRole } from "@/lib/trilha-viva-content";
 
@@ -45,21 +46,41 @@ const FAQ_ITEMS: FaqItem[] = [
   },
 ];
 
-const ADMIN_MANUALS = [
+const linkClass = "font-semibold text-emerald-300 underline decoration-emerald-500/40 underline-offset-4 hover:text-emerald-200";
+
+const ADMIN_MANUALS: { title: string; badge: string; body: ReactNode }[] = [
   {
     title: "Operação diária da diretoria",
     badge: "Administração",
-    body: "Use o dashboard e as áreas de transações, associados, reservas, comunicados, manutenção e feedbacks como fila operacional. Priorize registros com impacto coletivo, risco de segurança ou prazo definido.",
+    body: (
+      <>
+        Use o <Link href="/admin" className={linkClass}>dashboard administrativo</Link> e as áreas de{" "}
+        <Link href="/admin/transacoes" className={linkClass}>transações</Link>,{" "}
+        <Link href="/admin/associados" className={linkClass}>associados</Link>,{" "}
+        <Link href="/admin/reservas" className={linkClass}>reservas</Link>,{" "}
+        <Link href="/admin/comunicados" className={linkClass}>comunicados</Link>,{" "}
+        <Link href="/admin/manutencao" className={linkClass}>manutenção</Link> e{" "}
+        <Link href="/admin/feedbacks" className={linkClass}>feedbacks</Link> como fila operacional. Priorize registros com impacto coletivo, risco de segurança ou prazo definido.
+      </>
+    ),
   },
   {
     title: "Governança da Trilha Viva",
     badge: "Adoção",
-    body: "Acompanhe o painel de Trilha Viva para localizar rotas com maior necessidade de reforço. Guias com baixa conclusão devem gerar ajustes de texto, microcopy ou fluxo.",
+    body: (
+      <>
+        Acompanhe o <Link href="/admin/trilha-viva" className={linkClass}>painel de Trilha Viva</Link> para localizar rotas com maior necessidade de reforço. Guias com baixa conclusão devem gerar ajustes de texto, microcopy ou fluxo.
+      </>
+    ),
   },
   {
     title: "Gestão de acessos",
     badge: "Segurança",
-    body: "Diretoria e sysadmin devem revisar roles com cuidado. Permissões administrativas precisam ser concedidas apenas a pessoas autorizadas pela associação.",
+    body: (
+      <>
+        Diretoria e sysadmin devem revisar roles com cuidado em <Link href="/admin/usuarios" className={linkClass}>Usuários</Link> e, quando aplicável, conferir a composição em <Link href="/admin/diretoria" className={linkClass}>Diretoria</Link>. Permissões administrativas precisam ser concedidas apenas a pessoas autorizadas pela associação.
+      </>
+    ),
   },
 ];
 
@@ -105,19 +126,25 @@ export function HelpCenter({ variant = "portal" }: { variant?: HelpCenterVariant
       <section className="grid gap-4 md:grid-cols-3">
         <div className="rounded-2xl border p-4" style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
           <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>1. Encontre a área</p>
-          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>Use o índice abaixo para abrir o módulo correspondente ao assunto.</p>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+            Use o <Link href="#manuais-disponiveis" className={linkClass}>índice de manuais disponíveis</Link> abaixo para abrir o módulo correspondente ao assunto.
+          </p>
         </div>
         <div className="rounded-2xl border p-4" style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
           <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>2. Leia a técnica</p>
-          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>Cada manual traz finalidade, ação permitida, passos e dica prática.</p>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+            Cada manual traz finalidade, ação permitida, passos, dica prática e um link direto para a rota/página explicada.
+          </p>
         </div>
         <div className="rounded-2xl border p-4" style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
           <p className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>3. Aja com contexto</p>
-          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>Quando precisar, use Suporte ou Feedback Comunitário informando rota e situação.</p>
+          <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
+            Quando precisar, use <Link href="/portal/suporte" className={linkClass}>Suporte</Link> ou <Link href="/admin/feedbacks" className={linkClass}>Feedback Comunitário</Link> informando rota e situação.
+          </p>
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section id="manuais-disponiveis" className="space-y-3 scroll-mt-24">
         <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Manuais disponíveis para seu perfil</h2>
         <div className="grid gap-4 lg:grid-cols-2">
           {guides.map((guide) => (
@@ -125,14 +152,21 @@ export function HelpCenter({ variant = "portal" }: { variant?: HelpCenterVariant
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: "var(--text-accent)" }}>{guide.badge}</p>
-                  <h3 className="mt-1 font-bold" style={{ color: "var(--text-primary)" }}>{guide.menuLabel}</h3>
+                  <h3 className="mt-1 font-bold" style={{ color: "var(--text-primary)" }}>
+                    <Link href={guide.route} className="hover:text-emerald-200 hover:underline hover:underline-offset-4">
+                      {guide.menuLabel}
+                    </Link>
+                  </h3>
                 </div>
                 <Link href={guide.route} className="rounded-full bg-emerald-600/20 px-3 py-1 text-xs font-semibold text-emerald-200 hover:bg-emerald-600/30">
                   Abrir
                 </Link>
               </div>
               <p className="mt-3 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{guide.title}</p>
-              <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-muted)" }}>{guide.purpose}</p>
+              <p className="mt-2 text-sm leading-6" style={{ color: "var(--text-muted)" }}>
+                {guide.purpose}{" "}
+                <Link href={guide.route} className={linkClass}>Abrir {guide.menuLabel}</Link>.
+              </p>
               <div className="mt-3 rounded-xl border p-3 text-sm" style={{ borderColor: "var(--border-main)", backgroundColor: "var(--bg-module)", color: "var(--text-muted)" }}>
                 <p className="font-semibold" style={{ color: "var(--text-primary)" }}>Como fazer agora</p>
                 <ol className="mt-2 list-decimal space-y-1 pl-4">
