@@ -22,6 +22,7 @@ const TABS = [
   { href: "/portal/reservas",     label: "📅 Reservas" },
   { href: "/portal/comunicados",  label: "📢 Comunicados" },
   { href: "/portal/suporte",      label: "🔧 Suporte" },
+  { href: "/portal/ajuda",        label: "Ajuda" },
 ];
 
 // Badge colorido para cada papel (role)

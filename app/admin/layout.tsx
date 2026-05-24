@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/admin/manutencao", label: "🔧 Manutenção" },
   { href: "/admin/feedbacks", label: "💬 Feedbacks" },
   { href: "/admin/trilha-viva", label: "🗺️ Trilha Viva" },
+  { href: "/admin/ajuda", label: "Ajuda" },
   { href: "/admin/usuarios", label: "🔑 Usuários" },
 ];
 
