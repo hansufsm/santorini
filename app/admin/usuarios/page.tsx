@@ -62,12 +62,22 @@ export default function UsuariosPage() {
     unit: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; email: string; password: string; role: User["role"]; unit: string }>({
+    name: "",
+    email: "",
+    password: "",
+    role: "associado",
+    unit: "",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"todos" | User["role"]>("todos");
   const [statusFilter, setStatusFilter] = useState<"todos" | User["status"]>("todos");
 
   const canManageUsers = session?.role === "sysadmin" || session?.role === "diretoria";
+  const canEditUsers = session?.role === "sysadmin";
   const roleOptions = session?.role === "sysadmin" ? SYSTEM_ADMIN_ROLES : MANAGEMENT_ROLES;
 
   const filteredUsers = useMemo(() => {
@@ -123,6 +133,69 @@ export default function UsuariosPage() {
       setMsg({ type: "err", text: err instanceof Error ? err.message : "Erro ao criar usuário" });
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function startEdit(user: User) {
+    setEditingId(user._id);
+    setEditForm({
+      name: user.name,
+      email: user.email ?? "",
+      password: "",
+      role: user.role,
+      unit: user.unit ?? "",
+    });
+    setMsg(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm({ name: "", email: "", password: "", role: "associado", unit: "" });
+    setSavingEdit(false);
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!session || !editingId || session.role !== "sysadmin") {
+      setMsg({ type: "err", text: "Apenas Sysadmin pode editar usuários." });
+      return;
+    }
+    if (!editForm.name.trim()) {
+      setMsg({ type: "err", text: "Nome é obrigatório para editar o usuário." });
+      return;
+    }
+    setSavingEdit(true);
+    setMsg(null);
+    try {
+      const payload: {
+        sessionToken: string;
+        id: string;
+        name: string;
+        email?: string;
+        passwordHash?: string;
+        role: User["role"];
+        unit?: string;
+      } = {
+        sessionToken: session.token,
+        id: editingId,
+        name: editForm.name.trim(),
+        email: editForm.email.trim() || undefined,
+        role: editForm.role,
+        unit: editForm.unit.trim() || undefined,
+      };
+
+      if (editForm.password.trim()) {
+        payload.passwordHash = await sha256(editForm.password);
+      }
+
+      await convexMutation("users:updateUser", payload);
+      setMsg({ type: "ok", text: "Usuário atualizado com sucesso." });
+      cancelEdit();
+      reload();
+    } catch (err: unknown) {
+      setMsg({ type: "err", text: err instanceof Error ? err.message : "Erro ao atualizar usuário" });
+    } finally {
+      setSavingEdit(false);
     }
   }
 
@@ -214,6 +287,54 @@ export default function UsuariosPage() {
         </button>
       </form>
 
+      {canEditUsers && editingId && (
+        <form onSubmit={handleUpdate} className="bg-blue-950/30 border border-blue-800/70 rounded-xl p-5 space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-blue-200">Editar usuário</h3>
+              <p className="text-xs text-blue-300/80 mt-1">Somente Sysadmin pode editar cadastro, papel e redefinir senha de usuários.</p>
+            </div>
+            <button type="button" onClick={cancelEdit} className="text-xs text-gray-300 hover:text-white transition-colors">Cancelar edição</button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Nome</label>
+              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">E-mail</label>
+              <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Nova senha (opcional)</label>
+              <input type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                placeholder="Preencha apenas se quiser redefinir"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Papel</label>
+              <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as User["role"] })}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                {SYSTEM_ADMIN_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Unidade (opcional)</label>
+              <input type="text" value={editForm.unit} onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+
+          <button type="submit" disabled={savingEdit}
+            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium px-5 py-2 rounded-lg text-sm transition-colors">
+            {savingEdit ? "Salvando…" : "Salvar alterações"}
+          </button>
+        </form>
+      )}
+
       {/* Consulta de usuários */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -291,20 +412,28 @@ export default function UsuariosPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {/* Não permite inativar a si mesmo */}
-                      {u._id !== session._id && (
-                        u.status === "ativo" ? (
-                          <button onClick={() => deactivate(u._id)}
-                            className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded transition-colors">
-                            Inativar
+                      <div className="flex flex-wrap gap-2">
+                        {canEditUsers && (
+                          <button onClick={() => startEdit(u)}
+                            className="px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded transition-colors">
+                            Editar
                           </button>
-                        ) : (
-                          <button onClick={() => reactivate(u._id)}
-                            className="px-2 py-1 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded transition-colors">
-                            Reativar
-                          </button>
-                        )
-                      )}
+                        )}
+                        {/* Não permite inativar a si mesmo */}
+                        {u._id !== session._id && (
+                          u.status === "ativo" ? (
+                            <button onClick={() => deactivate(u._id)}
+                              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded transition-colors">
+                              Inativar
+                            </button>
+                          ) : (
+                            <button onClick={() => reactivate(u._id)}
+                              className="px-2 py-1 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded transition-colors">
+                              Reativar
+                            </button>
+                          )
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

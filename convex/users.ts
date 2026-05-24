@@ -158,8 +158,8 @@ export const createUser = mutation({
 });
 
 /**
- * Atualiza dados básicos de um usuário (nome, email, senha, unidade).
- * Não altera o papel (role) — para isso use uma mutation específica.
+ * Atualiza dados de um usuário. Diretoria pode atualizar dados básicos de perfis operacionais;
+ * apenas Sysadmin pode alterar papéis ou editar perfis administrativos sensíveis.
  */
 export const updateUser = mutation({
   args: {
@@ -168,6 +168,12 @@ export const updateUser = mutation({
     name: v.optional(v.string()),
     email: v.optional(v.string()),
     passwordHash: v.optional(v.string()),
+    role: v.optional(v.union(
+      v.literal("sysadmin"),
+      v.literal("diretoria"),
+      v.literal("associado"),
+      v.literal("morador")
+    )),
     unit: v.optional(v.string()),
     associateId: v.optional(v.id("associates")),
     parentAssociateId: v.optional(v.id("associates")),
@@ -191,7 +197,38 @@ export const updateUser = mutation({
       throw new Error("Apenas Sysadmin pode editar usuários com papel Diretoria.");
     }
 
-    await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
+    // Alteração de papel é uma operação sensível e fica restrita ao Sysadmin.
+    if (fields.role !== undefined) {
+      if (caller.role !== "sysadmin") {
+        throw new Error("Apenas Sysadmin pode alterar o papel de usuários.");
+      }
+
+      if (target._id === caller._id && fields.role !== "sysadmin") {
+        throw new Error("Sysadmin não pode remover o próprio papel administrativo.");
+      }
+
+      if (fields.role === "sysadmin" && target.role !== "sysadmin") {
+        const existingSysadmins = await ctx.db
+          .query("users")
+          .withIndex("by_role", (q: any) => q.eq("role", "sysadmin"))
+          .collect();
+
+        const activeCount = existingSysadmins.filter(
+          (u: any) => isUserActive(u)
+        ).length;
+
+        if (activeCount >= 2) {
+          throw new Error("Limite de 2 Sysadmins ativos atingido.");
+        }
+      }
+    }
+
+    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) patch[key] = value;
+    }
+
+    await ctx.db.patch(id, patch);
     return { success: true };
   },
 });

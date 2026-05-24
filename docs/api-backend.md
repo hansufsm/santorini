@@ -64,7 +64,7 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 | `auth:loginWithPassword` | mutation | Login administrativo. |
 | `auth:loginWithCpf` | mutation | Login simplificado de associado quando aplicável. |
 | `auth:getSession` | query | Restaura sessão pelo token. |
-| `users:*` | query/mutation | Gestão de usuários e papéis; Diretoria consulta/cadastra perfis operacionais e Sysadmin administra perfis sensíveis. |
+| `users:*` | query/mutation | Gestão de usuários e papéis; Diretoria consulta/cadastra perfis operacionais e Sysadmin administra perfis sensíveis, incluindo edição de cadastro, papel e redefinição de senha. |
 
 ## Contratos administrativos de usuários e transações
 
@@ -72,6 +72,7 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 |---|---|---|
 | Consulta de usuários | `users:getAllUsers`, `sessionToken`. | Diretoria e Sysadmin listam usuários visíveis; Sysadmin preserva acesso total. |
 | Criação de usuários | `users:createUser`, `sessionToken`, `name`, `email`, `passwordHash`, `role`, `unit` opcional. | Diretoria cria apenas `associado` e `morador`; Sysadmin também cria `diretoria` e `sysadmin`, respeitando o limite de sysadmins ativos. |
+| Edição de usuários | `users:updateUser`, `sessionToken`, `id`, campos opcionais de cadastro, `role` e `passwordHash`. | Sysadmin pode editar cadastro, papel e redefinir senha; Diretoria permanece limitada a dados básicos de perfis operacionais e não altera papéis sensíveis. |
 | Inativação/reativação | `users:deactivateUser` ou `users:reactivateUser`, `sessionToken`, `id`. | Diretoria não altera perfis `diretoria` ou `sysadmin`; Sysadmin mantém proteção contra remoção do último sysadmin ativo. |
 | Histórico financeiro por associado | `transactions:getAssociateHistory`, `sessionToken`, `associateId`. | Associado consulta somente o próprio vínculo; Diretoria/Sysadmin consultam por combobox administrativo em `/admin/transacoes`. |
 

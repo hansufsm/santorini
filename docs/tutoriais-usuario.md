@@ -125,7 +125,7 @@ O sysadmin possui a maior responsabilidade operacional. A instrução deve enfat
 
 | Menu | Para que serve | O que pode ou deve fazer | Como fazer | Risco principal |
 |---|---|---|---|---|
-| Usuários | Controlar acesso ao sistema. | Criar, consultar, ativar, inativar e revisar papéis, incluindo perfis administrativos quando necessário. | Abrir Usuários, usar filtros de consulta, conferir dados, definir role correta e salvar. | Conceder permissão excessiva ou manter acessos ativos sem necessidade. |
+| Usuários | Controlar acesso ao sistema. | Criar, consultar, editar cadastro, redefinir senha, ativar, inativar e revisar papéis, incluindo perfis administrativos quando necessário. | Abrir Usuários, usar filtros de consulta, acionar Editar, conferir dados, definir role correta e salvar alterações. | Conceder permissão excessiva, redefinir dados sem justificativa ou manter acessos ativos sem necessidade. |
 | Painel Admin | Operar com visão de diretoria quando necessário. | Apoiar diagnósticos e validar funcionamento. | Navegar pelas áreas administrativas com foco em suporte. | Alterar dados operacionais sem demanda. |
 | Deploy e Operações | Sustentar ambiente, banco e publicação. | Validar build, Convex, variáveis e versionamento. | Seguir `docs/operacoes.md` antes de publicar. | Publicar sem validação ou perder rastreabilidade. |
 | Feedbacks | Monitorar qualidade do produto e sinais de erro. | Separar bug técnico, dúvida de uso e sugestão. | Filtrar feedbacks e cruzar com rotas afetadas. | Ignorar padrões recorrentes reportados pelos usuários. |
