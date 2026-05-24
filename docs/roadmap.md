@@ -80,6 +80,8 @@ A primeira camada de experiência da **Trilha Viva Santorini** foi implementada 
 | Média | Preparar `associationId` nas novas tabelas | Reduz retrabalho na expansão SaaS. |
 | Baixa | Screenshot opcional no feedback | Deve vir somente após validar uso do MVP. |
 | Baixa | PWA e notificações | Úteis, mas dependem de base funcional estável. |
+| Futura | Refinar divisão de roles e permissões | Manter o fluxo atual como base, mas planejar com cuidado a separação entre `diretoria`, `admin` e `associado`, preservando que `sysadmin` cadastra Diretoria e que perfis administrativos tenham responsabilidades claras. |
+| Futura | Aprovação de alterações cadastrais | Permitir que usuários editem seus próprios cadastros, mas manter as mudanças como pendentes até validação por Diretoria ou Sysadmin; enquanto isso, a interface deve exibir um botão/estado informativo “validação pela diretoria”. |
 | Futura | Integração Redomus para controle de câmeras | Planejar comunicação API + token para inativar ou reativar acesso às câmeras de associados inadimplentes, sempre com regra formal, confirmação administrativa, trilha de auditoria e possibilidade de reversão. |
 | Futura | Integração CamobiSegura para botão do pânico | Planejar API de contato com CamobiSegura para botão do pânico e funcionalidades de segurança comunitária, com autorização explícita, registro de acionamentos, prevenção de falsos positivos e política clara de privacidade. |
 
@@ -92,7 +94,7 @@ As próximas entregas devem ser priorizadas por impacto comunitário, redução 
 | Valor para associado | A funcionalidade aumenta transparência ou utilidade cotidiana? |
 | Valor para diretoria | Reduz planilhas, retrabalho, dúvidas ou atendimento manual? |
 | Escala SaaS | Pode ser reutilizada por outras associações com pouca adaptação? |
-| Risco | Exige alteração sensível em banco, autenticação, privacidade, segurança física ou integração externa? |
+| Risco | Exige alteração sensível em banco, autenticação, privacidade, aprovação cadastral, segurança física ou integração externa? |
 | Mensurabilidade | Gera dados que ajudam a decidir os próximos passos? |
 
 ## Relação com documentação raiz

@@ -30,7 +30,7 @@ O objetivo é **levar cada usuário direto para o que importa para ele**.
 |-------|--------------------|
 | `associado` / `morador` | `/portal/inicio` — resumo financeiro pessoal, status do mês, comunicados recentes |
 | `diretoria` | `/admin` — dashboard rico com gráficos, tabela de transações, consulta de histórico por combobox e gestão de usuários operacionais |
-| `sysadmin` | `/admin` — mesmo dashboard + acesso a `/admin/usuarios` |
+| `sysadmin` | `/admin` — mesmo dashboard + acesso a `/admin/usuarios`, incluindo cadastro de Diretoria |
 
 **Implementação:**
 - `lib/auth.tsx` → após `login()` bem-sucedido, checar `user.role` e chamar `router.push(destinoPorPapel(role))`
@@ -129,6 +129,8 @@ O Santorini já iniciou a experiência de ensinar o usuário enquanto ele usa o 
 - **App mobile** — React Native ou PWA instalável
 - **Relatório em PDF** — extrato individual e balancete mensal para download
 - **Auditoria de ações** — log de quem fez o quê no painel admin (tabela `audit_log`)
+- **Refinamento de roles** — planejar com calma a divisão futura entre `diretoria`, `admin` e `associado`, mantendo o estado atual como base e preservando que `sysadmin` cadastra Diretoria
+- **Validação cadastral pela diretoria** — permitir que usuários editem seus próprios cadastros, mas gravar alterações como pendentes até aprovação por Diretoria ou Sysadmin, exibindo o estado/botão “validação pela diretoria” enquanto a mudança não persistir definitivamente
 - **Multi-residencial** — isolar dados por `condoId` para reutilizar o sistema em outros empreendimentos
 - **Integração Redomus** — planejar comunicação API + token para inativar ou reativar acesso às câmeras de associados inadimplentes, com confirmação administrativa, auditoria e reversão segura
 - **Integração CamobiSegura** — planejar API para botão do pânico e funcionalidades de segurança comunitária, com registro de acionamentos, política de privacidade e prevenção de falsos positivos
