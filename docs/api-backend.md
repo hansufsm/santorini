@@ -36,6 +36,8 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 | `assets.ts` | Patrimônio. |
 | `suppliers.ts` | Fornecedores e prestadores. |
 | `visitors.ts` | Visitantes. |
+| `feedbacks.ts` | Feedback Comunitário, triagem administrativa e arquivamento. |
+| `trilhaViva.ts` | Persistência de progresso dos microtutoriais e resumo administrativo. |
 
 ## Funções financeiras essenciais
 
@@ -75,6 +77,29 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 
 O contrato inicial de criação aceita categoria e mensagem do usuário, combinadas com metadados de contexto enviados pelo frontend. O backend valida tamanho de mensagem, categoria permitida e associação de destino antes de inserir o registro. A listagem administrativa exige sessão com papel autorizado e permite filtro por status, categoria e associação.
 
+## API implementada para Trilha Viva Santorini
+
+O módulo `trilhaViva.ts` persiste o progresso individual dos microtutoriais contextuais por usuário, rota, papel e associação. As funções de uso do portal aceitam sessão de qualquer perfil autenticado a partir de `morador`; as funções administrativas exigem pelo menos `diretoria`.
+
+| Função | Tipo | Responsabilidade |
+|---|---|---|
+| `trilhaViva:getMyProgress` | query | Retornar o progresso do usuário autenticado para a rota atual, calculando o `guideId` a partir da rota e do papel da sessão. |
+| `trilhaViva:touchGuide` | mutation | Criar ou atualizar o registro quando o usuário abre o card da Trilha Viva, marcando `lastOpenedAt` e status `em_andamento` quando ainda não concluído. |
+| `trilhaViva:completeGuide` | mutation | Marcar o guia como `concluido`, registrar `completedAt`, atualizar `lastOpenedAt` e incrementar `completionCount`. |
+| `trilhaViva:restartGuide` | mutation | Reiniciar um guia existente, removendo `completedAt`, registrando `restartedAt` e definindo status `reiniciado`. |
+| `trilhaViva:listProgress` | query | Listar registros para o painel administrativo com filtros opcionais por associação, status, role e rota. |
+| `trilhaViva:getProgressSummary` | query | Consolidar totais por status, agregação por rota e registros recentes para `/admin/trilha-viva`. |
+
+| Contrato | Campos principais |
+|---|---|
+| Leitura do próprio progresso | `sessionToken`, `route`. |
+| Abertura/conclusão do guia | `sessionToken`, `associationId` opcional, `route`, `menuLabel`. |
+| Reinício do guia | `sessionToken`, `route`. |
+| Listagem administrativa | `sessionToken`, `associationId` opcional, `status` opcional, `role` opcional, `route` opcional. |
+| Resumo administrativo | `sessionToken`, `associationId` opcional. |
+
+A experiência frontend usa `components/trilha-viva-guide.tsx` para sincronizar o estado remoto e manter fallback em `localStorage` quando a chamada Convex não estiver disponível. O painel `/admin/trilha-viva` consome `getProgressSummary` e `listProgress` para exibir métricas, filtros e pontos de dificuldade por menu.
+
 ## Cuidados operacionais
 
 | Cuidado | Motivo |
@@ -83,6 +108,7 @@ O contrato inicial de criação aceita categoria e mensagem do usuário, combina
 | Evitar mutations destrutivas sem confirmação | Dados financeiros e cadastrais exigem rastreabilidade. |
 | Usar soft delete em registros sensíveis | Preserva auditoria e reduz risco operacional. |
 | Filtrar por `associationId` em novos módulos | Prepara o produto para SaaS multiassociação. |
+| Manter fallback local em experiências de orientação | Evita perda de usabilidade quando a sincronização remota falha. |
 | Documentar novas funções | Evita divergência entre frontend, backend e suporte. |
 
 ## Referências internas
@@ -90,3 +116,4 @@ O contrato inicial de criação aceita categoria e mensagem do usuário, combina
 [1]: ../convex "Diretório de funções Convex"
 [2]: schema-banco.md "Schema do banco"
 [3]: feedback-comunitario.md "Feedback Comunitário"
+[4]: tutoriais-usuario.md "Tutoriais do usuário"

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { convexMutation, convexQuery } from "@/lib/convex";
+import { useAuth } from "@/lib/auth";
 import { getTrilhaVivaGuide, type TrilhaVivaGuide, type UserRole } from "@/lib/trilha-viva-content";
 
 type TrilhaVivaGuideProps = {
@@ -8,50 +10,160 @@ type TrilhaVivaGuideProps = {
   role: UserRole | string;
 };
 
+type RemoteProgress = {
+  status: "nao_iniciado" | "em_andamento" | "concluido" | "reiniciado";
+  completionCount?: number;
+  completedAt?: number;
+  updatedAt?: number;
+} | null;
+
 function getStorageKey(guide: TrilhaVivaGuide, role: string) {
   return `santorini:trilha-viva:${role}:${guide.route}:completed`;
 }
 
+function readLocalCompletion(guide: TrilhaVivaGuide, role: string) {
+  try {
+    return window.localStorage.getItem(getStorageKey(guide, role)) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeLocalCompletion(guide: TrilhaVivaGuide, role: string, completed: boolean) {
+  try {
+    if (completed) {
+      window.localStorage.setItem(getStorageKey(guide, role), "true");
+    } else {
+      window.localStorage.removeItem(getStorageKey(guide, role));
+    }
+  } catch {
+    // LocalStorage pode estar indisponível em alguns navegadores; a UI continua funcional.
+  }
+}
+
 export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
+  const { session } = useAuth();
   const guide = useMemo(() => getTrilhaVivaGuide(pathname, role), [pathname, role]);
   const [expanded, setExpanded] = useState(true);
   const [completed, setCompleted] = useState(false);
+  const [syncState, setSyncState] = useState<"local" | "sincronizando" | "sincronizado" | "indisponivel">("local");
+  const [completionCount, setCompletionCount] = useState(0);
 
   useEffect(() => {
     if (!guide) return;
-    try {
-      const stored = window.localStorage.getItem(getStorageKey(guide, role));
-      setCompleted(stored === "true");
-      setExpanded(stored !== "true");
-    } catch {
-      setCompleted(false);
-      setExpanded(true);
+
+    const localCompleted = readLocalCompletion(guide, role);
+    setCompleted(localCompleted);
+    setExpanded(!localCompleted);
+    setCompletionCount(0);
+
+    if (!session?.token) {
+      setSyncState("local");
+      return;
     }
-  }, [guide, role]);
+
+    let cancelled = false;
+    setSyncState("sincronizando");
+
+    async function syncGuide() {
+      if (!guide || !session?.token) return;
+
+      try {
+        await convexMutation("trilhaViva:touchGuide", {
+          sessionToken: session.token,
+          route: guide.route,
+          menuLabel: guide.menuLabel,
+        });
+
+        const remote = await convexQuery<RemoteProgress>("trilhaViva:getMyProgress", {
+          sessionToken: session.token,
+          route: guide.route,
+        });
+
+        if (cancelled) return;
+
+        const remoteCompleted = remote?.status === "concluido";
+        const isCompleted = remoteCompleted || localCompleted;
+        setCompleted(isCompleted);
+        setExpanded(!isCompleted);
+        setCompletionCount(remote?.completionCount ?? (isCompleted ? 1 : 0));
+        setSyncState("sincronizado");
+
+        if (remoteCompleted) {
+          writeLocalCompletion(guide, role, true);
+        }
+      } catch {
+        if (cancelled) return;
+        setSyncState("indisponivel");
+      }
+    }
+
+    void syncGuide();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [guide, role, session?.token]);
 
   if (!guide) return null;
 
-  function markAsCompleted() {
+  async function markAsCompleted() {
     if (!guide) return;
-    try {
-      window.localStorage.setItem(getStorageKey(guide, role), "true");
-    } catch {
-      // LocalStorage pode estar indisponível em alguns navegadores; a UI continua funcional.
-    }
+
+    writeLocalCompletion(guide, role, true);
     setCompleted(true);
     setExpanded(false);
+    setCompletionCount((current) => Math.max(current, 1));
+
+    if (!session?.token) {
+      setSyncState("local");
+      return;
+    }
+
+    setSyncState("sincronizando");
+    try {
+      await convexMutation("trilhaViva:completeGuide", {
+        sessionToken: session.token,
+        route: guide.route,
+        menuLabel: guide.menuLabel,
+      });
+      setSyncState("sincronizado");
+      setCompletionCount((current) => current + 1);
+    } catch {
+      setSyncState("indisponivel");
+    }
   }
 
-  function restartGuide() {
+  async function restartGuide() {
     if (!guide) return;
-    try {
-      window.localStorage.removeItem(getStorageKey(guide, role));
-    } catch {
-      // Mantém a experiência disponível mesmo sem persistência local.
-    }
+
+    writeLocalCompletion(guide, role, false);
     setCompleted(false);
     setExpanded(true);
+
+    if (!session?.token) {
+      setSyncState("local");
+      return;
+    }
+
+    setSyncState("sincronizando");
+    try {
+      await convexMutation("trilhaViva:restartGuide", {
+        sessionToken: session.token,
+        route: guide.route,
+      });
+      setSyncState("sincronizado");
+    } catch {
+      setSyncState("indisponivel");
+    }
   }
+
+  const syncLabel = {
+    local: "progresso local",
+    sincronizando: "sincronizando",
+    sincronizado: "progresso salvo",
+    indisponivel: "salvo localmente",
+  }[syncState];
 
   return (
     <section
@@ -67,9 +179,12 @@ export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
             <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium text-emerald-100/80">
               {guide.badge} · {guide.menuLabel}
             </span>
+            <span className="rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium text-emerald-100/70">
+              {syncLabel}
+            </span>
             {completed && (
               <span className="rounded-full bg-cyan-400/10 px-2.5 py-1 text-xs font-medium text-cyan-100">
-                Etapa compreendida
+                Etapa compreendida{completionCount > 1 ? ` · ${completionCount} revisões` : ""}
               </span>
             )}
           </div>
@@ -121,7 +236,7 @@ export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs leading-5 text-emerald-50/60">
-              Esta orientação muda conforme sua role e a área acessada. Ela não substitui regras formais, mas ajuda você a agir melhor dentro do app.
+              Esta orientação muda conforme sua role e a área acessada. Quando possível, seu progresso é salvo na nuvem; se o serviço estiver indisponível, a experiência continua salva localmente.
             </p>
             <div className="flex flex-wrap gap-2">
               {completed && (

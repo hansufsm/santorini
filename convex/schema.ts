@@ -285,6 +285,44 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("by_created_at", ["createdAt"]),
 
+  // ─── Trilha Viva Santorini ─────────────────────────────────────────────────
+  // Progresso individual dos microtutoriais por usuário, rota e papel.
+  // A associação padrão mantém a evolução SaaS sem acoplar a versão atual.
+
+  trilhaVivaProgress: defineTable({
+    associationId: v.string(),
+    guideId: v.string(),
+    route: v.string(),
+    menuLabel: v.string(),
+    userId: v.id("users"),
+    userRole: v.union(
+      v.literal("sysadmin"),
+      v.literal("diretoria"),
+      v.literal("associado"),
+      v.literal("morador")
+    ),
+    status: v.union(
+      v.literal("nao_iniciado"),
+      v.literal("em_andamento"),
+      v.literal("concluido"),
+      v.literal("reiniciado")
+    ),
+    completedAt: v.optional(v.number()),
+    lastOpenedAt: v.optional(v.number()),
+    restartedAt: v.optional(v.number()),
+    completionCount: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    deletedAt: v.optional(v.number()),
+  })
+    .index("by_user_guide", ["userId", "guideId"])
+    .index("by_user", ["userId"])
+    .index("by_association", ["associationId"])
+    .index("by_association_route", ["associationId", "route"])
+    .index("by_association_status", ["associationId", "status"])
+    .index("by_role", ["userRole"])
+    .index("by_updated_at", ["updatedAt"]),
+
   // ─── Usuários do sistema (RBAC) ───────────────────────────────────────────
   //
   // Hierarquia de papéis:

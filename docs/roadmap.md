@@ -11,7 +11,7 @@ O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencia
 | 3 | Operações, portal e privacidade | Em evolução | Portal, usuários, permissões, reservas, manutenção e módulos operacionais. |
 | 4 | UX, identidade e sessão | Implementada em parte | Logo AMRTS, favicon, toggles pill e melhoria de persistência de sessão. |
 | 5 | Feedback Comunitário | MVP implementado | Canal global de escuta com painel administrativo. |
-| 6 | Tutoriais inteligentes por role | MVP in-app implementado | Trilha Viva contextual no portal, com conteúdo por rota, role e checklist local. |
+| 6 | Tutoriais inteligentes por role | Persistência e painel implementados | Trilha Viva contextual no portal, com conteúdo por rota, role, checklist sincronizado no Convex e painel administrativo. |
 | 7 | SaaS multiassociação | Planejada | Isolamento por `associationId`, parametrização de marca e planos. |
 
 ## Entregas recentes registradas
@@ -26,6 +26,7 @@ O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencia
 | Modelo comercial de assinatura mensal | Aprovado | [Modelo de negócio SaaS](modelo-negocio.md). |
 | MVP de Feedback Comunitário com painel de triagem | Implementado | [Feedback Comunitário](feedback-comunitario.md). |
 | MVP da Trilha Viva no portal do associado | Implementado | [Tutoriais do usuário](tutoriais-usuario.md). |
+| Persistência Convex e painel administrativo da Trilha Viva | Implementada | [Tutoriais do usuário](tutoriais-usuario.md) e [Schema do banco](schema-banco.md). |
 
 ## Entrega implementada: Feedback Comunitário
 
@@ -42,7 +43,7 @@ O MVP de Feedback Comunitário foi implementado como canal pequeno, rastreável 
 
 ## Entrega implementada: Tutoriais Inteligentes por role
 
-A primeira camada de experiência da **Trilha Viva Santorini** foi implementada no portal do associado. O sistema agora ensina enquanto o usuário trabalha, com um card contextual que aparece dentro das rotas do portal e explica missão, ações, passos, confirmação e próximo destino. A meta permanece evoluir essa base para que associado, morador, diretoria ou sysadmin entendam imediatamente **para que serve** cada funcionalidade, **o que podem ou devem fazer** e **como executar** as ações principais.
+A primeira camada de experiência da **Trilha Viva Santorini** foi implementada no portal do associado e agora possui persistência remota no Convex. O sistema ensina enquanto o usuário trabalha, com um card contextual que aparece dentro das rotas do portal e explica missão, ações, passos, confirmação e próximo destino. A diretoria também passou a contar com `/admin/trilha-viva`, uma visão inicial de acompanhamento de progresso, filtros por perfil/status/menu e pontos de dificuldade. A meta permanece evoluir essa base para que associado, morador, diretoria ou sysadmin entendam imediatamente **para que serve** cada funcionalidade, **o que podem ou devem fazer** e **como executar** as ações principais.
 
 > A técnica proposta recebe o nome de **Trilha Viva Santorini**: uma combinação de manual por role, cards de missão, microtutorial contextual, checklist de primeira execução e canal de feedback na própria tela. A experiência deve parecer um guia de bordo do condomínio, não um arquivo de ajuda isolado.
 
@@ -52,7 +53,8 @@ A primeira camada de experiência da **Trilha Viva Santorini** foi implementada 
 | Mapa do menu | Cada item de menu descreve objetivo, permissões, ações recomendadas e limites. | Reduz dúvidas sobre onde clicar e por que cada área existe. |
 | Cards de missão | Cada tela ganha uma pequena narrativa: “sua missão aqui é…”. | Aumenta autonomia e sensação de progresso. |
 | Microtutorial contextual | Card contextual abre passos curtos dentro da própria tela. | Implementado no portal do associado. |
-| Checklist de primeira vez | Cada rota possui ações marcáveis, persistidas no navegador por role e rota. | Implementado no portal do associado. |
+| Checklist de primeira vez | Cada rota possui ações marcáveis, persistidas no Convex por usuário, role e rota, com fallback local no navegador. | Implementado no portal do associado. |
+| Acompanhamento administrativo | A diretoria visualiza totais, status, rotas com maior dificuldade e registros recentes. | Implementado em `/admin/trilha-viva`. |
 | Feedback acoplado | Ao final de cada tutorial, o usuário poderá enviar dúvida ou sugestão. | Próxima evolução integrada ao Feedback Comunitário. |
 
 | Role | Menus prioritários para instrução inicial | Foco pedagógico |
@@ -70,6 +72,8 @@ A primeira camada de experiência da **Trilha Viva Santorini** foi implementada 
 | Concluída | Criar painel administrativo de feedbacks | Sem triagem, os registros perdem valor operacional. |
 | Concluída | Criar documentação instrucional por role e menu | Transforma o app em uma experiência guiada e reduz suporte manual. |
 | Concluída | Implementar microtutorial in-app “Trilha Viva Santorini” no portal | Leva a instrução para dentro das telas, conectada ao papel do usuário. |
+| Concluída | Persistir progresso da Trilha Viva no Convex | Permite retomada entre dispositivos e cria base de métricas. |
+| Concluída | Criar painel administrativo `/admin/trilha-viva` | Ajuda a diretoria a identificar menus com maior fricção. |
 | Alta | Consolidar Portal do Associado como área dedicada | Aumenta valor percebido pelos moradores e reduz suporte manual. |
 | Média | Evoluir gestor de patrimônio | Organiza bens comuns e manutenção. |
 | Média | Estruturar divulgação de serviços | Cria utilidade comunitária e engajamento. |

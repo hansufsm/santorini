@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { href: "/admin/comunicados", label: "📢 Comunicados" },
   { href: "/admin/manutencao", label: "🔧 Manutenção" },
   { href: "/admin/feedbacks", label: "💬 Feedbacks" },
+  { href: "/admin/trilha-viva", label: "🗺️ Trilha Viva" },
 ];
 
 // Apenas sysadmin vê esta seção

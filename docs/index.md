@@ -41,7 +41,7 @@ Esta pasta reúne a documentação oficial do app Santorini. O objetivo é mante
 | Sessão administrativa | Melhorada | Usuário autenticado não deve ser solicitado a logar novamente ao retornar à página inicial. |
 | Toggles Wide/Boxed | Implementados na topbar desktop | Padrão visual em formato pill. |
 | Feedback Comunitário | MVP implementado | Botão global, persistência Convex e painel `/admin/feedbacks`. |
-| Tutoriais Inteligentes por role | MVP in-app implementado | Trilha Viva Santorini integrada ao portal do associado para instruir usuários por rotas, menus e permissões. |
+| Tutoriais Inteligentes por role | Persistência e painel implementados | Trilha Viva Santorini integrada ao portal do associado com progresso Convex, fallback local e painel `/admin/trilha-viva`. |
 | Modelo SaaS multiassociação | Planejado | Estrutura documental considera `associationId` e escalabilidade para novas associações. |
 
 ## Convenções de manutenção documental

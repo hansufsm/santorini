@@ -6,14 +6,15 @@ A **Trilha Viva Santorini** é a estratégia instrucional do app para que cada u
 
 ## Status da implementação
 
-A primeira versão in-app da Trilha Viva foi implementada no portal do associado. O app agora possui uma base estruturada de conteúdo em `lib/trilha-viva-content.ts`, um componente contextual reutilizável em `components/trilha-viva-guide.tsx` e integração direta no layout `app/portal/layout.tsx`. O card aparece nas principais rotas do portal e combina missão da tela, ações orientadas, checklist de conclusão local e próximo passo recomendado.
+A versão in-app da Trilha Viva foi implementada no portal do associado e evoluiu para persistência remota no Convex. O app possui uma base estruturada de conteúdo em `lib/trilha-viva-content.ts`, um componente contextual reutilizável em `components/trilha-viva-guide.tsx`, integração direta no layout `app/portal/layout.tsx`, tabela `trilhaVivaProgress` no schema Convex e painel administrativo em `/admin/trilha-viva`. O card aparece nas principais rotas do portal e combina missão da tela, ações orientadas, checklist de conclusão sincronizado, fallback local e próximo passo recomendado.
 
 | Item | Status | Observação |
 |---|---|---|
 | Conteúdo por rota do portal | Implementado | Cobre Início, Extrato, Mensalidade, Meu Cadastro, Reservas, Comunicados e Suporte. |
 | Segmentação por role | Implementado no MVP | A estrutura aceita roles e o portal usa o papel da sessão para exibir conteúdo compatível. |
 | Card contextual “Como usar esta tela” | Implementado | O usuário aprende sem sair da rota atual. |
-| Checklist local por rota e role | Implementado | O progresso fica salvo no navegador via `localStorage`. |
+| Checklist por rota e role | Implementado | O progresso é sincronizado no Convex por usuário, rota e papel; quando a conexão remota falha, o navegador mantém fallback em `localStorage`. |
+| Painel administrativo `/admin/trilha-viva` | Implementado | Diretoria e sysadmin acompanham registros, status, perfis e pontos de dificuldade por menu. |
 | Integração com Feedback Comunitário | Planejada para evolução | O MVP já convive com o botão global de feedback; a conexão direta “esta orientação ajudou?” será a próxima etapa. |
 
 ## Princípio de experiência
@@ -48,10 +49,12 @@ A implementação atual criou uma camada de ajuda reutilizável por rota para o 
 |---|---|---|
 | `TrilhaVivaGuideCard` | Card discreto de ajuda contextual dentro da área principal do portal. | Implementado |
 | `trilhaVivaGuides` | Registro técnico que relaciona rota, role, título, passos e permissões. | Implementado |
-| Checklist contextual | Lista de ações concluíveis pelo usuário, com persistência local por rota e role. | Implementado |
+| Checklist contextual | Lista de ações concluíveis pelo usuário, com persistência remota em `trilhaVivaProgress` e fallback local por rota e role. | Implementado |
+| `trilhaViva.ts` | Queries e mutations Convex para abrir, concluir, reiniciar e acompanhar progresso. | Implementado |
+| Painel administrativo `/admin/trilha-viva` | Visão de métricas, filtros por status/perfil/menu e pontos de dificuldade. | Implementado |
 | `TutorialFeedback` | Pergunta final: “Esta orientação ajudou?” integrada ao Feedback Comunitário. | Próxima evolução |
 | `GuidedSpotlight` | Destaque visual opcional de botões e campos importantes. | Futuro |
-| Painel lateral/drawer | Versão expandida do guia para fluxos longos e administração. | Futuro |
+| Painel lateral/drawer | Versão expandida do guia para fluxos longos. | Futuro |
 
 ## Mapa por role
 
@@ -163,8 +166,8 @@ A Trilha Viva deve ser avaliada por indicadores simples, pois o objetivo é redu
 | Métrica | Sinal positivo | Fonte inicial |
 |---|---|---|
 | Redução de dúvidas repetidas | Menos chamados sobre “onde encontro” ou “como faço”. | Suporte e Feedback Comunitário. |
-| Conclusão de primeira visita | Usuário passa pelos menus essenciais sem pedir ajuda. | Checklist futuro. |
-| Clareza por tela | Feedbacks indicam que a instrução ajudou. | `TutorialFeedback`. |
+| Conclusão de primeira visita | Usuário passa pelos menus essenciais sem pedir ajuda. | `trilhaVivaProgress` e painel `/admin/trilha-viva`. |
+| Clareza por tela | Feedbacks indicam que a instrução ajudou. | Feedback Comunitário e futura integração `TutorialFeedback`. |
 | Qualidade dos chamados | Mensagens de suporte ficam mais completas e objetivas. | Módulo Suporte. |
 | Adoção do portal | Associados acessam mais Extrato, Mensalidade e Comunicados. | Métricas futuras de uso. |
 
@@ -178,8 +181,10 @@ A implementação é gradual e já saiu da fase puramente documental. O portal d
 | 2 | Criar registro técnico de tutoriais. | Concluída em `lib/trilha-viva-content.ts` |
 | 3 | Implementar card “Como usar esta tela”. | Concluída em `components/trilha-viva-guide.tsx` |
 | 4 | Integrar o card às rotas do portal. | Concluída em `app/portal/layout.tsx` |
-| 5 | Integrar diretamente com Feedback Comunitário. | Próxima evolução |
-| 6 | Medir dúvidas recorrentes e ajustar conteúdo. | Futuro |
+| 5 | Persistir progresso da Trilha Viva no Convex por usuário, rota e role. | Concluída em `convex/trilhaViva.ts` e `trilhaVivaProgress` |
+| 6 | Criar painel administrativo de acompanhamento da Trilha Viva. | Concluída em `/admin/trilha-viva` |
+| 7 | Integrar diretamente com Feedback Comunitário. | Próxima evolução |
+| 8 | Medir dúvidas recorrentes e ajustar conteúdo. | Em evolução |
 
 ## Decisão de produto
 
