@@ -13,7 +13,9 @@
 | 2B   | Frontend — portal do associado + painel admin base | ✅ Entregue |
 | 3    | Redirect inteligente pós-login + dashboard admin rico | 🔜 Próximo |
 | 4    | Inadimplência — relatório mensal e histórico | 🔜 Planejado |
-| 5+   | Funcionalidades avançadas | 💡 Backlog |
+| 5    | Feedback Comunitário — canal global de escuta | ✅ MVP implementado |
+| 6    | Tutoriais Inteligentes por role, área e menu | 🧭 Aprovado para planejamento |
+| 7+   | Funcionalidades avançadas e SaaS multiassociação | 💡 Backlog |
 
 ---
 
@@ -95,7 +97,26 @@ Lógica:
 
 ---
 
-## Fase 5+ — Backlog de funcionalidades
+## Fase 5 — Feedback Comunitário
+
+O Feedback Comunitário cria um canal de escuta contínua dentro do app. O MVP implementado registra categoria, mensagem, URL, rota, timestamp e, quando existir sessão, o perfil do usuário. A diretoria conta com a rota `/admin/feedbacks` para triagem, alteração de status e transformação dos registros em decisões de produto e melhorias operacionais.
+
+---
+
+## Fase 6 — Tutoriais Inteligentes por role, área e menu
+
+O Santorini deve passar a ensinar o usuário enquanto ele usa o sistema. A experiência proposta, chamada **Trilha Viva Santorini**, combina documentação por perfil, cards de missão por tela, microtutorial contextual, checklist de primeira execução e feedback acoplado ao fim de cada instrução. O objetivo é orientar o usuário sobre **para que serve**, **o que pode ou deve fazer** e **como fazer** em cada funcionalidade visível para sua role.
+
+| Role | Menus iniciais a documentar | Intenção de instrução |
+|------|-----------------------------|------------------------|
+| `morador` | Início, Comunicados, Suporte | Ler informações essenciais e pedir ajuda. |
+| `associado` | Início, Extrato, Mensalidade, Meu Cadastro, Reservas, Comunicados, Suporte | Acompanhar finanças, manter cadastro e usar serviços. |
+| `diretoria` | Dashboard, Transações, Associados, Reservas, Comunicados, Manutenção, Feedbacks | Operar a associação com rastreabilidade e governança. |
+| `sysadmin` | Itens da diretoria, Usuários e parâmetros técnicos | Sustentar segurança, permissões e operação do sistema. |
+
+---
+
+## Fase 7+ — Backlog de funcionalidades
 
 > Ideias levantadas, sem prioridade definida ainda.
 
@@ -119,4 +140,4 @@ Lógica:
 
 ## Documentação complementar
 
-A versão organizada e detalhada do roadmap está em [`docs/roadmap.md`](docs/roadmap.md), integrada aos documentos de modelo de negócio, Feedback Comunitário, portal do associado e registro de decisões.
+A versão organizada e detalhada do roadmap está em [`docs/roadmap.md`](docs/roadmap.md), integrada aos documentos de modelo de negócio, Feedback Comunitário, tutoriais do usuário, portal do associado e registro de decisões.

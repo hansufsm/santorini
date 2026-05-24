@@ -243,6 +243,48 @@ export default defineSchema({
     .index("by_unit", ["unit"])
     .index("by_status", ["status"]),
 
+  // ─── Feedback Comunitário ─────────────────────────────────────────────────
+  // Registros enviados por moradores, associados, diretoria ou visitantes.
+  // A tabela já nasce com associationId para evolução SaaS multiassociação.
+
+  feedbacks: defineTable({
+    associationId: v.string(),
+    category: v.union(
+      v.literal("sugestao"),
+      v.literal("problema"),
+      v.literal("elogio"),
+      v.literal("duvida"),
+      v.literal("outro")
+    ),
+    message: v.string(),
+    url: v.string(),
+    route: v.string(),
+    userRole: v.optional(
+      v.union(
+        v.literal("sysadmin"),
+        v.literal("diretoria"),
+        v.literal("associado"),
+        v.literal("morador")
+      )
+    ),
+    userId: v.optional(v.id("users")),
+    status: v.union(
+      v.literal("novo"),
+      v.literal("em_analise"),
+      v.literal("resolvido"),
+      v.literal("arquivado")
+    ),
+    screenshotUrl: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    deletedAt: v.optional(v.number()),
+  })
+    .index("by_association", ["associationId"])
+    .index("by_association_status", ["associationId", "status"])
+    .index("by_status", ["status"])
+    .index("by_category", ["category"])
+    .index("by_created_at", ["createdAt"]),
+
   // ─── Usuários do sistema (RBAC) ───────────────────────────────────────────
   //
   // Hierarquia de papéis:

@@ -4,11 +4,28 @@
 
 | Perfil | Como acessa | O que pode fazer |
 |--------|------------|-----------------|
-| **Visitante público** | Abre o site sem login | Ver resumo financeiro com nomes anonimizados |
-| **Associado** | Portal do Associado (CPF) | Ver o próprio extrato de contribuições |
-| **Viewer** | Login admin (role viewer) | Visualizar todos os dados sem editar |
-| **Admin** | Login admin (role admin) | CRUD completo em todos os módulos |
-| **Sysadmin** | Login admin (role sysadmin) | Admin + gestão de usuários |
+| **Visitante público** | Abre o site sem login | Ver informações públicas e conhecer o sistema. |
+| **Morador** | Login no portal | Ler comunicados permitidos e abrir suporte quando necessário. |
+| **Associado** | Login no portal | Consultar início, extrato, mensalidade, cadastro, reservas, comunicados e suporte. |
+| **Diretoria** | Login administrativo | Operar dados financeiros, associados, reservas, comunicados, manutenção e feedbacks. |
+| **Sysadmin** | Login administrativo | Administrar usuários, permissões e sustentação técnica do sistema. |
+
+---
+
+## Técnica de uso guiado: Trilha Viva Santorini
+
+O Santorini adota a proposta de **Trilha Viva**, uma forma de instrução que ensina o usuário dentro do próprio contexto do app. Cada área deve explicar sua missão, as ações permitidas e o sinal de sucesso esperado. O objetivo é que a pessoa saiba **para que serve**, **o que pode ou deve fazer** e **como fazer** sem depender de suporte manual para tarefas simples.
+
+| Pergunta do usuário | Resposta que cada tela deve oferecer |
+|---|---|
+| Onde estou? | Nome da área e missão da funcionalidade. |
+| Para que serve? | Explicação curta sobre o valor daquela tela. |
+| O que posso fazer? | Ações permitidas para a role autenticada. |
+| Como faço? | Passos práticos e linguagem simples. |
+| Como sei que deu certo? | Mensagem, status, registro ou item visível confirmando a ação. |
+| E se eu tiver dúvida? | Usar Suporte quando for atendimento operacional ou Feedback quando for melhoria do app. |
+
+A documentação detalhada da estratégia está em [`docs/tutoriais-usuario.md`](tutoriais-usuario.md). Este guia resume as principais rotas de uso para consulta rápida.
 
 ---
 
@@ -55,18 +72,30 @@ O dashboard carrega automaticamente as transações mais recentes. O indicador n
 
 ## Portal do Associado
 
-1. Clique em **Área do Associado** (botão no topo ou no drawer)
-2. Digite os **5 primeiros dígitos do seu CPF** (apenas números)
-   - Exemplo: CPF `123.456.789-00` → digitar `12345`
-3. Clique em **Buscar**
-4. O portal exibe:
-   - Nome do associado
-   - Total contribuído
-   - Número de meses ativos
-   - Última contribuição
-   - Histórico completo de transações
+O Portal do Associado é a área em que o usuário acompanha sua relação cotidiana com a associação. A navegação principal deve orientar o associado pelos menus **Início**, **Extrato**, **Mensalidade**, **Meu Cadastro**, **Reservas**, **Comunicados** e **Suporte**.
 
-> **Privacidade:** você vê apenas o seu próprio histórico. Outros associados aparecem anonimizados.
+> **Privacidade:** o associado visualiza apenas informações compatíveis com sua role. Dados pessoais sensíveis e operações administrativas ficam restritos à diretoria e ao sysadmin.
+
+| Menu | Para que serve | O que fazer | Como confirmar que deu certo |
+|---|---|---|---|
+| **Início** | Ver um resumo da situação e avisos relevantes. | Ler cards, alertas e atalhos principais. | A situação geral fica compreensível sem abrir todas as telas. |
+| **Extrato** | Conferir movimentações e histórico financeiro. | Revisar datas, descrições e valores. | O lançamento esperado aparece no histórico. |
+| **Mensalidade** | Entender a situação do mês corrente. | Verificar status, valor e possível pendência. | O status financeiro aparece claro e coerente com o extrato. |
+| **Meu Cadastro** | Conferir e atualizar dados permitidos. | Revisar telefone, e-mail e dados visíveis. | O app confirma a atualização ou mantém dados corretos. |
+| **Reservas** | Solicitar ou acompanhar áreas comuns. | Escolher área e data quando disponível. | A reserva aparece registrada ou o impedimento fica claro. |
+| **Comunicados** | Ler avisos oficiais da associação. | Acompanhar comunicados recentes e urgentes. | O usuário sabe qual orientação oficial deve seguir. |
+| **Suporte** | Abrir chamados e pedir ajuda. | Descrever o problema ou dúvida com objetividade. | O chamado aparece no histórico com status inicial. |
+
+### Roteiro recomendado de primeira visita
+
+| Passo | Ação | Intenção |
+|---:|---|---|
+| 1 | Abrir **Início**. | Entender o panorama geral. |
+| 2 | Conferir **Mensalidade** e **Extrato**. | Validar situação financeira e histórico. |
+| 3 | Revisar **Meu Cadastro**. | Garantir que a associação consiga entrar em contato. |
+| 4 | Ler **Comunicados**. | Ficar alinhado com informações oficiais. |
+| 5 | Testar **Reservas**, quando necessário. | Entender como solicitar uso de áreas comuns. |
+| 6 | Usar **Suporte** ou **Feedback**. | Resolver problemas operacionais ou sugerir melhoria do app. |
 
 ---
 

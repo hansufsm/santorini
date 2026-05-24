@@ -64,16 +64,16 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 | `auth:getSession` | query | Restaura sessão pelo token. |
 | `users:*` | query/mutation | Gestão de usuários e papéis. |
 
-## API planejada para Feedback Comunitário
+## API implementada para Feedback Comunitário
 
 | Função | Tipo | Responsabilidade |
 |---|---|---|
 | `feedbacks:createFeedback` | mutation | Gravar feedback enviado por usuário autenticado ou visitante permitido. |
 | `feedbacks:listFeedbacks` | query | Listar registros para painel administrativo, filtrando por associação, categoria e status. |
-| `feedbacks:getFeedback` | query | Obter detalhes de um feedback específico. |
 | `feedbacks:updateFeedbackStatus` | mutation | Atualizar status e metadados de triagem. |
+| `feedbacks:archiveFeedback` | mutation | Arquivar feedback sem exclusão física. |
 
-O contrato inicial de criação deve aceitar categoria e mensagem do usuário, combinadas com metadados de contexto enviados pelo frontend. O backend deve validar tamanho de mensagem, categoria permitida e associação de destino antes de inserir o registro.
+O contrato inicial de criação aceita categoria e mensagem do usuário, combinadas com metadados de contexto enviados pelo frontend. O backend valida tamanho de mensagem, categoria permitida e associação de destino antes de inserir o registro. A listagem administrativa exige sessão com papel autorizado e permite filtro por status, categoria e associação.
 
 ## Cuidados operacionais
 

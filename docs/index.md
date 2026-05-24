@@ -7,7 +7,7 @@
 **Versão pública estática:** [zionsti.github.io/santorini](https://zionsti.github.io/santorini/)
 **Última atualização documental:** 2026-05-23
 
-Esta pasta reúne a documentação oficial do app Santorini. O objetivo é manter, em um único ponto do repositório, a memória técnica, operacional e estratégica do produto, incluindo decisões recentes de UX, identidade visual, modelo SaaS, portal do associado e evolução do módulo de **Feedback Comunitário**.
+Esta pasta reúne a documentação oficial do app Santorini. O objetivo é manter, em um único ponto do repositório, a memória técnica, operacional e estratégica do produto, incluindo decisões recentes de UX, identidade visual, modelo SaaS, portal do associado, evolução do módulo de **Feedback Comunitário** e estratégia de **Tutoriais Inteligentes por role**.
 
 > A documentação deve ser tratada como parte do produto. Sempre que uma decisão funcional, comercial, técnica ou operacional for aprovada, ela deve ser registrada nesta pasta antes ou junto da implementação correspondente.
 
@@ -19,7 +19,8 @@ Esta pasta reúne a documentação oficial do app Santorini. O objetivo é mante
 | [Registro de decisões do produto](registro-decisoes.md) | Produto, diretoria e desenvolvimento | Consolida decisões aprovadas, motivação e impacto esperado. |
 | [Modelo de negócio SaaS](modelo-negocio.md) | Diretoria, comercial e produto | Documenta assinatura mensal, Plano Básico, multiassociação e premissas comerciais. |
 | [Roadmap](roadmap.md) | Todos os envolvidos | Organiza entregas concluídas, próximas fases e backlog priorizado. |
-| [Feedback Comunitário](feedback-comunitario.md) | Produto, UX e desenvolvimento | Especifica o módulo global de feedback e suas seis etapas aprovadas. |
+| [Feedback Comunitário](feedback-comunitario.md) | Produto, UX e desenvolvimento | Documenta o módulo global de feedback, o MVP implementado e as próximas etapas. |
+| [Tutoriais do usuário](tutoriais-usuario.md) | Produto, UX, suporte e usuários finais | Planeja a Trilha Viva Santorini, com instruções por role, área e menu permitido. |
 | [Portal do Associado](portal-do-associado.md) | Produto, suporte e desenvolvimento | Define a experiência dedicada do associado, substituindo o uso de modal como solução principal. |
 | [Identidade visual](identidade-visual.md) | Produto, design e desenvolvimento | Registra uso da logo AMRTS, favicons, ícones e aplicação nos menus. |
 | [Arquitetura técnica](arquitetura.md) | Desenvolvimento | Explica a arquitetura Next.js, Convex, versão estática e estratégia de evolução. |
@@ -39,7 +40,8 @@ Esta pasta reúne a documentação oficial do app Santorini. O objetivo é mante
 | Identidade visual AMRTS | Implementada | Logo oficial aplicada como favicon, Apple Touch Icon e marca nos menus. |
 | Sessão administrativa | Melhorada | Usuário autenticado não deve ser solicitado a logar novamente ao retornar à página inicial. |
 | Toggles Wide/Boxed | Implementados na topbar desktop | Padrão visual em formato pill. |
-| Feedback Comunitário | Aprovado para implementação | MVP documentado e dividido em seis etapas. |
+| Feedback Comunitário | MVP implementado | Botão global, persistência Convex e painel `/admin/feedbacks`. |
+| Tutoriais Inteligentes por role | Aprovados para planejamento | Trilha Viva Santorini documentada para instruir usuários por menus e permissões. |
 | Modelo SaaS multiassociação | Planejado | Estrutura documental considera `associationId` e escalabilidade para novas associações. |
 
 ## Convenções de manutenção documental
@@ -48,7 +50,7 @@ A documentação deve permanecer objetiva, rastreável e versionada. Novos módu
 
 | Tipo de alteração | Documentos a revisar |
 |---|---|
-| Nova funcionalidade de usuário | `roadmap.md`, documento funcional específico e `guia-usuario.md`. |
+| Nova funcionalidade de usuário | `roadmap.md`, documento funcional específico, `guia-usuario.md` e, quando houver impacto instrucional, `tutoriais-usuario.md`. |
 | Nova tabela ou alteração Convex | `schema-banco.md`, `api-backend.md` e `arquitetura.md`, quando impactar fluxo. |
 | Decisão comercial | `modelo-negocio.md` e `registro-decisoes.md`. |
 | Alteração visual ou de marca | `identidade-visual.md` e documentos de UX relacionados. |

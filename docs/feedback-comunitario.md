@@ -1,6 +1,6 @@
 # Feedback Comunitário
 
-O módulo de **Feedback Comunitário** será o canal permanente para que administradores, associados e moradores reportem problemas, enviem sugestões, elogiem melhorias ou indiquem demandas operacionais. A decisão aprovada é iniciar com um MVP simples, global e discreto, evitando complexidade excessiva antes de validar o uso real pela comunidade.
+O módulo de **Feedback Comunitário** é o canal permanente para que administradores, associados, moradores e visitantes reportem problemas, enviem sugestões, elogiem melhorias ou indiquem demandas operacionais. O MVP foi implementado com um botão global, formulário compacto, persistência Convex e painel administrativo de triagem, evitando complexidade excessiva antes de validar o uso real pela comunidade.
 
 > O feedback deve estar disponível em todas as páginas, por meio de um ícone discreto no canto inferior direito. O MVP deve coletar URL, rota, timestamp e perfil do usuário automaticamente, mas não deve capturar screenshot automático.
 
@@ -14,20 +14,20 @@ O módulo de **Feedback Comunitário** será o canal permanente para que adminis
 | Baixa fricção | Evitar formulários longos, anexos obrigatórios ou fluxos que impeçam o envio rápido. |
 | Privacidade | Não capturar tela automaticamente e solicitar consentimento claro se screenshot for incluído no futuro. |
 
-## Etapas aprovadas
+## Etapas aprovadas e status
 
-| Etapa | Nome | Escopo | Resultado esperado |
-|---:|---|---|---|
-| 1 | MVP global | Botão flutuante, formulário compacto, categoria, mensagem, URL, timestamp, rota, perfil e persistência Convex. | Canal funcional de feedback em todas as páginas. |
-| 2 | Painel administrativo | Página `/admin/feedbacks` com listagem, filtros, status e detalhes. | Diretoria consegue acompanhar e tratar registros. |
-| 3 | Aprimoramento de UX | Estados de carregamento, confirmação, tratamento de erro e microcopy clara. | Maior confiança no envio e menor abandono. |
-| 4 | Screenshot opcional | Captura manual com consentimento e pré-visualização antes de enviar. | Evidência visual quando o usuário desejar. |
-| 5 | Inteligência de produto | Classificação por recorrência, tags, prioridades e relatórios. | Feedbacks passam a orientar backlog e métricas. |
-| 6 | Escalabilidade SaaS | `associationId`, filtros por cliente, isolamento lógico e exportações. | Módulo pronto para múltiplas associações. |
+| Etapa | Nome | Status | Escopo | Resultado esperado |
+|---:|---|---|---|---|
+| 1 | MVP global | Implementada | Botão flutuante, formulário compacto, categoria, mensagem, URL, timestamp, rota, perfil e persistência Convex. | Canal funcional de feedback em todas as páginas. |
+| 2 | Painel administrativo | Implementada | Página `/admin/feedbacks` com listagem, filtros por status, status e detalhes de rota. | Diretoria consegue acompanhar e tratar registros. |
+| 3 | Aprimoramento de UX | Implementada no MVP | Estados de carregamento, confirmação, tratamento de erro e microcopy clara. | Maior confiança no envio e menor abandono. |
+| 4 | Screenshot opcional | Planejada | Captura manual com consentimento e pré-visualização antes de enviar. | Evidência visual quando o usuário desejar. |
+| 5 | Inteligência de produto | Planejada | Classificação por recorrência, tags, prioridades e relatórios. | Feedbacks passam a orientar backlog e métricas. |
+| 6 | Escalabilidade SaaS | Parcialmente preparada | `associationId`, filtros por cliente, isolamento lógico e exportações. | Módulo pronto para múltiplas associações. |
 
-## MVP aprovado
+## MVP implementado
 
-A primeira etapa deve ser implementada como componente global reutilizável, preferencialmente montado no layout principal para cobrir área pública, portal e painel administrativo. O botão deve ser perceptível sem competir com as ações principais da página.
+A primeira etapa foi implementada como componente global reutilizável, montado no layout principal para cobrir área pública, portal e painel administrativo. O botão fica no canto inferior direito, é perceptível sem competir com as ações principais da página e abre um modal compacto sem retirar o usuário do contexto atual.
 
 | Campo | Origem | Obrigatório | Observação |
 |---|---|---:|---|
@@ -54,16 +54,16 @@ A primeira etapa deve ser implementada como componente global reutilizável, pre
 | 6 | Interface mostra confirmação clara e fecha ou limpa o formulário. |
 | 7 | Em caso de erro, a mensagem deve preservar o texto digitado e orientar nova tentativa. |
 
-## Painel administrativo planejado
+## Painel administrativo implementado
 
-A rota `/admin/feedbacks` deve permitir que a diretoria acompanhe a fila de feedbacks. A visualização inicial deve priorizar simplicidade e triagem rápida, sem transformar o módulo em um sistema de chamados complexo antes da validação de uso.
+A rota `/admin/feedbacks` permite que a diretoria acompanhe a fila de feedbacks. A visualização inicial prioriza simplicidade e triagem rápida, sem transformar o módulo em um sistema de chamados complexo antes da validação de uso.
 
 | Recurso | Prioridade | Descrição |
 |---|---:|---|
 | Listagem cronológica | Alta | Feedbacks mais recentes no topo. |
 | Filtros por status e categoria | Alta | Permite separar problemas, sugestões e elogios. |
 | Detalhe do registro | Alta | Mostra mensagem, rota, usuário, data e metadados. |
-| Alteração de status | Média | `novo`, `em_analise`, `resolvido`, `arquivado`. |
+| Alteração de status | Alta | `novo`, `em_analise`, `resolvido`, `arquivado`. |
 | Tags e prioridade | Média | Suporte à etapa de inteligência de produto. |
 | Exportação | Baixa | Útil para prestação de contas e análise externa. |
 
@@ -78,7 +78,7 @@ Screenshot automático foi descartado no MVP por simplicidade e privacidade. Em 
 | Permitir pré-visualização | Usuário pode cancelar caso a imagem exponha dados sensíveis. |
 | Armazenar com `associationId` | Mantém rastreabilidade e isolamento no modelo SaaS. |
 
-## Contratos técnicos planejados
+## Contratos técnicos implementados
 
 | Item | Proposta |
 |---|---|

@@ -48,9 +48,8 @@ A premissa técnica é manter o frontend desacoplado de servidores próprios sem
 | Grupo | Rotas atuais | Finalidade |
 |---|---|---|
 | Público | `/`, `/login` | Entrada pública, autenticação e redirecionamento contextual. |
-| Admin | `/admin`, `/admin/associados`, `/admin/comunicados`, `/admin/manutencao`, `/admin/reservas`, `/admin/transacoes`, `/admin/usuarios` | Gestão operacional e administrativa. |
+| Admin | `/admin`, `/admin/associados`, `/admin/comunicados`, `/admin/feedbacks`, `/admin/manutencao`, `/admin/reservas`, `/admin/transacoes`, `/admin/usuarios` | Gestão operacional e administrativa, incluindo triagem de Feedback Comunitário. |
 | Portal | `/portal`, `/portal/inicio`, `/portal/extrato`, `/portal/mensalidade`, `/portal/comunicados`, `/portal/reservas`, `/portal/suporte`, `/portal/cadastro` | Área dedicada para associados e moradores. |
-| Futuro | `/admin/feedbacks` | Triagem do módulo de Feedback Comunitário. |
 
 ## Backend Convex
 
@@ -64,6 +63,7 @@ A premissa técnica é manter o frontend desacoplado de servidores próprios sem
 | `convex/announcements.ts` | Comunicados. |
 | `convex/reservations.ts` | Reservas de áreas comuns. |
 | `convex/maintenances.ts` | Chamados e manutenção. |
+| `convex/feedbacks.ts` | Criação, listagem administrativa e triagem de Feedback Comunitário. |
 | `convex/assets.ts` | Patrimônio. |
 | `convex/suppliers.ts` | Fornecedores e prestadores. |
 

@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { href: "/admin/reservas", label: "📅 Reservas" },
   { href: "/admin/comunicados", label: "📢 Comunicados" },
   { href: "/admin/manutencao", label: "🔧 Manutenção" },
+  { href: "/admin/feedbacks", label: "💬 Feedbacks" },
 ];
 
 // Apenas sysadmin vê esta seção

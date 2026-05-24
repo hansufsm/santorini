@@ -19,6 +19,7 @@ O banco Convex do Santorini organiza dados financeiros, usuários, associados, c
 | `visitors` | Controle operacional de visitantes. | `by_date`, `by_unit`, `by_status`. |
 | `users` | Usuários e papéis do sistema. | `by_email`, `by_role`, `by_status`, `by_associate`, `by_parent_associate`. |
 | `sessions` | Sessões autenticadas. | `by_token`, `by_user`. |
+| `feedbacks` | Feedback Comunitário enviado pelo app. | `by_association`, `by_status`, `by_category`, `by_association_status`, `by_created_at`. |
 
 ## Papéis de usuário
 
@@ -43,9 +44,9 @@ Registros operacionais e sensíveis devem usar soft delete quando houver risco d
 | `users` | Sim | Evita apagar usuários de auditoria. |
 | `sessions` | Não | Pode ser removida como controle de autenticação. |
 
-## Tabela planejada: `feedbacks`
+## Tabela implementada: `feedbacks`
 
-A tabela `feedbacks` é planejada para o MVP do Feedback Comunitário. Ela deve nascer preparada para multiassociação por meio de `associationId`, ainda que a implantação inicial use apenas a AMRTS.
+A tabela `feedbacks` foi implementada para o MVP do Feedback Comunitário. Ela já nasce preparada para multiassociação por meio de `associationId`, ainda que a implantação inicial use apenas a AMRTS.
 
 | Campo | Tipo conceitual | Obrigatório | Observação |
 |---|---|---:|---|
@@ -60,8 +61,9 @@ A tabela `feedbacks` é planejada para o MVP do Feedback Comunitário. Ela deve 
 | `createdAt` | number | Sim | Timestamp de criação. |
 | `updatedAt` | number | Sim | Timestamp de atualização. |
 | `screenshotUrl` | string opcional | Não | Futuro, com consentimento explícito. |
+| `deletedAt` | number opcional | Não | Soft delete aplicado quando o feedback é arquivado. |
 
-Índices recomendados para a etapa inicial são `by_association`, `by_status`, `by_category` e `by_created_at`. Para operação SaaS, a query administrativa deve combinar filtro por associação e status antes de retornar registros ao painel.
+Os índices implementados para a etapa inicial são `by_association`, `by_status`, `by_category`, `by_association_status` e `by_created_at`. Para operação SaaS, a query administrativa deve combinar filtro por associação e status antes de retornar registros ao painel.
 
 ## Evolução para multiassociação
 

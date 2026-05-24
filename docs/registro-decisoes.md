@@ -16,6 +16,7 @@ Este documento registra decisões aprovadas para o app Santorini e deve ser usad
 | DP-008 | O MVP do Feedback Comunitário não terá screenshot automático. | Aprovada | Reduz complexidade, risco de privacidade e esforço inicial. |
 | DP-009 | Screenshot poderá ser opcional em etapa futura, mediante consentimento claro. | Aprovada | Permite evolução com evidência visual sem comprometer privacidade. |
 | DP-010 | A arquitetura futura deve considerar múltiplas associações por meio de `associationId`. | Aprovada | Prepara o produto para escala SaaS e separação lógica de dados. |
+| DP-011 | O app terá uma estratégia de Tutoriais Inteligentes por role, área e menu, chamada Trilha Viva Santorini. | Aprovada | Reduz dúvidas, aumenta autonomia do usuário e transforma a documentação em experiência contextual dentro do app. |
 
 ## Critérios de registro
 
@@ -30,4 +31,4 @@ Uma decisão deve ser adicionada a este arquivo sempre que alterar o comportamen
 
 ## Relação com outros documentos
 
-As decisões DP-001 e DP-002 estão detalhadas em [Modelo de negócio SaaS](modelo-negocio.md). As decisões DP-007, DP-008 e DP-009 estão especificadas em [Feedback Comunitário](feedback-comunitario.md). As decisões DP-003 e DP-005 estão registradas em [Identidade visual](identidade-visual.md) e no [Roadmap](roadmap.md).
+As decisões DP-001 e DP-002 estão detalhadas em [Modelo de negócio SaaS](modelo-negocio.md). As decisões DP-007, DP-008 e DP-009 estão especificadas em [Feedback Comunitário](feedback-comunitario.md). As decisões DP-003 e DP-005 estão registradas em [Identidade visual](identidade-visual.md) e no [Roadmap](roadmap.md). A decisão DP-011 está detalhada em [Tutoriais do usuário](tutoriais-usuario.md) e conectada ao plano de evolução do [Portal do Associado](portal-do-associado.md).

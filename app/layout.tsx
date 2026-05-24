@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/convex-provider";
 import { AuthProvider } from "@/lib/auth";
+import { CommunityFeedbackButton } from "@/components/community-feedback-button";
 
 const geist = Geist({ subsets: ["latin"] });
 
@@ -31,6 +32,7 @@ export default function RootLayout({
           {/* AuthProvider: gerencia sessão do usuário logado */}
           <AuthProvider>
             {children}
+            <CommunityFeedbackButton />
           </AuthProvider>
         </ConvexClientProvider>
       </body>
