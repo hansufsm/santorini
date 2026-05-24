@@ -40,6 +40,45 @@ type AssociateHistory = {
   transactions: Transaction[];
 } | null;
 
+function DesktopRecommendedNotice({ className = "" }: { className?: string }) {
+  return (
+    <div className={`rounded-xl border border-sky-400/25 bg-sky-950/30 px-4 py-3 text-sm text-sky-100/80 ${className}`}>
+      <strong className="text-sky-100">Melhor em Desktop/Laptop PC:</strong> a tabela completa possui várias colunas e é exibida no desktop. No celular, use os cartões otimizados para leitura rápida.
+    </div>
+  );
+}
+
+function TransactionMobileCard({ tx, variant = "default" }: { tx: Transaction; variant?: "default" | "preview" }) {
+  const isIncome = tx.value >= 0;
+  return (
+    <article className="rounded-2xl border border-gray-800 bg-gray-950/45 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/70">{formatDate(tx.date)}</p>
+          <p className="mt-1 truncate text-sm font-bold text-white">{tx.name || "Sem nome"}</p>
+        </div>
+        <div className="text-right">
+          <p className={`whitespace-nowrap text-base font-black ${isIncome ? "text-emerald-400" : "text-red-400"}`}>{formatCurrency(tx.value)}</p>
+          <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${isIncome ? "bg-emerald-400/10 text-emerald-200" : "bg-red-400/10 text-red-200"}`}>
+            {isIncome ? "Entrada" : "Saída"}
+          </span>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-400">
+        <div className="rounded-lg bg-gray-900/70 px-3 py-2">
+          <span className="block text-gray-500">Hora</span>
+          <span className="font-medium text-gray-200">{tx.time?.slice(0, 5) || "—"}</span>
+        </div>
+        <div className="rounded-lg bg-gray-900/70 px-3 py-2">
+          <span className="block text-gray-500">Tipo</span>
+          <span className="font-medium text-gray-200">{tx.type || (variant === "preview" ? "Preview" : "—")}</span>
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-gray-400">{tx.detail || "Sem detalhe informado."}</p>
+    </article>
+  );
+}
+
 // Parser CSV simples — suporta vírgula e ponto-e-vírgula como separadores,
 // e campos entre aspas duplas
 function parseCSV(text: string): string[][] {
@@ -166,21 +205,29 @@ export default function TransacoesPage() {
 
       {/* Upload CSV */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-        <h3 className="text-sm font-medium text-gray-300">📥 Importar CSV</h3>
+        <h3 className="text-sm font-medium text-gray-300">Importar CSV</h3>
 
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-xl p-8 cursor-pointer hover:border-emerald-600 transition-colors">
-          <span className="text-3xl mb-2">📄</span>
-          <span className="text-sm text-gray-400">{fileName || "Clique para selecionar o arquivo CSV"}</span>
-          <input type="file" accept=".csv" className="hidden" onChange={handleFile} />
+        <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-xl p-6 sm:p-8 cursor-pointer hover:border-emerald-600 transition-colors">
+          <span className="text-sm font-black text-white">Selecionar arquivo CSV</span>
+          <span className="mt-2 text-center text-sm text-gray-400">{fileName || "Toque aqui para selecionar o extrato exportado"}</span>
+          <span className="mt-3 rounded-full border border-emerald-700/50 px-3 py-1 text-xs text-emerald-200/75">Compatível com Android</span>
+          <input
+            type="file"
+            className="sr-only"
+            onChange={handleFile}
+          />
         </label>
+        <p className="text-xs leading-relaxed text-gray-500">
+          No Android, alguns gerenciadores de arquivos ocultam `.csv` quando o seletor restringe extensões. Por isso, o seletor foi liberado para exibir todos os arquivos; a importação continua validando o conteúdo antes do preview.
+        </p>
 
         {/* Preview */}
         {preview.length > 0 && (
           <div>
             <p className="text-sm text-gray-300 mb-2">{preview.length} transação(ões) encontrada(s) no arquivo</p>
-            <div className="overflow-x-auto max-h-48 rounded-lg border border-gray-700">
+            <div className="hidden max-h-56 overflow-auto rounded-lg border border-gray-700 md:block">
               <table className="w-full text-xs">
-                <thead className="bg-gray-800 sticky top-0">
+                <thead className="sticky top-0 bg-gray-800">
                   <tr>
                     {["Data", "Nome", "Detalhe", "Valor"].map((h) => (
                       <th key={h} className="text-left px-3 py-2 text-gray-400">{h}</th>
@@ -189,7 +236,7 @@ export default function TransacoesPage() {
                 </thead>
                 <tbody>
                   {preview.slice(0, 20).map((tx, i) => (
-                    <tr key={i} className="border-t border-gray-800">
+                    <tr key={i} className="border-t border-gray-800 hover:bg-gray-800/30">
                       <td className="px-3 py-1.5 text-gray-300">{formatDate(tx.date)}</td>
                       <td className="px-3 py-1.5 text-gray-300 max-w-32 truncate">{tx.name}</td>
                       <td className="px-3 py-1.5 text-gray-400">{tx.detail}</td>
@@ -203,6 +250,15 @@ export default function TransacoesPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="space-y-3 md:hidden">
+              <DesktopRecommendedNotice />
+              {preview.slice(0, 8).map((tx, i) => (
+                <TransactionMobileCard key={i} tx={tx} variant="preview" />
+              ))}
+              {preview.length > 8 && (
+                <p className="text-center text-xs text-gray-500">... e mais {preview.length - 8} registro(s) no preview</p>
+              )}
             </div>
 
             <button
@@ -291,7 +347,7 @@ export default function TransacoesPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-800">
+            <div className="hidden overflow-x-auto rounded-lg border border-gray-800 md:block">
               <table className="w-full text-sm">
                 <thead className="bg-gray-800/50">
                   <tr className="text-gray-400 text-xs uppercase">
@@ -315,6 +371,12 @@ export default function TransacoesPage() {
                 </tbody>
               </table>
             </div>
+            <div className="space-y-3 md:hidden">
+              <DesktopRecommendedNotice />
+              {selectedTransactions.map((tx, index) => (
+                <TransactionMobileCard key={tx._id ?? `${tx.date}-${tx.time}-${index}`} tx={tx} />
+              ))}
+            </div>
           </div>
         )}
       </section>
@@ -330,31 +392,42 @@ export default function TransacoesPage() {
         ) : !txList || txList.length === 0 ? (
           <div className="p-6 text-center text-gray-500 text-sm">Nenhuma transação importada ainda.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-800/50">
-                <tr className="text-gray-400 text-xs uppercase">
-                  <th className="text-left px-4 py-3">Data</th>
-                  <th className="text-left px-4 py-3">Nome</th>
-                  <th className="text-left px-4 py-3">Tipo</th>
-                  <th className="text-right px-4 py-3">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {txList.slice(0, 100).map((tx, i) => (
-                  <tr key={i} className="border-t border-gray-800/50 hover:bg-gray-800/20">
-                    <td className="px-4 py-2 text-gray-300">{formatDate(tx.date)}</td>
-                    <td className="px-4 py-2 text-gray-300 max-w-48 truncate">{tx.name}</td>
-                    <td className="px-4 py-2 text-gray-400">{tx.detail}</td>
-                    <td className={`px-4 py-2 text-right font-medium ${tx.value >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      {formatCurrency(tx.value)}
-                    </td>
+          <div>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-800/50">
+                  <tr className="text-gray-400 text-xs uppercase">
+                    <th className="text-left px-4 py-3">Data</th>
+                    <th className="text-left px-4 py-3">Nome</th>
+                    <th className="text-left px-4 py-3">Tipo</th>
+                    <th className="text-right px-4 py-3">Valor</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {txList.slice(0, 100).map((tx, i) => (
+                    <tr key={i} className="border-t border-gray-800/50 hover:bg-gray-800/20">
+                      <td className="px-4 py-2 text-gray-300">{formatDate(tx.date)}</td>
+                      <td className="px-4 py-2 text-gray-300 max-w-48 truncate">{tx.name}</td>
+                      <td className="px-4 py-2 text-gray-400">{tx.detail}</td>
+                      <td className={`px-4 py-2 text-right font-medium ${tx.value >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {formatCurrency(tx.value)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="space-y-3 p-4 md:hidden">
+              <DesktopRecommendedNotice />
+              {txList.slice(0, 30).map((tx, i) => (
+                <TransactionMobileCard key={tx._id ?? `${tx.date}-${tx.name}-${i}`} tx={tx} />
+              ))}
+            </div>
             {txList.length > 100 && (
-              <p className="text-center text-gray-500 text-xs py-3">Exibindo 100 de {txList.length} registros</p>
+              <p className="text-center text-gray-500 text-xs py-3">Exibindo 100 de {txList.length} registros no desktop</p>
+            )}
+            {txList.length > 30 && (
+              <p className="text-center text-gray-500 text-xs pb-3 md:hidden">Exibindo 30 de {txList.length} cartões no celular</p>
             )}
           </div>
         )}

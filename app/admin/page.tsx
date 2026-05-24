@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Banknote,
   CalendarDays,
+  Info,
   FileText,
   Search,
   Users,
@@ -119,6 +120,52 @@ function CardShell({ children, className = "" }: { children: React.ReactNode; cl
 
 function EmptyState({ text }: { text: string }) {
   return <div className="py-12 text-center text-sm text-emerald-200/50">{text}</div>;
+}
+
+function DesktopRecommendedNotice({ className = "" }: { className?: string }) {
+  return (
+    <div className={`rounded-2xl border border-sky-300/25 bg-sky-950/30 px-4 py-3 text-sm text-sky-100/80 ${className}`}>
+      <div className="flex gap-3">
+        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-300" />
+        <p className="leading-relaxed">
+          <strong className="text-sky-100">Melhor em Desktop/Laptop PC:</strong> esta visualização possui muitos dados simultâneos. No celular, mostramos uma versão resumida e otimizada para leitura rápida.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function TransactionMobileCard({ tx }: { tx: Transaction }) {
+  const isIncome = tx.value >= 0;
+  return (
+    <article className="rounded-2xl border border-emerald-900/60 bg-emerald-950/30 p-4 shadow-lg shadow-emerald-950/10">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300/65">{formatDate(tx.date)}</p>
+          <p className="mt-1 text-base font-bold text-white line-clamp-2">{tx.name || "Sem nome"}</p>
+        </div>
+        <div className="text-right">
+          <p className={`text-lg font-black ${isIncome ? "text-emerald-300" : "text-red-300"}`}>{formatCurrency(tx.value)}</p>
+          <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${isIncome ? "bg-emerald-400/10 text-emerald-200" : "bg-red-400/10 text-red-200"}`}>
+            {isIncome ? "Entrada" : "Saída"}
+          </span>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-xl bg-emerald-950/45 px-3 py-2">
+          <p className="text-emerald-200/45">Hora</p>
+          <p className="mt-1 font-semibold text-emerald-50">{tx.time?.slice(0, 5) || "—"}</p>
+        </div>
+        <div className="rounded-xl bg-emerald-950/45 px-3 py-2">
+          <p className="text-emerald-200/45">Tipo</p>
+          <p className="mt-1 truncate font-semibold text-emerald-50">{tx.type || "—"}</p>
+        </div>
+      </div>
+      <p className="mt-3 rounded-xl bg-emerald-950/35 px-3 py-2 text-sm leading-relaxed text-emerald-50/65">
+        {tx.detail || "Sem detalhe informado."}
+      </p>
+    </article>
+  );
 }
 
 function MetricCard({
@@ -331,6 +378,7 @@ export default function AdminPage() {
               <p className="mt-1 text-sm text-emerald-200/55">
                 Gráficos, subtotais, busca em qualquer campo, seleção mensal e tabela paginada para análise financeira.
               </p>
+              <DesktopRecommendedNotice className="mt-4 lg:hidden" />
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative">
@@ -371,6 +419,7 @@ export default function AdminPage() {
             <div className="mb-4">
               <h3 className="text-lg font-bold text-white">Fluxo do recorte selecionado</h3>
               <p className="text-sm text-emerald-200/55">Entradas e saídas agrupadas por mês ou por dia do mês escolhido.</p>
+              <DesktopRecommendedNotice className="mt-3 md:hidden" />
             </div>
             <div className="h-72 sm:h-80">
               {selectedMonthFlow.length ? (
@@ -395,6 +444,7 @@ export default function AdminPage() {
             <div className="mb-4">
               <h3 className="text-lg font-bold text-white">Distribuição de despesas</h3>
               <p className="text-sm text-emerald-200/55">Categorias com maior impacto no caixa filtrado.</p>
+              <DesktopRecommendedNotice className="mt-3 md:hidden" />
             </div>
             <div className="h-72 sm:h-80">
               {expenseDistribution.length ? (
@@ -420,9 +470,9 @@ export default function AdminPage() {
           <EmptyState text="Carregando transações…" />
         ) : filteredTransactions.length ? (
           <>
-            <div className="overflow-x-auto border-t border-emerald-900/70">
-              <table className="w-full min-w-[860px] text-sm">
-                <thead className="bg-emerald-950/55 text-xs uppercase tracking-widest text-emerald-200/55">
+            <div className="hidden overflow-x-auto border-t border-emerald-900/70 md:block">
+              <table className="w-full min-w-[920px] border-separate border-spacing-0 text-sm">
+                <thead className="sticky top-0 z-10 bg-emerald-950/90 text-xs uppercase tracking-widest text-emerald-200/60 backdrop-blur">
                   <tr>
                     <th className="px-4 py-4 text-left font-semibold">Data</th>
                     <th className="px-4 py-4 text-left font-semibold">Hora</th>
@@ -434,19 +484,25 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {paginatedTransactions.map((tx, index) => (
-                    <tr key={tx._id ?? `${tx.date}-${tx.name}-${index}`} className="border-t border-emerald-900/60 transition-colors hover:bg-emerald-900/20">
-                      <td className="whitespace-nowrap px-4 py-3 text-emerald-100/75">{formatDate(tx.date)}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-emerald-200/55">{tx.time?.slice(0, 5) || "—"}</td>
-                      <td className="max-w-64 truncate px-4 py-3 font-medium text-white">{tx.name || "—"}</td>
-                      <td className="px-4 py-3 text-emerald-200/65">{tx.type || "—"}</td>
-                      <td className="px-4 py-3 text-emerald-200/50">{tx.detail || "—"}</td>
-                      <td className={`whitespace-nowrap px-4 py-3 text-right font-bold ${tx.value >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+                    <tr key={tx._id ?? `${tx.date}-${tx.name}-${index}`} className="border-t border-emerald-900/60 transition-colors odd:bg-emerald-950/10 hover:bg-emerald-900/25">
+                      <td className="whitespace-nowrap border-t border-emerald-900/45 px-4 py-3 text-emerald-100/75">{formatDate(tx.date)}</td>
+                      <td className="whitespace-nowrap border-t border-emerald-900/45 px-4 py-3 text-emerald-200/55">{tx.time?.slice(0, 5) || "—"}</td>
+                      <td className="max-w-72 truncate border-t border-emerald-900/45 px-4 py-3 font-semibold text-white">{tx.name || "—"}</td>
+                      <td className="border-t border-emerald-900/45 px-4 py-3 text-emerald-200/70">{tx.type || "—"}</td>
+                      <td className="max-w-[28rem] truncate border-t border-emerald-900/45 px-4 py-3 text-emerald-200/55">{tx.detail || "—"}</td>
+                      <td className={`whitespace-nowrap border-t border-emerald-900/45 px-4 py-3 text-right text-base font-black ${tx.value >= 0 ? "text-emerald-300" : "text-red-300"}`}>
                         {formatCurrency(tx.value)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="space-y-3 border-t border-emerald-900/70 p-4 md:hidden">
+              <DesktopRecommendedNotice />
+              {paginatedTransactions.map((tx, index) => (
+                <TransactionMobileCard key={tx._id ?? `${tx.date}-${tx.name}-${index}`} tx={tx} />
+              ))}
             </div>
             <div className="flex flex-col gap-3 border-t border-emerald-900/70 p-4 text-sm text-emerald-100/65 sm:flex-row sm:items-center sm:justify-between">
               <span>
@@ -490,6 +546,7 @@ export default function AdminPage() {
             <div>
               <h2 className="text-lg font-bold text-white">Fluxo anual</h2>
               <p className="text-sm text-emerald-200/55">Evolução de contribuições, despesas e saldo acumulado nos últimos meses.</p>
+              <DesktopRecommendedNotice className="mt-3 md:hidden" />
             </div>
             <span className="rounded-full border border-emerald-700/50 px-3 py-1 text-xs text-emerald-200/70">Últimos 12 meses</span>
           </div>
