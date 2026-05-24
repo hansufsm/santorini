@@ -17,6 +17,9 @@ Este documento registra decisões aprovadas para o app Santorini e deve ser usad
 | DP-009 | Screenshot poderá ser opcional em etapa futura, mediante consentimento claro. | Aprovada | Permite evolução com evidência visual sem comprometer privacidade. |
 | DP-010 | A arquitetura futura deve considerar múltiplas associações por meio de `associationId`. | Aprovada | Prepara o produto para escala SaaS e separação lógica de dados. |
 | DP-011 | O app terá uma estratégia de Tutoriais Inteligentes por role, área e menu, chamada Trilha Viva Santorini. | Aprovada | Reduz dúvidas, aumenta autonomia do usuário e transforma a documentação em experiência contextual dentro do app. |
+| DP-012 | A entrada pública adotará um Splash Hero Híbrido com vídeo, substituindo a intro modal isolada. | Aprovada para implementação | Melhora impacto visual sem bloquear indevidamente o acesso, com fallback para mobile e redução de movimento. |
+| DP-013 | Manuais, Q&A e instruções devem ter rota própria e chamada clara no menu, com conteúdo filtrado por role. | Aprovada para implementação | Torna a ajuda previsível, segmentada e escalável para morador, associado, diretoria e sysadmin. |
+| DP-014 | Controles secundários devem migrar gradualmente para painel lateral, preservando wide/boxed no desktop quando útil. | Aprovada para implementação | Reduz poluição da topbar, fortalece Mobile First e mantém produtividade em telas maiores. |
 
 ## Critérios de registro
 
@@ -31,4 +34,4 @@ Uma decisão deve ser adicionada a este arquivo sempre que alterar o comportamen
 
 ## Relação com outros documentos
 
-As decisões DP-001 e DP-002 estão detalhadas em [Modelo de negócio SaaS](modelo-negocio.md). As decisões DP-007, DP-008 e DP-009 estão especificadas em [Feedback Comunitário](feedback-comunitario.md). As decisões DP-003 e DP-005 estão registradas em [Identidade visual](identidade-visual.md) e no [Roadmap](roadmap.md). A decisão DP-011 está detalhada em [Tutoriais do usuário](tutoriais-usuario.md) e conectada ao plano de evolução do [Portal do Associado](portal-do-associado.md).
+As decisões DP-001 e DP-002 estão detalhadas em [Modelo de negócio SaaS](modelo-negocio.md). As decisões DP-007, DP-008 e DP-009 estão especificadas em [Feedback Comunitário](feedback-comunitario.md). As decisões DP-003 e DP-005 estão registradas em [Identidade visual](identidade-visual.md) e no [Roadmap](roadmap.md). A decisão DP-011 está detalhada em [Tutoriais do usuário](tutoriais-usuario.md) e conectada ao plano de evolução do [Portal do Associado](portal-do-associado.md). As decisões DP-012, DP-013 e DP-014 estão consolidadas em [UX Mobile First, Ajuda e Splash](ux-mobile-first-ajuda-splash.md) e no [Roadmap](roadmap.md).

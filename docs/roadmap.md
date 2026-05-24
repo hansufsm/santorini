@@ -12,7 +12,8 @@ O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencia
 | 4 | UX, identidade e sessão | Implementada em parte | Logo AMRTS, favicon, toggles pill e melhoria de persistência de sessão. |
 | 5 | Feedback Comunitário | MVP implementado | Canal global de escuta com painel administrativo. |
 | 6 | Tutoriais inteligentes por role | Persistência e painel implementados | Trilha Viva contextual no portal, com conteúdo por rota, role, checklist sincronizado no Convex e painel administrativo. |
-| 7 | SaaS multiassociação | Planejada | Isolamento por `associationId`, parametrização de marca e planos. |
+| 7 | UX Mobile First, ajuda centralizada e splash hero | Aprovada para implementação | Entrada pública com splash/hero em vídeo, central de Ajuda e Manuais por role, navegação lateral mais limpa e painel de controles secundários. |
+| 8 | SaaS multiassociação | Planejada | Isolamento por `associationId`, parametrização de marca e planos. |
 
 ## Entregas recentes registradas
 
@@ -27,6 +28,7 @@ O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencia
 | MVP de Feedback Comunitário com painel de triagem | Implementado | [Feedback Comunitário](feedback-comunitario.md). |
 | MVP da Trilha Viva no portal do associado | Implementado | [Tutoriais do usuário](tutoriais-usuario.md). |
 | Persistência Convex e painel administrativo da Trilha Viva | Implementada | [Tutoriais do usuário](tutoriais-usuario.md) e [Schema do banco](schema-banco.md). |
+| Roadmap UX Mobile First com splash hero e central de ajuda | Aprovado para implementação | [UX Mobile First, Ajuda e Splash](ux-mobile-first-ajuda-splash.md). |
 
 ## Entrega implementada: Feedback Comunitário
 
@@ -63,6 +65,28 @@ A primeira camada de experiência da **Trilha Viva Santorini** foi implementada 
 | Associado | Início, Extrato, Mensalidade, Meu Cadastro, Reservas, Comunicados, Suporte | Acompanhar situação financeira, manter cadastro e consumir serviços. |
 | Diretoria | Dashboard, Transações, Associados, Reservas, Comunicados, Manutenção, Feedbacks, Usuários | Operar a associação, responder demandas, consultar históricos por associado e cadastrar acessos operacionais. |
 | Sysadmin | Todos os itens da diretoria, Usuários e parâmetros técnicos | Garantir segurança, permissões administrativas e sustentação do sistema. |
+
+## Roadmap aprovado: UX Mobile First, splash hero e central de ajuda
+
+A próxima evolução aprovada desloca o Santorini para uma experiência **Mobile First**, com menos ruído visual e mais orientação para o usuário. A entrada pública deve deixar de tratar o vídeo como modal isolado e passar a usá-lo como **Splash Hero Híbrido**. A documentação de usuário deve sair de uma posição periférica e virar uma **Central de Ajuda e Manuais** acessível pelo menu, com conteúdo filtrado por `role`. A secondary topbar deve ser progressivamente esvaziada, movendo preferências e controles secundários para um painel lateral acionado por toggle.
+
+| Frente | Entrega planejada | Resultado esperado |
+|---|---|---|
+| Splash Hero Híbrido | Substituir o modal `SiteIntroVideo` por hero público com vídeo, poster/fallback e CTA. | A entrada pública parece parte natural do carregamento e da identidade do site. |
+| Ajuda e Manuais por role | Criar rota interna de ajuda com Q&A, índice e manuais filtrados por morador, associado, diretoria e sysadmin. | Usuários encontram instruções sem depender de cards soltos ou documentação externa. |
+| Chamada no menu | Adicionar “Ajuda e Manuais” ao menu lateral do portal e da administração. | A localização do manual fica previsível e acessível. |
+| Painel lateral de controles | Mover tema, layout wide/boxed e preferências para um painel lateral inicial. | A topbar fica mais limpa, principalmente no mobile. |
+| Mobile First | Priorizar drawer/bottom navigation, cards empilhados e controles confortáveis ao toque. | O app atende melhor moradores e associados que acessam pelo celular. |
+| Desktop evolutivo | Preservar desktop robusto para diretoria, com wide/boxed e sidebar refinado. | Telas maiores continuam produtivas sem comandar toda a arquitetura visual. |
+
+| Ordem | Implementação | Critério de aceite |
+|---:|---|---|
+| 1 | Registrar documentação e decisão de produto. | Roadmap, decisão e documento de UX versionados no GitHub. |
+| 2 | Implementar Splash Hero Híbrido na rota `/`. | Vídeo aparece como parte da entrada pública, com CTA, fallback e exibição única não intrusiva. |
+| 3 | Implementar Central de Ajuda do portal. | Usuário autenticado acessa `/portal/ajuda` e vê conteúdo compatível com sua role. |
+| 4 | Implementar Ajuda administrativa. | Diretoria/sysadmin acessam ajuda com conteúdo administrativo adicional. |
+| 5 | Adicionar chamadas no menu. | Portal e admin exibem “Ajuda e Manuais” em posição previsível. |
+| 6 | Iniciar painel lateral de controles. | Preferências secundárias deixam de disputar espaço com a ação principal, mantendo wide/boxed no desktop quando útil. |
 
 ## Backlog priorizado
 
