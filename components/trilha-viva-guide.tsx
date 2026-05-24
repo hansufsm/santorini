@@ -44,7 +44,7 @@ function writeLocalCompletion(guide: TrilhaVivaGuide, role: string, completed: b
 export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
   const { session } = useAuth();
   const guide = useMemo(() => getTrilhaVivaGuide(pathname, role), [pathname, role]);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [syncState, setSyncState] = useState<"local" | "sincronizando" | "sincronizado" | "indisponivel">("local");
   const [completionCount, setCompletionCount] = useState(0);
@@ -54,7 +54,7 @@ export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
 
     const localCompleted = readLocalCompletion(guide, role);
     setCompleted(localCompleted);
-    setExpanded(!localCompleted);
+    setExpanded(false);
     setCompletionCount(0);
 
     if (!session?.token) {
@@ -85,7 +85,7 @@ export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
         const remoteCompleted = remote?.status === "concluido";
         const isCompleted = remoteCompleted || localCompleted;
         setCompleted(isCompleted);
-        setExpanded(!isCompleted);
+        setExpanded(false);
         setCompletionCount(remote?.completionCount ?? (isCompleted ? 1 : 0));
         setSyncState("sincronizado");
 
@@ -139,7 +139,7 @@ export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
 
     writeLocalCompletion(guide, role, false);
     setCompleted(false);
-    setExpanded(true);
+    setExpanded(false);
 
     if (!session?.token) {
       setSyncState("local");
@@ -196,10 +196,14 @@ export function TrilhaVivaGuideCard({ pathname, role }: TrilhaVivaGuideProps) {
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200/40 hover:bg-emerald-400/15"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200/40 hover:bg-emerald-400/15"
           aria-expanded={expanded}
+          aria-label={`${expanded ? "Recolher" : "Expandir"} guia da Trilha Viva para ${guide.menuLabel}`}
         >
-          {expanded ? "Recolher guia" : completed ? "Rever guia" : "Abrir guia"}
+          <span aria-hidden="true" className="text-base leading-none">
+            {expanded ? "▴" : "▾"}
+          </span>
+          <span>{expanded ? "Recolher" : completed ? "Expandir revisão" : "Expandir guia"}</span>
         </button>
       </div>
 
