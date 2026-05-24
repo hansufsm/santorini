@@ -1,12 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const INTRO_STORAGE_KEY = "santorini-intro-video-seen-v1";
-const INTRO_TIMEOUT_MS = 5000;
+const INTRO_STORAGE_KEY = "santorini-intro-video-seen-v2";
+const INTRO_MIN_VISIBLE_MS = 8000;
 
 export function SiteIntroVideo() {
   const [visible, setVisible] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current === null) return;
+
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }, []);
+
+  const closeIntro = useCallback(() => {
+    clearCloseTimer();
+    setVisible(false);
+  }, [clearCloseTimer]);
+
+  const scheduleClose = useCallback(() => {
+    if (closeTimerRef.current !== null) return;
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setVisible(false);
+      closeTimerRef.current = null;
+    }, INTRO_MIN_VISIBLE_MS);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -17,12 +39,8 @@ export function SiteIntroVideo() {
     window.localStorage.setItem(INTRO_STORAGE_KEY, "true");
     setVisible(true);
 
-    const timer = window.setTimeout(() => {
-      setVisible(false);
-    }, INTRO_TIMEOUT_MS);
-
-    return () => window.clearTimeout(timer);
-  }, []);
+    return () => clearCloseTimer();
+  }, [clearCloseTimer]);
 
   if (!visible) return null;
 
@@ -36,7 +54,7 @@ export function SiteIntroVideo() {
       <div className="relative w-full max-w-4xl overflow-hidden rounded-[2rem] border border-emerald-300/30 bg-black shadow-2xl shadow-emerald-950/40">
         <button
           type="button"
-          onClick={() => setVisible(false)}
+          onClick={closeIntro}
           className="absolute right-4 top-4 z-10 rounded-full border border-white/25 bg-black/55 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur transition hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-emerald-300"
           aria-label="Fechar vídeo de introdução"
         >
@@ -50,8 +68,10 @@ export function SiteIntroVideo() {
           muted
           playsInline
           preload="auto"
-          onEnded={() => setVisible(false)}
-          onError={() => setVisible(false)}
+          onCanPlay={scheduleClose}
+          onPlaying={scheduleClose}
+          onEnded={scheduleClose}
+          onError={closeIntro}
         />
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent p-6 text-white">
