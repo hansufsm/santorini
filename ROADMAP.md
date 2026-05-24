@@ -106,7 +106,7 @@ Lógica:
 - **App mobile** — React Native ou PWA instalável
 - **Relatório em PDF** — extrato individual e balancete mensal para download
 - **Auditoria de ações** — log de quem fez o quê no painel admin (tabela `audit_log`)
-- **Multi-condomínio** — isolar dados por `condoId` para reutilizar o sistema em outros empreendimentos
+- **Multi-residencial** — isolar dados por `condoId` para reutilizar o sistema em outros empreendimentos
 
 ---
 

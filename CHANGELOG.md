@@ -46,7 +46,7 @@ com mudanças em `convex/` e exibe lembrete automático para rodar o deploy.
 - **Fase 3:** redirect pós-login por papel; portal do associado com conteúdo acionável;
   dashboard admin com gráficos equivalentes ao sistema legado
 - **Fase 4:** relatório de inadimplência por mês (corrente e histórico)
-- **Fase 5+:** backlog (push notifications, votações, upload de documentos, pagamentos, PWA, PDF, auditoria, multi-condomínio)
+- **Fase 5+:** backlog (push notifications, votações, upload de documentos, pagamentos, PWA, PDF, auditoria, multi-residencial)
 
 ### UX — Frontpage
 

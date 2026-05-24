@@ -1,5 +1,5 @@
 /**
- * portal/comunicados/page.tsx — Comunicados do condomínio
+ * portal/comunicados/page.tsx — Comunicados do residencial
  * Lista todos os comunicados ativos para os moradores.
  */
 "use client";
@@ -41,7 +41,7 @@ export default function ComunicadosPage() {
 
       <div>
         <h2 className="text-xl font-bold text-white">Comunicados</h2>
-        <p className="text-sm text-gray-400 mt-1">Avisos e informativos do condomínio</p>
+        <p className="text-sm text-gray-400 mt-1">Avisos e informativos do residencial</p>
       </div>
 
       {!comunicados || comunicados.length === 0 ? (

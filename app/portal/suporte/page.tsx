@@ -1,6 +1,6 @@
 /**
  * portal/suporte/page.tsx — Chamados de suporte / manutenção
- * Permite abrir chamados e visualizar o status de todos os chamados do condomínio.
+ * Permite abrir chamados e visualizar o status de todos os chamados do residencial.
  */
 "use client";
 
@@ -91,7 +91,7 @@ export default function SuportePage() {
 
       <div>
         <h2 className="text-xl font-bold text-white">Suporte</h2>
-        <p className="text-sm text-gray-400 mt-1">Chamados de manutenção e suporte do condomínio</p>
+        <p className="text-sm text-gray-400 mt-1">Chamados de manutenção e suporte do residencial</p>
       </div>
 
       {/* Formulário de abertura de chamado */}
@@ -159,9 +159,9 @@ export default function SuportePage() {
         </button>
       </form>
 
-      {/* Lista de chamados do condomínio */}
+      {/* Lista de chamados do residencial */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-gray-300 mb-3">📋 Chamados do Condomínio</h3>
+        <h3 className="text-sm font-medium text-gray-300 mb-3">📋 Chamados do Residencial</h3>
 
         {loading ? (
           <div className="text-gray-400 text-center py-4 text-sm">Carregando…</div>

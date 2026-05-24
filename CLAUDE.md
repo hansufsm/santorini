@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-**AMRTS Santorini** is a residential condominium management dashboard for a Brazilian homeowners association. It has two frontends sharing one Convex serverless backend:
+**AMRTS Santorini** is a residential management dashboard for a Brazilian homeowners association. It has two frontends sharing one Convex serverless backend:
 
 - **Root (`/app/`, `/lib/`, `/components/`)** — Modern full-featured portal (Next.js 16 App Router + TypeScript + Tailwind CSS 4). This is the primary frontend.
 - **`/index.html` + `/script.js`** — Legacy SPA (pure HTML + Tailwind + Chart.js + PapaParse), deployed to GitHub Pages. Still maintained for backward compatibility.

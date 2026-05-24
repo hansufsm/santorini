@@ -132,7 +132,7 @@ Qualquer `git push` para `main` aciona um novo deploy na Vercel automaticamente.
 | `/portal/mensalidade` | Qualquer login | Status da mensalidade mensal |
 | `/portal/cadastro` | Qualquer login | Dados cadastrais + editar contato |
 | `/portal/reservas` | Qualquer login | Reservar e ver reservas da unidade |
-| `/portal/comunicados` | Qualquer login | Comunicados do condomínio |
+| `/portal/comunicados` | Qualquer login | Comunicados do residencial |
 | `/portal/suporte` | Qualquer login | Abrir e acompanhar chamados |
 | `/admin` | Diretoria+ | Dashboard administrativo |
 | `/admin/transacoes` | Diretoria+ | Importar CSV e listar transações |

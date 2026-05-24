@@ -284,7 +284,7 @@ export default function HomePage() {
                   Residencial Santorini
                 </h2>
                 <p className="text-emerald-100/70 mt-1 md:mt-2 max-w-xl text-sm leading-relaxed hidden sm:block">
-                  Gestão de contribuições e acompanhamento financeiro do condomínio.
+                  Gestão de contribuições e acompanhamento financeiro do residencial.
                 </p>
               </div>
             </div>
@@ -347,7 +347,7 @@ export default function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {[
             { icon: IC.finance,  label: "Financeiro",       desc: "Extrato e contribuições"    },
-            { icon: IC.bell,     label: "Comunicados",      desc: "Avisos do condomínio"        },
+            { icon: IC.bell,     label: "Comunicados",      desc: "Avisos do residencial"       },
             { icon: IC.cal,      label: "Reservas",         desc: "Áreas comuns"                },
             { icon: IC.wrench,   label: "Manutenção",       desc: "Chamados de suporte"         },
             { icon: IC.people,   label: "Assembleias",      desc: "Votações e atas"             },
