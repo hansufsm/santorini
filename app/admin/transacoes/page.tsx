@@ -595,7 +595,7 @@ export default function TransacoesPage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs text-gray-400">Link público da pasta pCloud</label>
+          <label className="mb-1 block text-xs text-gray-400">Repositório dos extratos</label>
           <input
             value={pcloudUrl}
             onChange={(event) => setPcloudUrl(event.target.value)}
