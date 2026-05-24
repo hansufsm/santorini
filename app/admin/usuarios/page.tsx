@@ -1,4 +1,4 @@
-/**
+/*
  * admin/usuarios/page.tsx — Gestão de Usuários
  * Diretoria e Sysadmin podem consultar e cadastrar usuários conforme suas permissões.
  */
@@ -15,6 +15,25 @@ type User = {
   role: "sysadmin" | "diretoria" | "associado" | "morador";
   status: "ativo" | "inativo";
   unit?: string;
+  associateId?: string;
+  parentAssociateId?: string;
+};
+
+type Associate = {
+  _id: string;
+  name: string;
+  unit?: string;
+  cpfPrefix?: string;
+  status: "ativo" | "inativo" | "inadimplente";
+};
+
+type UserFormState = {
+  name: string;
+  email: string;
+  password: string;
+  role: User["role"];
+  unit: string;
+  residenceAssociateId: string;
 };
 
 const ROLE_BADGE: Record<string, string> = {
@@ -41,6 +60,45 @@ const ROLE_LABEL: Record<User["role"], string> = {
 const SYSTEM_ADMIN_ROLES: User["role"][] = ["sysadmin", "diretoria", "associado", "morador"];
 const MANAGEMENT_ROLES: User["role"][] = ["associado", "morador"];
 
+const emptyForm = (role: User["role"] = "associado"): UserFormState => ({
+  name: "",
+  email: "",
+  password: "",
+  role,
+  unit: "",
+  residenceAssociateId: "",
+});
+
+function formatAssociateOption(associate: Associate) {
+  const parts = [associate.unit ? `Unidade ${associate.unit}` : "Sem unidade", associate.name];
+  if (associate.cpfPrefix) parts.push(`CPF ${associate.cpfPrefix}…`);
+  if (associate.status !== "ativo") parts.push(associate.status);
+  return parts.join(" — ");
+}
+
+function residenceLabel(role: User["role"]) {
+  if (role === "associado") return "Associado financeiro vinculado";
+  if (role === "morador") return "Titular financeiro da unidade";
+  return "Unidade administrativa/informativa";
+}
+
+function buildResidencePayload(form: UserFormState) {
+  const unit = form.unit.trim() || undefined;
+  if (form.role === "associado") {
+    return {
+      unit,
+      associateId: form.residenceAssociateId || undefined,
+    };
+  }
+  if (form.role === "morador") {
+    return {
+      unit,
+      parentAssociateId: form.residenceAssociateId || undefined,
+    };
+  }
+  return { unit };
+}
+
 export default function UsuariosPage() {
   const { session } = useAuth();
 
@@ -54,22 +112,13 @@ export default function UsuariosPage() {
     !session
   );
 
-  const [form, setForm] = useState<{ name: string; email: string; password: string; role: User["role"]; unit: string }>({
-    name: "",
-    email: "",
-    password: "",
-    role: "associado",
-    unit: "",
-  });
+  // Cadastro financeiro/titular usado como origem operacional das unidades.
+  const { data: associates } = useConvexQuery<Associate[]>("associates:getAllAssociates");
+
+  const [form, setForm] = useState<UserFormState>(emptyForm("associado"));
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<{ name: string; email: string; password: string; role: User["role"]; unit: string }>({
-    name: "",
-    email: "",
-    password: "",
-    role: "associado",
-    unit: "",
-  });
+  const [editForm, setEditForm] = useState<UserFormState>(emptyForm("associado"));
   const [savingEdit, setSavingEdit] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [search, setSearch] = useState("");
@@ -80,19 +129,44 @@ export default function UsuariosPage() {
   const canEditUsers = session?.role === "sysadmin";
   const roleOptions = session?.role === "sysadmin" ? SYSTEM_ADMIN_ROLES : MANAGEMENT_ROLES;
 
+  const associateById = useMemo(() => {
+    const map = new Map<string, Associate>();
+    (associates ?? []).forEach((associate) => map.set(associate._id, associate));
+    return map;
+  }, [associates]);
+
+  const unitOptions = useMemo(() => {
+    const units = new Set<string>();
+    (associates ?? []).forEach((associate) => {
+      if (associate.unit?.trim()) units.add(associate.unit.trim().toUpperCase());
+    });
+    (users ?? []).forEach((user) => {
+      if (user.unit?.trim()) units.add(user.unit.trim().toUpperCase());
+    });
+    return Array.from(units).sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
+  }, [associates, users]);
+
+  const activeAssociates = useMemo(
+    () => (associates ?? []).filter((associate) => associate.status === "ativo"),
+    [associates]
+  );
+
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (users ?? []).filter((user) => {
+      const linkedAssociate = associateById.get(user.associateId ?? user.parentAssociateId ?? "");
       const matchesSearch =
         !term ||
         user.name.toLowerCase().includes(term) ||
         (user.email ?? "").toLowerCase().includes(term) ||
-        (user.unit ?? "").toLowerCase().includes(term);
+        (user.unit ?? "").toLowerCase().includes(term) ||
+        (linkedAssociate?.name ?? "").toLowerCase().includes(term) ||
+        (linkedAssociate?.cpfPrefix ?? "").toLowerCase().includes(term);
       const matchesRole = roleFilter === "todos" || user.role === roleFilter;
       const matchesStatus = statusFilter === "todos" || user.status === statusFilter;
       return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [users, search, roleFilter, statusFilter]);
+  }, [users, search, roleFilter, statusFilter, associateById]);
 
   if (!session) return null;
   if (!canManageUsers) {
@@ -102,6 +176,15 @@ export default function UsuariosPage() {
         <p className="text-lg">Acesso restrito à Diretoria ou Sysadmin</p>
       </div>
     );
+  }
+
+  function syncUnitFromAssociate(value: string, currentForm: UserFormState) {
+    const associate = associateById.get(value);
+    return {
+      ...currentForm,
+      residenceAssociateId: value,
+      unit: associate?.unit?.trim() ? associate.unit.trim().toUpperCase() : currentForm.unit,
+    };
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -120,14 +203,14 @@ export default function UsuariosPage() {
       const passwordHash = await sha256(form.password);
       await convexMutation("users:createUser", {
         sessionToken: session.token,
-        name: form.name,
-        email: form.email,
+        name: form.name.trim(),
+        email: form.email.trim(),
         passwordHash,
         role: form.role,
-        unit: form.unit || undefined,
+        ...buildResidencePayload(form),
       });
       setMsg({ type: "ok", text: "Usuário criado com sucesso!" });
-      setForm({ name: "", email: "", password: "", role: roleOptions[0] ?? "associado", unit: "" });
+      setForm(emptyForm(roleOptions[0] ?? "associado"));
       reload();
     } catch (err: unknown) {
       setMsg({ type: "err", text: err instanceof Error ? err.message : "Erro ao criar usuário" });
@@ -144,13 +227,14 @@ export default function UsuariosPage() {
       password: "",
       role: user.role,
       unit: user.unit ?? "",
+      residenceAssociateId: user.associateId ?? user.parentAssociateId ?? "",
     });
     setMsg(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
-    setEditForm({ name: "", email: "", password: "", role: "associado", unit: "" });
+    setEditForm(emptyForm("associado"));
     setSavingEdit(false);
   }
 
@@ -175,13 +259,15 @@ export default function UsuariosPage() {
         passwordHash?: string;
         role: User["role"];
         unit?: string;
+        associateId?: string;
+        parentAssociateId?: string;
       } = {
         sessionToken: session.token,
         id: editingId,
         name: editForm.name.trim(),
         email: editForm.email.trim() || undefined,
         role: editForm.role,
-        unit: editForm.unit.trim() || undefined,
+        ...buildResidencePayload(editForm),
       };
 
       if (editForm.password.trim()) {
@@ -211,18 +297,77 @@ export default function UsuariosPage() {
     reload();
   }
 
+  const renderResidenceFields = (
+    state: UserFormState,
+    onChange: (next: UserFormState) => void,
+    accent: "emerald" | "blue"
+  ) => {
+    const usesFinancialLink = state.role === "associado" || state.role === "morador";
+    const borderClass = accent === "blue" ? "focus:border-blue-500" : "focus:border-emerald-500";
+
+    return (
+      <>
+        {usesFinancialLink && (
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">{residenceLabel(state.role)}</label>
+            <select
+              value={state.residenceAssociateId}
+              onChange={(e) => onChange(syncUnitFromAssociate(e.target.value, state))}
+              className={`w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none ${borderClass}`}
+            >
+              <option value="">Selecionar pelo cadastro financeiro</option>
+              {activeAssociates.map((associate) => (
+                <option key={associate._id} value={associate._id}>{formatAssociateOption(associate)}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+              O vínculo garante que CPF, unidade e futura conciliação de pagamentos apontem para o titular financeiro correto.
+            </p>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-xs text-gray-400 mb-1">
+            {usesFinancialLink ? "Unidade derivada ou informada" : residenceLabel(state.role)}
+          </label>
+          <input
+            type="text"
+            list="unit-options"
+            value={state.unit}
+            onChange={(e) => onChange({ ...state, unit: e.target.value })}
+            placeholder="Ex: CASA 12, APTO 203, A1…"
+            className={`w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none ${borderClass}`}
+          />
+          <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+            A inadimplência deve ser acompanhada por unidade; CPF e nomes de pagadores ficam como filtros complementares.
+          </p>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      <datalist id="unit-options">
+        {unitOptions.map((unit) => <option key={unit} value={unit} />)}
+      </datalist>
 
       <div>
         <h2 className="text-xl font-bold text-white">Usuários do Sistema</h2>
         <p className="text-sm text-gray-400 mt-1">
-          Cadastre e consulte usuários conforme as permissões do seu perfil.
+          Cadastre usuários vinculando a unidade operacional e, quando aplicável, o associado financeiro/titular.
           {session.role === "sysadmin" && typeof sysCount === "number" && (
             <span className={`ml-2 ${sysCount >= 2 ? "text-yellow-400" : "text-gray-400"}`}>
               {sysCount}/2 sysadmins ativos
             </span>
           )}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4 text-sm text-emerald-100">
+        <p className="font-medium">Regra operacional recomendada</p>
+        <p className="mt-1 text-xs leading-relaxed text-emerald-200/80">
+          Use a <strong>Unidade</strong> para verificar inadimplência e agrupar moradores. Use o <strong>CPF</strong> e o cadastro financeiro para autenticação, rastreabilidade e futura conciliação de pagadores alternativos.
         </p>
       </div>
 
@@ -254,18 +399,13 @@ export default function UsuariosPage() {
 
           <div>
             <label className="block text-xs text-gray-400 mb-1">Papel</label>
-            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
+            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as User["role"], residenceAssociateId: e.target.value === "associado" || e.target.value === "morador" ? form.residenceAssociateId : "" })}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
               {roleOptions.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Unidade (opcional)</label>
-            <input type="text" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })}
-              placeholder="Ex: A1, B3…"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500" />
-          </div>
+          {renderResidenceFields(form, setForm, "emerald")}
         </div>
 
         {/* Alerta quando limite de sysadmins for atingido */}
@@ -292,7 +432,7 @@ export default function UsuariosPage() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-sm font-medium text-blue-200">Editar usuário</h3>
-              <p className="text-xs text-blue-300/80 mt-1">Somente Sysadmin pode editar cadastro, papel e redefinir senha de usuários.</p>
+              <p className="text-xs text-blue-300/80 mt-1">Somente Sysadmin pode editar cadastro, papel, vínculo de unidade e senha de usuários.</p>
             </div>
             <button type="button" onClick={cancelEdit} className="text-xs text-gray-300 hover:text-white transition-colors">Cancelar edição</button>
           </div>
@@ -316,16 +456,12 @@ export default function UsuariosPage() {
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Papel</label>
-              <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as User["role"] })}
+              <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as User["role"], residenceAssociateId: e.target.value === "associado" || e.target.value === "morador" ? editForm.residenceAssociateId : "" })}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 {SYSTEM_ADMIN_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Unidade (opcional)</label>
-              <input type="text" value={editForm.unit} onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
-            </div>
+            {renderResidenceFields(editForm, setEditForm, "blue")}
           </div>
 
           <button type="submit" disabled={savingEdit}
@@ -344,7 +480,7 @@ export default function UsuariosPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nome, e-mail ou unidade"
+              placeholder="Buscar por nome, e-mail, unidade, titular ou CPF parcial"
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
             />
           </div>
@@ -387,56 +523,66 @@ export default function UsuariosPage() {
       ) : (
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[920px]">
               <thead className="bg-gray-800/50">
                 <tr className="text-gray-400 text-xs uppercase">
-                  {["Nome", "E-mail", "Papel", "Unidade", "Status", "Ações"].map((h) => (
+                  {["Nome", "E-mail", "Papel", "Unidade", "Vínculo financeiro", "Status", "Ações"].map((h) => (
                     <th key={h} className="text-left px-4 py-3">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">Nenhum usuário encontrado.</td></tr>
-                ) : filteredUsers.map((u) => (
-                  <tr key={u._id} className="border-t border-gray-800/50 hover:bg-gray-800/20">
-                    <td className="px-4 py-3 text-white">{u.name}</td>
-                    <td className="px-4 py-3 text-gray-400">{u.email ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[u.role]}`}>{u.role}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-400">{u.unit ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs ${u.status === "ativo" ? "bg-emerald-900/50 text-emerald-300" : "bg-gray-800 text-gray-400"}`}>
-                        {u.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        {canEditUsers && (
-                          <button onClick={() => startEdit(u)}
-                            className="px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded transition-colors">
-                            Editar
-                          </button>
-                        )}
-                        {/* Não permite inativar a si mesmo */}
-                        {u._id !== session._id && (
-                          u.status === "ativo" ? (
-                            <button onClick={() => deactivate(u._id)}
-                              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded transition-colors">
-                              Inativar
+                  <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-500">Nenhum usuário encontrado.</td></tr>
+                ) : filteredUsers.map((u) => {
+                  const linkedAssociate = associateById.get(u.associateId ?? u.parentAssociateId ?? "");
+                  const linkKind = u.associateId ? "Titular" : u.parentAssociateId ? "Morador da unidade" : "Sem vínculo";
+                  return (
+                    <tr key={u._id} className="border-t border-gray-800/50 hover:bg-gray-800/20">
+                      <td className="px-4 py-3 text-white">{u.name}</td>
+                      <td className="px-4 py-3 text-gray-400">{u.email ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[u.role]}`}>{u.role}</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-200 font-medium">{u.unit ?? "—"}</td>
+                      <td className="px-4 py-3 text-gray-400">
+                        <div className="max-w-[220px]">
+                          <p className="text-xs text-gray-300">{linkKind}</p>
+                          <p className="truncate text-xs text-gray-500">{linkedAssociate ? `${linkedAssociate.name}${linkedAssociate.cpfPrefix ? ` · CPF ${linkedAssociate.cpfPrefix}…` : ""}` : "—"}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${u.status === "ativo" ? "bg-emerald-900/50 text-emerald-300" : "bg-gray-800 text-gray-400"}`}>
+                          {u.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          {canEditUsers && (
+                            <button onClick={() => startEdit(u)}
+                              className="px-2 py-1 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded transition-colors">
+                              Editar
                             </button>
-                          ) : (
-                            <button onClick={() => reactivate(u._id)}
-                              className="px-2 py-1 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded transition-colors">
-                              Reativar
-                            </button>
-                          )
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          )}
+                          {/* Não permite inativar a si mesmo */}
+                          {u._id !== session._id && (
+                            u.status === "ativo" ? (
+                              <button onClick={() => deactivate(u._id)}
+                                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded transition-colors">
+                                Inativar
+                              </button>
+                            ) : (
+                              <button onClick={() => reactivate(u._id)}
+                                className="px-2 py-1 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded transition-colors">
+                                Reativar
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -19,8 +19,9 @@ export default function CadastroPage() {
 
   if (!session) return null;
 
-  // Moradores sem associateId não podem editar seus dados por aqui
+  // Moradores vinculados à unidade podem visualizar o vínculo, mas a edição permanece restrita ao titular financeiro.
   const canEdit = session.role === "associado" && !!session.associateId;
+  const isLinkedResident = Boolean(session.parentAssociateId) && !session.associateId;
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -67,6 +68,12 @@ export default function CadastroPage() {
           <p className="text-xs text-gray-500 uppercase tracking-wide">Perfil</p>
           <p className="text-white font-medium mt-1 capitalize">{session.role}</p>
         </div>
+        {isLinkedResident && session.financialResponsibleName && (
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Titular financeiro da unidade</p>
+            <p className="text-white font-medium mt-1">{session.financialResponsibleName}</p>
+          </div>
+        )}
         {session.cpfPrefix && (
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide">CPF (prefixo)</p>
@@ -124,7 +131,9 @@ export default function CadastroPage() {
         </form>
       ) : (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center text-gray-400 text-sm">
-          Para alterar seus dados de contato, entre em contato com a administração.
+          {isLinkedResident
+            ? "Seu cadastro está vinculado à unidade informada, mas alterações cadastrais e financeiras devem ser solicitadas à diretoria ou ao associado titular."
+            : "Para alterar seus dados de contato, entre em contato com a administração."}
         </div>
       )}
 

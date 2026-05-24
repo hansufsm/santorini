@@ -15,6 +15,8 @@ export type SessionData = {
   role: "sysadmin" | "diretoria" | "associado" | "morador";
   status: string;
   associateId?: string;
+  parentAssociateId?: string;
+  financialResponsibleName?: string;
   joinedAt: string;
   cpfPrefix: string;
   token: string;

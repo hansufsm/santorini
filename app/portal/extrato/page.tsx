@@ -29,6 +29,7 @@ export default function ExtratoPage() {
   const { session } = useAuth();
 
   const canViewFinancialData = session?.role === "associado" && Boolean(session?.associateId);
+  const isLinkedResident = Boolean(session?.parentAssociateId) && !session?.associateId;
 
   const { data, loading, error } = useConvexQuery<HistoryData>(
     "transactions:getAssociateHistory",
@@ -48,7 +49,9 @@ export default function ExtratoPage() {
         <section className="rounded-2xl border border-emerald-400/15 bg-emerald-950/60 p-6">
           <p className="text-sm font-bold text-white">Acesso restrito ao associado contribuinte</p>
           <p className="mt-2 text-sm leading-relaxed text-emerald-100/65">
-            Para preservar a privacidade, este extrato só é exibido quando a conta tem vínculo de associado contribuinte confirmado.
+            {isLinkedResident
+              ? `Seu cadastro está vinculado à unidade ${session.unit || "—"}${session.financialResponsibleName ? `, cujo titular financeiro é ${session.financialResponsibleName}` : ""}. Para preservar a privacidade, o extrato detalhado permanece disponível apenas ao associado titular.`
+              : "Para preservar a privacidade, este extrato só é exibido quando a conta tem vínculo de associado contribuinte confirmado."}
           </p>
         </section>
       </div>

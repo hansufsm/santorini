@@ -15,6 +15,58 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getEffectiveUserStatus, isUserActive, requireRole } from "./_lib";
 
+const normalizeUnit = (unit?: string) => {
+  const cleaned = unit?.trim().replace(/\s+/g, " ").toUpperCase();
+  return cleaned || undefined;
+};
+
+const getActiveAssociateOrThrow = async (ctx: any, associateId: any) => {
+  const associate = await ctx.db.get(associateId);
+  if (!associate || associate.deletedAt !== undefined) {
+    throw new Error("Associado financeiro/titular não encontrado.");
+  }
+  return associate;
+};
+
+const buildResidencePatch = async (
+  ctx: any,
+  fields: {
+    role: "sysadmin" | "diretoria" | "associado" | "morador";
+    unit?: string;
+    associateId?: any;
+    parentAssociateId?: any;
+  }
+) => {
+  const patch: Record<string, unknown> = {
+    unit: normalizeUnit(fields.unit),
+  };
+
+  if (fields.role === "associado") {
+    patch.parentAssociateId = undefined;
+    patch.associateId = fields.associateId;
+
+    if (fields.associateId) {
+      const associate = await getActiveAssociateOrThrow(ctx, fields.associateId);
+      patch.unit = normalizeUnit(associate.unit) ?? patch.unit;
+    }
+  } else if (fields.role === "morador") {
+    patch.associateId = undefined;
+    patch.parentAssociateId = fields.parentAssociateId;
+
+    if (fields.parentAssociateId) {
+      const parentAssociate = await getActiveAssociateOrThrow(ctx, fields.parentAssociateId);
+      patch.unit = normalizeUnit(parentAssociate.unit) ?? patch.unit;
+    }
+  } else {
+    // Perfis administrativos podem ter unidade informativa, mas não devem assumir
+    // automaticamente um vínculo financeiro/titular de associado.
+    patch.associateId = undefined;
+    patch.parentAssociateId = undefined;
+  }
+
+  return patch;
+};
+
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
 /**
@@ -186,8 +238,16 @@ export const createUser = mutation({
     }
 
     const now = Date.now();
+    const residencePatch = await buildResidencePatch(ctx, {
+      role: fields.role,
+      unit: fields.unit,
+      associateId: fields.associateId,
+      parentAssociateId: fields.parentAssociateId,
+    });
+
     const newId = await ctx.db.insert("users", {
       ...fields,
+      ...residencePatch,
       status: "ativo",
       createdBy: caller._id, // registrar quem criou
       createdAt: now,
@@ -268,9 +328,27 @@ export const updateUser = mutation({
       }
     }
 
-    const patch: Record<string, unknown> = { updatedAt: Date.now() };
+    const nextRole = fields.role ?? target.role;
+    const residencePatch = await buildResidencePatch(ctx, {
+      role: nextRole,
+      unit: fields.unit ?? target.unit,
+      associateId: fields.associateId ?? target.associateId,
+      parentAssociateId: fields.parentAssociateId ?? target.parentAssociateId,
+    });
+
+    const patch: Record<string, unknown> = {
+      updatedAt: Date.now(),
+      ...residencePatch,
+    };
     for (const [key, value] of Object.entries(fields)) {
-      if (value !== undefined) patch[key] = value;
+      if (
+        value !== undefined &&
+        key !== "unit" &&
+        key !== "associateId" &&
+        key !== "parentAssociateId"
+      ) {
+        patch[key] = value;
+      }
     }
 
     await ctx.db.patch(id, patch);

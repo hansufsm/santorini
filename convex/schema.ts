@@ -356,7 +356,8 @@ export default defineSchema({
     .index("by_role", ["role"])
     .index("by_status", ["status"])
     .index("by_associate", ["associateId"])
-    .index("by_parent_associate", ["parentAssociateId"]),
+    .index("by_parent_associate", ["parentAssociateId"])
+    .index("by_unit", ["unit"]),
 
   // ─── Sessões autenticadas ─────────────────────────────────────────────────
   //

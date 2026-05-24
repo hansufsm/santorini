@@ -166,6 +166,12 @@ export const loginWithPassword = mutation({
       });
     }
 
+    let financialAssociateData: any = null;
+    const financialAssociateId = user.associateId ?? user.parentAssociateId;
+    if (financialAssociateId) {
+      financialAssociateData = await ctx.db.get(financialAssociateId);
+    }
+
     // Criar token de sessão
     const token = generateToken();
     const now = Date.now();
@@ -186,6 +192,9 @@ export const loginWithPassword = mutation({
         unit: user.unit ?? "",
         role: user.role as Role,
         status: getEffectiveUserStatus(user),
+        associateId: (user.associateId as string) ?? undefined,
+        parentAssociateId: (user.parentAssociateId as string) ?? undefined,
+        financialResponsibleName: financialAssociateData?.name ?? undefined,
       },
     };
   },
@@ -235,10 +244,12 @@ export const getSession = query({
       return null;
     }
 
-    // Se o usuário tem um associado vinculado, buscar dados complementares
+    // Se o usuário tem um associado direto ou vínculo indireto à unidade,
+    // buscar apenas dados seguros do cadastro financeiro/titular.
     let associateData: any = null;
-    if (user.associateId) {
-      associateData = await ctx.db.get(user.associateId);
+    const financialAssociateId = user.associateId ?? user.parentAssociateId;
+    if (financialAssociateId) {
+      associateData = await ctx.db.get(financialAssociateId);
     }
 
     // Retornar apenas campos seguros (sem CPF completo, sem passwordHash)
@@ -251,8 +262,10 @@ export const getSession = query({
       role: user.role as Role,
       status: getEffectiveUserStatus(user),
       associateId: (user.associateId as string) ?? undefined,
-      joinedAt: associateData?.joinedAt ?? "",
-      cpfPrefix: associateData?.cpfPrefix ?? "",
+      parentAssociateId: (user.parentAssociateId as string) ?? undefined,
+      financialResponsibleName: associateData?.name ?? undefined,
+      joinedAt: user.associateId ? associateData?.joinedAt ?? "" : "",
+      cpfPrefix: user.associateId ? associateData?.cpfPrefix ?? "" : "",
     };
   },
 });

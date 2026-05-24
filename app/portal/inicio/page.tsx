@@ -105,27 +105,52 @@ function PaymentOk({ monthLabel }: { monthLabel: string }) {
   );
 }
 
-function PaymentProtectedNotice({ firstName, unit }: { firstName: string; unit?: string }) {
+function PaymentProtectedNotice({
+  firstName,
+  unit,
+  linkedToUnit,
+  financialResponsibleName,
+}: {
+  firstName: string;
+  unit?: string;
+  linkedToUnit?: boolean;
+  financialResponsibleName?: string;
+}) {
   return (
     <section className="rounded-[1.75rem] border border-emerald-400/15 bg-emerald-950/60 p-5 shadow-[0_24px_70px_rgba(0,0,0,0.22)]">
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/80">Verificação de pagamento</p>
-      <h2 className="mt-3 text-2xl font-black leading-tight text-white">Olá, {firstName}. Vínculo financeiro não confirmado</h2>
+      <h2 className="mt-3 text-2xl font-black leading-tight text-white">
+        {linkedToUnit ? `Olá, ${firstName}. Unidade vinculada` : `Olá, ${firstName}. Vínculo financeiro não confirmado`}
+      </h2>
       <p className="mt-3 text-sm leading-relaxed text-emerald-50/70">
-        Unidade <strong className="text-white">{unit || "—"}</strong>. Esta conta não possui vínculo ativo de associado contribuinte. Por privacidade, não exibimos valores, históricos ou dados financeiros de terceiros.
+        Unidade <strong className="text-white">{unit || "—"}</strong>
+        {linkedToUnit && financialResponsibleName ? (
+          <> — titular financeiro: <strong className="text-white">{financialResponsibleName}</strong>.</>
+        ) : (
+          <>.</>
+        )} {linkedToUnit
+          ? "Seu cadastro está vinculado à unidade, mas os valores, extratos e histórico de pagamento permanecem restritos ao associado titular por privacidade."
+          : "Esta conta não possui vínculo ativo de associado contribuinte. Por privacidade, não exibimos valores, históricos ou dados financeiros de terceiros."}
       </p>
       <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
-        <p className="text-sm font-bold text-white">Quer regularizar ou vincular seu cadastro?</p>
-        <p className="mt-1 text-xs leading-relaxed text-emerald-100/65">
-          Fale com a diretoria para confirmar seu CPF como associado contribuinte. Se deseja contribuir agora, use o link seguro ou o Pix direto abaixo.
+        <p className="text-sm font-bold text-white">
+          {linkedToUnit ? "Precisa atualizar dados da unidade?" : "Quer regularizar ou vincular seu cadastro?"}
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <a href={PAYMENT_LINK} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-300 px-4 py-3 text-center text-sm font-black text-emerald-950 transition hover:bg-emerald-200">
-            Contribuir agora
-          </a>
-          <div className="rounded-xl border border-emerald-300/20 bg-emerald-900/40 px-4 py-3 text-center text-sm font-mono font-bold text-emerald-50">
-            {PIX_KEY}
+        <p className="mt-1 text-xs leading-relaxed text-emerald-100/65">
+          {linkedToUnit
+            ? "Fale com a diretoria ou com o associado titular para atualizar contatos, vínculo familiar ou responsabilidade financeira."
+            : "Fale com a diretoria para confirmar seu CPF como associado contribuinte. Se deseja contribuir agora, use o link seguro ou o Pix direto abaixo."}
+        </p>
+        {!linkedToUnit && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <a href={PAYMENT_LINK} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-300 px-4 py-3 text-center text-sm font-black text-emerald-950 transition hover:bg-emerald-200">
+              Contribuir agora
+            </a>
+            <div className="rounded-xl border border-emerald-300/20 bg-emerald-900/40 px-4 py-3 text-center text-sm font-mono font-bold text-emerald-50">
+              {PIX_KEY}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );
@@ -134,6 +159,7 @@ function PaymentProtectedNotice({ firstName, unit }: { firstName: string; unit?:
 export default function InicioPage() {
   const { session } = useAuth();
   const canViewFinancialData = session?.role === "associado" && Boolean(session?.associateId);
+  const isLinkedResident = Boolean(session?.parentAssociateId) && !session?.associateId;
 
   const { data, loading, error } = useConvexQuery<HistoryData>(
     "transactions:getAssociateHistory",
@@ -150,7 +176,12 @@ export default function InicioPage() {
   if (!canViewFinancialData) {
     return (
       <div className="space-y-6">
-        <PaymentProtectedNotice firstName={firstName} unit={session.unit} />
+        <PaymentProtectedNotice
+          firstName={firstName}
+          unit={session.unit}
+          linkedToUnit={isLinkedResident}
+          financialResponsibleName={session.financialResponsibleName}
+        />
       </div>
     );
   }

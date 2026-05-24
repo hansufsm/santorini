@@ -23,10 +23,11 @@ export default function MensalidadePage() {
   const { session } = useAuth();
 
   const canViewFinancialData = session?.role === "associado" && Boolean(session?.associateId);
+  const isLinkedResident = Boolean(session?.parentAssociateId) && !session?.associateId;
 
   const { data, loading, error } = useConvexQuery<HistoryData>(
     "transactions:getAssociateHistory",
-    { search: "", associateId: canViewFinancialData ? session?.associateId : undefined },
+    { search: "", associateId: canViewFinancialData ? session?.associateId : undefined, sessionToken: session?.token ?? "" },
     !session || !canViewFinancialData
   );
 
@@ -42,7 +43,9 @@ export default function MensalidadePage() {
         <section className="rounded-2xl border border-emerald-400/15 bg-emerald-950/60 p-6">
           <p className="text-sm font-bold text-white">Acesso restrito ao associado contribuinte</p>
           <p className="mt-2 text-sm leading-relaxed text-emerald-100/65">
-            Esta conta não possui vínculo financeiro confirmado. Para proteger os moradores, nenhum status, valor ou histórico de contribuição é exibido aqui.
+            {isLinkedResident
+              ? `Seu cadastro está vinculado à unidade ${session.unit || "—"}${session.financialResponsibleName ? `, cujo titular financeiro é ${session.financialResponsibleName}` : ""}. Para proteger os moradores e o associado titular, nenhum status, valor ou histórico de contribuição é exibido aqui.`
+              : "Esta conta não possui vínculo financeiro confirmado. Para proteger os moradores, nenhum status, valor ou histórico de contribuição é exibido aqui."}
           </p>
         </section>
       </div>
