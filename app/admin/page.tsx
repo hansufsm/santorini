@@ -585,7 +585,7 @@ export default function AdminPage() {
                     <span className="truncate text-emerald-100/70">{index + 1}. {item.name}</span>
                     <div className="relative h-8 overflow-hidden rounded-lg bg-emerald-950/70 ring-1 ring-emerald-900/80">
                       <div className="h-full rounded-lg bg-gradient-to-r from-emerald-700 to-emerald-400" style={{ width: `${percent}%` }} />
-                      <span className="absolute inset-y-0 right-3 flex items-center text-xs font-bold text-white/90">{formatCurrency(item.total)}</span>
+                      <span className="absolute inset-y-0 left-3 flex items-center justify-start text-[0.66rem] font-bold leading-none text-white/90">{formatCurrency(item.total)}</span>
                     </div>
                   </div>
                 );
