@@ -19,9 +19,26 @@ type Transaction = {
   name: string;
   detail: string;
   value: number;
-  originalValue: string;
-  transactionKey: string;
+  originalValue?: string;
+  transactionKey?: string;
 };
+
+type AssociateOption = {
+  _id: string;
+  name: string;
+  unit?: string;
+  status: "ativo" | "inativo" | "inadimplente";
+};
+
+type AssociateHistory = {
+  name: string;
+  unit?: string | null;
+  total: number;
+  monthsActive: number;
+  lastDate: string;
+  paidThisMonth: boolean;
+  transactions: Transaction[];
+} | null;
 
 // Parser CSV simples — suporta vírgula e ponto-e-vírgula como separadores,
 // e campos entre aspas duplas
@@ -76,6 +93,7 @@ export default function TransacoesPage() {
 
   // Lista de transações existentes
   const { data: txList, loading: listLoading } = useConvexQuery<Transaction[]>("transactions:getAllTransactions");
+  const { data: associates, loading: associatesLoading } = useConvexQuery<AssociateOption[]>("associates:getAllAssociates");
 
   // Estado do import
   const [preview, setPreview] = useState<Transaction[]>([]);
@@ -83,6 +101,15 @@ export default function TransacoesPage() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAssociateId, setSelectedAssociateId] = useState("");
+
+  const selectedAssociate = associates?.find((associate) => associate._id === selectedAssociateId);
+  const { data: associateHistory, loading: historyLoading, error: historyError } = useConvexQuery<AssociateHistory>(
+    "transactions:getAssociateHistory",
+    { search: "", associateId: selectedAssociateId || undefined, sessionToken: session?.token ?? "" },
+    !session || !selectedAssociateId
+  );
+  const selectedTransactions = associateHistory?.transactions ?? [];
 
   if (!session) return null;
 
@@ -199,6 +226,98 @@ export default function TransacoesPage() {
           <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-sm text-red-300">{error}</div>
         )}
       </div>
+
+      {/* Histórico por associado */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-300">Histórico por usuário/associado</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Selecione um associado no combobox para consultar suas transações recebidas em tabela.
+            </p>
+          </div>
+          <div className="w-full lg:w-96">
+            <label className="block text-xs text-gray-400 mb-1">Associado</label>
+            <select
+              value={selectedAssociateId}
+              onChange={(event) => setSelectedAssociateId(event.target.value)}
+              disabled={associatesLoading}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 disabled:opacity-60"
+            >
+              <option value="">{associatesLoading ? "Carregando associados…" : "Selecione para consultar"}</option>
+              {(associates ?? []).map((associate) => (
+                <option key={associate._id} value={associate._id}>
+                  {associate.name}{associate.unit ? ` — Unidade ${associate.unit}` : ""}{associate.status !== "ativo" ? ` (${associate.status})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {!selectedAssociateId ? (
+          <div className="rounded-lg border border-gray-800 bg-gray-950/40 p-4 text-sm text-gray-500">
+            Nenhum associado selecionado para consulta.
+          </div>
+        ) : historyLoading ? (
+          <div className="rounded-lg border border-gray-800 bg-gray-950/40 p-4 text-sm text-gray-400">
+            Carregando histórico de {selectedAssociate?.name ?? "associado"}…
+          </div>
+        ) : historyError ? (
+          <div className="rounded-lg border border-red-700 bg-red-900/30 p-4 text-sm text-red-300">
+            {historyError}
+          </div>
+        ) : !associateHistory || selectedTransactions.length === 0 ? (
+          <div className="rounded-lg border border-gray-800 bg-gray-950/40 p-4 text-sm text-gray-500">
+            Nenhuma transação recebida encontrada para {selectedAssociate?.name ?? "este associado"}.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Associado</p>
+                <p className="mt-1 text-sm font-medium text-white">{associateHistory.name}</p>
+              </div>
+              <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Total recebido</p>
+                <p className="mt-1 text-sm font-bold text-emerald-400">{formatCurrency(associateHistory.total)}</p>
+              </div>
+              <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Meses ativos</p>
+                <p className="mt-1 text-sm font-bold text-white">{associateHistory.monthsActive}</p>
+              </div>
+              <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Último pagamento</p>
+                <p className="mt-1 text-sm font-bold text-white">{formatDate(associateHistory.lastDate)}</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-gray-800">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-800/50">
+                  <tr className="text-gray-400 text-xs uppercase">
+                    <th className="text-left px-4 py-3">Data</th>
+                    <th className="text-left px-4 py-3">Hora</th>
+                    <th className="text-left px-4 py-3">Tipo</th>
+                    <th className="text-left px-4 py-3">Nome no extrato</th>
+                    <th className="text-right px-4 py-3">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedTransactions.map((tx, index) => (
+                    <tr key={tx._id ?? `${tx.date}-${tx.time}-${index}`} className="border-t border-gray-800/50 hover:bg-gray-800/20">
+                      <td className="px-4 py-2 text-gray-300">{formatDate(tx.date)}</td>
+                      <td className="px-4 py-2 text-gray-400">{tx.time?.slice(0, 5) || "—"}</td>
+                      <td className="px-4 py-2 text-gray-400">{tx.detail || tx.type}</td>
+                      <td className="px-4 py-2 text-gray-300 max-w-56 truncate">{tx.name}</td>
+                      <td className="px-4 py-2 text-right font-medium text-emerald-400">{formatCurrency(tx.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Lista de transações */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">

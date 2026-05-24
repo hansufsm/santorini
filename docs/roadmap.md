@@ -8,7 +8,7 @@ O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencia
 |---:|---|---:|---|
 | 1 | Base financeira e associados | Concluída | Importação de transações, associados e indicadores iniciais. |
 | 2 | Comunicação e governança | Concluída | Comunicados, documentos, assembleias e organização institucional. |
-| 3 | Operações, portal e privacidade | Em evolução | Portal, usuários, permissões, reservas, manutenção e módulos operacionais. |
+| 3 | Operações, portal e privacidade | Em evolução | Portal, usuários, permissões, reservas, manutenção, histórico financeiro por combobox e módulos operacionais. |
 | 4 | UX, identidade e sessão | Implementada em parte | Logo AMRTS, favicon, toggles pill e melhoria de persistência de sessão. |
 | 5 | Feedback Comunitário | MVP implementado | Canal global de escuta com painel administrativo. |
 | 6 | Tutoriais inteligentes por role | Persistência e painel implementados | Trilha Viva contextual no portal, com conteúdo por rota, role, checklist sincronizado no Convex e painel administrativo. |
@@ -61,8 +61,8 @@ A primeira camada de experiência da **Trilha Viva Santorini** foi implementada 
 |---|---|---|
 | Morador | Início, Comunicados, Suporte | Entender informações essenciais e saber pedir ajuda. |
 | Associado | Início, Extrato, Mensalidade, Meu Cadastro, Reservas, Comunicados, Suporte | Acompanhar situação financeira, manter cadastro e consumir serviços. |
-| Diretoria | Dashboard, Transações, Associados, Reservas, Comunicados, Manutenção, Feedbacks | Operar a associação, responder demandas e manter governança. |
-| Sysadmin | Todos os itens da diretoria, Usuários e parâmetros técnicos | Garantir segurança, permissões e sustentação do sistema. |
+| Diretoria | Dashboard, Transações, Associados, Reservas, Comunicados, Manutenção, Feedbacks, Usuários | Operar a associação, responder demandas, consultar históricos por associado e cadastrar acessos operacionais. |
+| Sysadmin | Todos os itens da diretoria, Usuários e parâmetros técnicos | Garantir segurança, permissões administrativas e sustentação do sistema. |
 
 ## Backlog priorizado
 
@@ -80,6 +80,8 @@ A primeira camada de experiência da **Trilha Viva Santorini** foi implementada 
 | Média | Preparar `associationId` nas novas tabelas | Reduz retrabalho na expansão SaaS. |
 | Baixa | Screenshot opcional no feedback | Deve vir somente após validar uso do MVP. |
 | Baixa | PWA e notificações | Úteis, mas dependem de base funcional estável. |
+| Futura | Integração Redomus para controle de câmeras | Planejar comunicação API + token para inativar ou reativar acesso às câmeras de associados inadimplentes, sempre com regra formal, confirmação administrativa, trilha de auditoria e possibilidade de reversão. |
+| Futura | Integração CamobiSegura para botão do pânico | Planejar API de contato com CamobiSegura para botão do pânico e funcionalidades de segurança comunitária, com autorização explícita, registro de acionamentos, prevenção de falsos positivos e política clara de privacidade. |
 
 ## Critérios de priorização
 
@@ -90,7 +92,7 @@ As próximas entregas devem ser priorizadas por impacto comunitário, redução 
 | Valor para associado | A funcionalidade aumenta transparência ou utilidade cotidiana? |
 | Valor para diretoria | Reduz planilhas, retrabalho, dúvidas ou atendimento manual? |
 | Escala SaaS | Pode ser reutilizada por outras associações com pouca adaptação? |
-| Risco | Exige alteração sensível em banco, autenticação ou privacidade? |
+| Risco | Exige alteração sensível em banco, autenticação, privacidade, segurança física ou integração externa? |
 | Mensurabilidade | Gera dados que ajudam a decidir os próximos passos? |
 
 ## Relação com documentação raiz

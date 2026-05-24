@@ -32,7 +32,7 @@ export default function ExtratoPage() {
 
   const { data, loading, error } = useConvexQuery<HistoryData>(
     "transactions:getAssociateHistory",
-    { search: "", associateId: canViewFinancialData ? session?.associateId : undefined },
+    { search: "", associateId: canViewFinancialData ? session?.associateId : undefined, sessionToken: session?.token ?? "" },
     !session || !canViewFinancialData
   );
 

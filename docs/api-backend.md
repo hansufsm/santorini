@@ -50,7 +50,7 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 | `transactions:getSummary` | query | Consolida entradas, saídas e saldo. |
 | `transactions:getTopContributors` | query | Ranking de contribuintes. |
 | `transactions:getMonthlyFlow` | query | Fluxo mensal. |
-| `transactions:getAssociateHistory` | query | Histórico de um associado. |
+| `transactions:getAssociateHistory` | query | Histórico de um associado por `associateId`, protegido por `sessionToken`; Associado consulta o próprio vínculo e Diretoria/Sysadmin consultam qualquer associado. |
 | `transactions:getDefaulters` | query | Inadimplentes por mês. |
 
 ## Funções de associados e usuários
@@ -64,7 +64,16 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 | `auth:loginWithPassword` | mutation | Login administrativo. |
 | `auth:loginWithCpf` | mutation | Login simplificado de associado quando aplicável. |
 | `auth:getSession` | query | Restaura sessão pelo token. |
-| `users:*` | query/mutation | Gestão de usuários e papéis. |
+| `users:*` | query/mutation | Gestão de usuários e papéis; Diretoria consulta/cadastra perfis operacionais e Sysadmin administra perfis sensíveis. |
+
+## Contratos administrativos de usuários e transações
+
+| Contrato | Campos principais | Regra de autorização |
+|---|---|---|
+| Consulta de usuários | `users:getAllUsers`, `sessionToken`. | Diretoria e Sysadmin listam usuários visíveis; Sysadmin preserva acesso total. |
+| Criação de usuários | `users:createUser`, `sessionToken`, `name`, `email`, `passwordHash`, `role`, `unit` opcional. | Diretoria cria apenas `associado` e `morador`; Sysadmin também cria `diretoria` e `sysadmin`, respeitando o limite de sysadmins ativos. |
+| Inativação/reativação | `users:deactivateUser` ou `users:reactivateUser`, `sessionToken`, `id`. | Diretoria não altera perfis `diretoria` ou `sysadmin`; Sysadmin mantém proteção contra remoção do último sysadmin ativo. |
+| Histórico financeiro por associado | `transactions:getAssociateHistory`, `sessionToken`, `associateId`. | Associado consulta somente o próprio vínculo; Diretoria/Sysadmin consultam por combobox administrativo em `/admin/transacoes`. |
 
 ## API implementada para Feedback Comunitário
 
@@ -100,6 +109,15 @@ O módulo `trilhaViva.ts` persiste o progresso individual dos microtutoriais con
 
 A experiência frontend usa `components/trilha-viva-guide.tsx` para sincronizar o estado remoto e manter fallback em `localStorage` quando a chamada Convex não estiver disponível. O painel `/admin/trilha-viva` consome `getProgressSummary` e `listProgress` para exibir métricas, filtros e pontos de dificuldade por menu.
 
+## Integrações externas planejadas
+
+As integrações com serviços externos devem ser planejadas como módulos isolados, com tokens armazenados em variáveis de ambiente, chamadas auditáveis e nenhuma automação irreversível sem confirmação administrativa. A implementação futura deve evitar acoplamento direto entre inadimplência e bloqueios sem regra formal aprovada pela associação.
+
+| Integração | Escopo futuro | Requisitos mínimos antes de implementar |
+|---|---|---|
+| Redomus | Comunicação API + token para inativar ou reativar acesso às câmeras de associados inadimplentes. | Definir contrato de API, token seguro, regra de inadimplência, confirmação manual, log de auditoria, tela de revisão e fluxo de reversão. |
+| CamobiSegura | API de contato para botão do pânico e outras funcionalidades de segurança comunitária. | Definir evento de acionamento, autenticação, payload mínimo, registro de acionamentos, política de privacidade, teste controlado e prevenção de falsos positivos. |
+
 ## Cuidados operacionais
 
 | Cuidado | Motivo |
@@ -107,6 +125,8 @@ A experiência frontend usa `components/trilha-viva-guide.tsx` para sincronizar 
 | Validar `data.status` em chamadas HTTP | Erros de aplicação podem vir em HTTP 200. |
 | Evitar mutations destrutivas sem confirmação | Dados financeiros e cadastrais exigem rastreabilidade. |
 | Usar soft delete em registros sensíveis | Preserva auditoria e reduz risco operacional. |
+| Proteger histórico financeiro por sessão | Evita que dados de contribuição sejam recuperados por nome digitado ou consulta sem vínculo autenticado. |
+| Auditar integrações externas | Redomus, CamobiSegura e serviços semelhantes podem afetar segurança física, privacidade ou acesso a recursos sensíveis. |
 | Filtrar por `associationId` em novos módulos | Prepara o produto para SaaS multiassociação. |
 | Manter fallback local em experiências de orientação | Evita perda de usabilidade quando a sincronização remota falha. |
 | Documentar novas funções | Evita divergência entre frontend, backend e suporte. |

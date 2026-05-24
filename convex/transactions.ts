@@ -138,12 +138,21 @@ export const getMonthlyFlow = query({
 });
 
 export const getAssociateHistory = query({
-  args: { search: v.string(), associateId: v.optional(v.id("associates")) },
-  handler: async (ctx, { associateId }) => {
-    // Regra de privacidade: histórico financeiro do portal só pode ser resolvido
-    // por vínculo explícito de associado. Nunca usar nome digitado ou nome da
-    // sessão como fallback, pois isso poderia expor contribuições de terceiros.
-    if (!associateId) return null;
+  args: {
+    search: v.string(),
+    associateId: v.optional(v.id("associates")),
+    sessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { associateId, sessionToken }) => {
+    // Regra de privacidade: histórico financeiro só pode ser resolvido por vínculo
+    // explícito de associado e por uma sessão autenticada. Diretoria/Sysadmin podem
+    // consultar qualquer associado; Associado só pode consultar o próprio vínculo.
+    if (!associateId || !sessionToken) return null;
+
+    const caller = await requireRole(ctx.db, sessionToken, "associado");
+    if (caller.role === "associado" && String(caller.associateId ?? "") !== String(associateId)) {
+      throw new Error("Você só pode consultar o histórico financeiro do seu próprio vínculo de associado.");
+    }
 
     const associate = await ctx.db.get(associateId);
     if (!associate || associate.status !== "ativo") return null;

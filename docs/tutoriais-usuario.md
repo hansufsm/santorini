@@ -111,12 +111,13 @@ A diretoria precisa de orientação operacional e critérios de decisão. As ins
 | Menu | Para que serve | O que pode ou deve fazer | Como fazer | Cuidados de governança |
 |---|---|---|---|---|
 | Dashboard | Acompanhar indicadores e visão geral da associação. | Observar receitas, despesas, saldo, associados e alertas. | Entrar no painel administrativo e revisar KPIs antes de ações operacionais. | Não tomar decisões apenas por um indicador isolado. |
-| Transações | Gerenciar lançamentos financeiros. | Registrar, revisar e classificar movimentações. | Abrir Transações, conferir dados, usar filtros e manter descrições claras. | Evitar duplicidade e preservar rastreabilidade. |
+| Transações | Gerenciar lançamentos financeiros. | Registrar, revisar, classificar movimentações e consultar histórico por associado. | Abrir Transações, selecionar um associado no combobox e revisar a tabela de pagamentos recebidos. | Evitar duplicidade, preservar rastreabilidade e consultar apenas quando houver finalidade administrativa legítima. |
 | Associados | Administrar cadastro e status de associados. | Verificar dados, status e vínculo com unidade. | Abrir Associados, pesquisar pessoa ou unidade e atualizar apenas quando houver base. | Proteger dados pessoais e evitar alterações sem justificativa. |
 | Reservas | Gerenciar solicitações de áreas comuns. | Aprovar, acompanhar ou revisar reservas. | Abrir Reservas, verificar data, área, solicitante e conflitos. | Aplicar regras de forma uniforme. |
 | Comunicados | Publicar informações oficiais. | Criar avisos claros, objetivos e úteis. | Abrir Comunicados, escolher tipo, escrever mensagem e publicar. | Diferenciar informação oficial de conversa informal. |
 | Manutenção | Triar chamados de suporte e manutenção. | Atualizar status, priorizar urgências e registrar andamento. | Abrir Manutenção, revisar chamados abertos e mudar status conforme execução. | Não encerrar chamado sem resolução ou justificativa. |
 | Feedbacks | Transformar percepções dos usuários em melhorias. | Classificar feedbacks, identificar padrões e priorizar ajustes. | Abrir Feedbacks, filtrar por status/categoria e atualizar triagem. | Usar feedback como insumo de produto, não como atendimento isolado. |
+| Usuários | Consultar e cadastrar acessos operacionais. | Diretoria pode criar e consultar usuários associados ou moradores, sem alterar perfis sensíveis de diretoria/sysadmin. | Abrir Usuários, pesquisar por nome/e-mail/unidade, escolher papel permitido e salvar. | Não conceder permissão administrativa sem validação formal. |
 
 ## Tutorial do Sysadmin
 
@@ -124,7 +125,7 @@ O sysadmin possui a maior responsabilidade operacional. A instrução deve enfat
 
 | Menu | Para que serve | O que pode ou deve fazer | Como fazer | Risco principal |
 |---|---|---|---|---|
-| Usuários | Controlar acesso ao sistema. | Criar, ativar, inativar e revisar papéis. | Abrir Usuários, conferir dados, definir role correta e salvar. | Conceder permissão excessiva. |
+| Usuários | Controlar acesso ao sistema. | Criar, consultar, ativar, inativar e revisar papéis, incluindo perfis administrativos quando necessário. | Abrir Usuários, usar filtros de consulta, conferir dados, definir role correta e salvar. | Conceder permissão excessiva ou manter acessos ativos sem necessidade. |
 | Painel Admin | Operar com visão de diretoria quando necessário. | Apoiar diagnósticos e validar funcionamento. | Navegar pelas áreas administrativas com foco em suporte. | Alterar dados operacionais sem demanda. |
 | Deploy e Operações | Sustentar ambiente, banco e publicação. | Validar build, Convex, variáveis e versionamento. | Seguir `docs/operacoes.md` antes de publicar. | Publicar sem validação ou perder rastreabilidade. |
 | Feedbacks | Monitorar qualidade do produto e sinais de erro. | Separar bug técnico, dúvida de uso e sugestão. | Filtrar feedbacks e cruzar com rotas afetadas. | Ignorar padrões recorrentes reportados pelos usuários. |

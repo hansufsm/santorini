@@ -22,10 +22,6 @@ const NAV_ITEMS = [
   { href: "/admin/manutencao", label: "🔧 Manutenção" },
   { href: "/admin/feedbacks", label: "💬 Feedbacks" },
   { href: "/admin/trilha-viva", label: "🗺️ Trilha Viva" },
-];
-
-// Apenas sysadmin vê esta seção
-const SYSADMIN_ITEMS = [
   { href: "/admin/usuarios", label: "🔑 Usuários" },
 ];
 
@@ -99,17 +95,6 @@ export default function AdminLayout({
             <NavLink key={item.href} {...item} />
           ))}
 
-          {/* Seção exclusiva do sysadmin */}
-          {session.role === "sysadmin" && (
-            <>
-              <div className="pt-4 pb-2 px-1">
-                <p className="text-xs text-emerald-700 uppercase tracking-widest">Sistema</p>
-              </div>
-              {SYSADMIN_ITEMS.map((item) => (
-                <NavLink key={item.href} {...item} />
-              ))}
-            </>
-          )}
         </nav>
 
         {/* Usuário logado + link para página inicial */}
@@ -161,7 +146,7 @@ export default function AdminLayout({
 
         {/* Nav mobile — horizontal scroll */}
         <nav className="md:hidden border-b px-2 py-2 flex gap-1 overflow-x-auto" style={{ backgroundColor: "var(--bg-drawer)", borderColor: "var(--border-main)" }}>
-          {[...NAV_ITEMS, ...(session.role === "sysadmin" ? SYSADMIN_ITEMS : [])].map((item) => {
+          {NAV_ITEMS.map((item) => {
             const isActive = item.href === "/admin"
               ? pathname === "/admin"
               : pathname.startsWith(item.href);

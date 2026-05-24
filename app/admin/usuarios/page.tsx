@@ -1,10 +1,10 @@
 /**
- * admin/usuarios/page.tsx — Gestão de Usuários (Sysadmin apenas)
- * Criar, inativar e reativar usuários do sistema.
+ * admin/usuarios/page.tsx — Gestão de Usuários
+ * Diretoria e Sysadmin podem consultar e cadastrar usuários conforme suas permissões.
  */
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useConvexQuery, convexMutation } from "@/lib/convex";
 
@@ -31,7 +31,15 @@ async function sha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-const ROLES = ["sysadmin", "diretoria", "associado", "morador"];
+const ROLE_LABEL: Record<User["role"], string> = {
+  sysadmin: "Sysadmin",
+  diretoria: "Diretoria",
+  associado: "Associado",
+  morador: "Morador",
+};
+
+const SYSTEM_ADMIN_ROLES: User["role"][] = ["sysadmin", "diretoria", "associado", "morador"];
+const MANAGEMENT_ROLES: User["role"][] = ["associado", "morador"];
 
 export default function UsuariosPage() {
   const { session } = useAuth();
@@ -46,17 +54,42 @@ export default function UsuariosPage() {
     !session
   );
 
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "diretoria", unit: "" });
+  const [form, setForm] = useState<{ name: string; email: string; password: string; role: User["role"]; unit: string }>({
+    name: "",
+    email: "",
+    password: "",
+    role: "associado",
+    unit: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"todos" | User["role"]>("todos");
+  const [statusFilter, setStatusFilter] = useState<"todos" | User["status"]>("todos");
 
-  // Apenas sysadmin pode acessar esta página
+  const canManageUsers = session?.role === "sysadmin" || session?.role === "diretoria";
+  const roleOptions = session?.role === "sysadmin" ? SYSTEM_ADMIN_ROLES : MANAGEMENT_ROLES;
+
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return (users ?? []).filter((user) => {
+      const matchesSearch =
+        !term ||
+        user.name.toLowerCase().includes(term) ||
+        (user.email ?? "").toLowerCase().includes(term) ||
+        (user.unit ?? "").toLowerCase().includes(term);
+      const matchesRole = roleFilter === "todos" || user.role === roleFilter;
+      const matchesStatus = statusFilter === "todos" || user.status === statusFilter;
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  }, [users, search, roleFilter, statusFilter]);
+
   if (!session) return null;
-  if (session.role !== "sysadmin") {
+  if (!canManageUsers) {
     return (
       <div className="text-center py-12 text-gray-400">
         <p className="text-4xl mb-3">🔒</p>
-        <p className="text-lg">Acesso restrito a Sysadmin</p>
+        <p className="text-lg">Acesso restrito à Diretoria ou Sysadmin</p>
       </div>
     );
   }
@@ -65,6 +98,10 @@ export default function UsuariosPage() {
     e.preventDefault();
     if (!session || !form.name || !form.email || !form.password) {
       setMsg({ type: "err", text: "Nome, e-mail e senha são obrigatórios." });
+      return;
+    }
+    if (!roleOptions.includes(form.role)) {
+      setMsg({ type: "err", text: "Seu perfil não pode cadastrar usuários com este papel." });
       return;
     }
     setSubmitting(true);
@@ -80,7 +117,7 @@ export default function UsuariosPage() {
         unit: form.unit || undefined,
       });
       setMsg({ type: "ok", text: "Usuário criado com sucesso!" });
-      setForm({ name: "", email: "", password: "", role: "diretoria", unit: "" });
+      setForm({ name: "", email: "", password: "", role: roleOptions[0] ?? "associado", unit: "" });
       reload();
     } catch (err: unknown) {
       setMsg({ type: "err", text: err instanceof Error ? err.message : "Erro ao criar usuário" });
@@ -107,8 +144,9 @@ export default function UsuariosPage() {
       <div>
         <h2 className="text-xl font-bold text-white">Usuários do Sistema</h2>
         <p className="text-sm text-gray-400 mt-1">
-          {typeof sysCount === "number" && (
-            <span className={sysCount >= 2 ? "text-yellow-400" : "text-gray-400"}>
+          Cadastre e consulte usuários conforme as permissões do seu perfil.
+          {session.role === "sysadmin" && typeof sysCount === "number" && (
+            <span className={`ml-2 ${sysCount >= 2 ? "text-yellow-400" : "text-gray-400"}`}>
               {sysCount}/2 sysadmins ativos
             </span>
           )}
@@ -143,9 +181,9 @@ export default function UsuariosPage() {
 
           <div>
             <label className="block text-xs text-gray-400 mb-1">Papel</label>
-            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}
+            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
-              {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+              {roleOptions.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
           </div>
 
@@ -158,7 +196,7 @@ export default function UsuariosPage() {
         </div>
 
         {/* Alerta quando limite de sysadmins for atingido */}
-        {typeof sysCount === "number" && sysCount >= 2 && form.role === "sysadmin" && (
+        {session.role === "sysadmin" && typeof sysCount === "number" && sysCount >= 2 && form.role === "sysadmin" && (
           <p className="text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-700 rounded-lg px-3 py-2">
             ⚠️ Limite de 2 sysadmins ativos atingido — não é possível criar mais.
           </p>
@@ -175,6 +213,50 @@ export default function UsuariosPage() {
           {submitting ? "Criando…" : "Criar Usuário"}
         </button>
       </form>
+
+      {/* Consulta de usuários */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-400 mb-1">Consultar usuários</label>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome, e-mail ou unidade"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">Papel</label>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as "todos" | User["role"])}
+              className="w-full sm:w-40 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+            >
+              <option value="todos">Todos</option>
+              {SYSTEM_ADMIN_ROLES.map((role) => (
+                <option key={role} value={role}>{ROLE_LABEL[role]}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "todos" | User["status"])}
+              className="w-full sm:w-36 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+            >
+              <option value="todos">Todos</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500">
+          {filteredUsers.length} de {users?.length ?? 0} usuário(s) visível(is) para o seu perfil.
+        </p>
+      </section>
 
       {/* Lista de usuários */}
       {loading ? (
@@ -193,9 +275,9 @@ export default function UsuariosPage() {
                 </tr>
               </thead>
               <tbody>
-                {(!users || users.length === 0) ? (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">Nenhum usuário.</td></tr>
-                ) : users.map((u) => (
+                {filteredUsers.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-500">Nenhum usuário encontrado.</td></tr>
+                ) : filteredUsers.map((u) => (
                   <tr key={u._id} className="border-t border-gray-800/50 hover:bg-gray-800/20">
                     <td className="px-4 py-3 text-white">{u.name}</td>
                     <td className="px-4 py-3 text-gray-400">{u.email ?? "—"}</td>

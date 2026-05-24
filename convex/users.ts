@@ -213,12 +213,12 @@ export const deactivateUser = mutation({
       throw new Error("Usuário não encontrado ou já inativado.");
     }
 
-    // Somente Sysadmin pode inativar outro Sysadmin
-    if (target.role === "sysadmin") {
-      if (caller.role !== "sysadmin") {
-        throw new Error("Apenas Sysadmin pode inativar outro Sysadmin.");
-      }
+    // Somente Sysadmin pode inativar perfis administrativos sensíveis
+    if ((target.role === "sysadmin" || target.role === "diretoria") && caller.role !== "sysadmin") {
+      throw new Error("Apenas Sysadmin pode inativar usuários com papel Diretoria ou Sysadmin.");
+    }
 
+    if (target.role === "sysadmin") {
       // Garantir que sempre reste pelo menos 1 Sysadmin ativo
       const allSysadmins = await ctx.db
         .query("users")
@@ -265,9 +265,9 @@ export const reactivateUser = mutation({
       throw new Error("Usuário não encontrado.");
     }
 
-    // Somente Sysadmin pode reativar Sysadmin
-    if (target.role === "sysadmin" && caller.role !== "sysadmin") {
-      throw new Error("Apenas Sysadmin pode reativar outro Sysadmin.");
+    // Somente Sysadmin pode reativar perfis administrativos sensíveis
+    if ((target.role === "sysadmin" || target.role === "diretoria") && caller.role !== "sysadmin") {
+      throw new Error("Apenas Sysadmin pode reativar usuários com papel Diretoria ou Sysadmin.");
     }
 
     // Verificar limite ao reativar Sysadmin

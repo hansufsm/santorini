@@ -29,7 +29,7 @@ O objetivo é **levar cada usuário direto para o que importa para ele**.
 | Papel | Destino após login |
 |-------|--------------------|
 | `associado` / `morador` | `/portal/inicio` — resumo financeiro pessoal, status do mês, comunicados recentes |
-| `diretoria` | `/admin` — dashboard rico com gráficos e tabela de transações |
+| `diretoria` | `/admin` — dashboard rico com gráficos, tabela de transações, consulta de histórico por combobox e gestão de usuários operacionais |
 | `sysadmin` | `/admin` — mesmo dashboard + acesso a `/admin/usuarios` |
 
 **Implementação:**
@@ -56,7 +56,7 @@ O `/admin` (visão geral) precisa ter paridade com o sistema legado (GitHub Page
   - Evolução do saldo em caixa (linha)
   - Distribuição por categoria de despesa (pizza/donut)
 - **Cards de KPI** — Total Recebido / Total Despesas / Saldo / Nº Associados (já existem, manter)
-- **Tabela de histórico de transações** — paginada, com filtro por tipo (recebido/enviado) e período
+- **Tabela de histórico de transações** — paginada, com filtro por tipo (recebido/enviado), período e consulta administrativa por associado via combobox
   - Colunas: Data · Descrição · Associado (mascarado para não-admin) · Valor · Tipo
   - Ordenação por coluna clicável
   - Exportação CSV
@@ -111,8 +111,8 @@ O Santorini já iniciou a experiência de ensinar o usuário enquanto ele usa o 
 |------|-----------------------------|------------------------|
 | `morador` | Início, Comunicados, Suporte | Ler informações essenciais e pedir ajuda. |
 | `associado` | Início, Extrato, Mensalidade, Meu Cadastro, Reservas, Comunicados, Suporte | Acompanhar finanças, manter cadastro e usar serviços. |
-| `diretoria` | Dashboard, Transações, Associados, Reservas, Comunicados, Manutenção, Feedbacks | Operar a associação com rastreabilidade e governança. |
-| `sysadmin` | Itens da diretoria, Usuários e parâmetros técnicos | Sustentar segurança, permissões e operação do sistema. |
+| `diretoria` | Dashboard, Transações, Associados, Reservas, Comunicados, Manutenção, Feedbacks, Usuários | Operar a associação com rastreabilidade, consulta por associado e gestão de acessos operacionais. |
+| `sysadmin` | Itens da diretoria, Usuários e parâmetros técnicos | Sustentar segurança, permissões administrativas e operação do sistema. |
 
 **Entrega implementada:** o portal do associado carrega `TrilhaVivaGuideCard` em suas rotas principais, alimentado pelo registro `lib/trilha-viva-content.ts`. O progresso é salvo na tabela Convex `trilhaVivaProgress` por usuário, rota e role, com fallback local no navegador. A diretoria também possui a rota `/admin/trilha-viva` para acompanhar métricas, filtros por perfil/status/menu e pontos de dificuldade.
 
@@ -130,6 +130,8 @@ O Santorini já iniciou a experiência de ensinar o usuário enquanto ele usa o 
 - **Relatório em PDF** — extrato individual e balancete mensal para download
 - **Auditoria de ações** — log de quem fez o quê no painel admin (tabela `audit_log`)
 - **Multi-residencial** — isolar dados por `condoId` para reutilizar o sistema em outros empreendimentos
+- **Integração Redomus** — planejar comunicação API + token para inativar ou reativar acesso às câmeras de associados inadimplentes, com confirmação administrativa, auditoria e reversão segura
+- **Integração CamobiSegura** — planejar API para botão do pânico e funcionalidades de segurança comunitária, com registro de acionamentos, política de privacidade e prevenção de falsos positivos
 
 ---
 
