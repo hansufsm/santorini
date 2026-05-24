@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useConvexQuery, convexMutation } from "@/lib/convex";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -131,6 +131,7 @@ type PCloudSyncResult = {
 };
 
 const DEFAULT_PCLOUD_FOLDER_URL = "https://u.pcloud.link/publink/show?code=kZ8V7I5Z6xQw6zTf7sp39QtML5sJDkzrP8xV";
+const TRANSACTIONS_PAGE_SIZE = 50;
 
 function buildPCloudFileKey(file: Pick<PCloudApiFile, "fileId" | "fileName" | "fileHash" | "fileSize" | "modified">) {
   return [file.fileId || file.fileName, file.fileHash || file.fileSize || file.modified || "sem-hash"].join(":");
@@ -235,7 +236,7 @@ export default function TransacoesPage() {
   const { session } = useAuth();
 
   // Lista de transações existentes
-  const { data: txList, loading: listLoading } = useConvexQuery<Transaction[]>("transactions:getAllTransactions");
+  const { data: txList, loading: listLoading, reload: reloadTransactions } = useConvexQuery<Transaction[]>("transactions:getAllTransactions");
   const { data: associates, loading: associatesLoading } = useConvexQuery<AssociateOption[]>("associates:getAllAssociates");
 
   // Estado do import
@@ -253,6 +254,7 @@ export default function TransacoesPage() {
   const [pcloudFolderName, setPcloudFolderName] = useState("");
   const [pcloudResult, setPcloudResult] = useState<PCloudSyncResult | null>(null);
   const [selectedAssociateId, setSelectedAssociateId] = useState("");
+  const [transactionsPage, setTransactionsPage] = useState(1);
 
   const selectedAssociate = associates?.find((associate) => associate._id === selectedAssociateId);
   const { data: associateHistory, loading: historyLoading, error: historyError } = useConvexQuery<AssociateHistory>(
@@ -266,7 +268,7 @@ export default function TransacoesPage() {
     { sessionToken: session?.token ?? "" },
     !session
   );
-  const { data: pcloudProcessedFiles, loading: pcloudHistoryLoading } = useConvexQuery<PCloudProcessedFile[]>(
+  const { data: pcloudProcessedFiles, loading: pcloudHistoryLoading, reload: reloadPCloudProcessedFiles } = useConvexQuery<PCloudProcessedFile[]>(
     "transactions:getPCloudImportFiles",
     { sessionToken: session?.token ?? "" },
     !session
@@ -276,6 +278,19 @@ export default function TransacoesPage() {
   const pcloudProcessedKeys = new Set((pcloudProcessedFiles ?? []).filter((file) => file.status === "processed").map((file) => file.fileKey));
   const pcloudReadyFiles = pcloudFiles.filter((file) => file.transactions.length > 0 && !file.alreadyProcessed && !file.parseError && !file.skippedBySize);
   const pcloudReprocessableFiles = pcloudFiles.filter((file) => file.transactions.length > 0 && !file.parseError && !file.skippedBySize);
+  const transactionCount = txList?.length ?? 0;
+  const totalTransactionPages = Math.max(1, Math.ceil(transactionCount / TRANSACTIONS_PAGE_SIZE));
+  const safeTransactionsPage = Math.min(transactionsPage, totalTransactionPages);
+  const paginatedTransactions = (txList ?? []).slice(
+    (safeTransactionsPage - 1) * TRANSACTIONS_PAGE_SIZE,
+    safeTransactionsPage * TRANSACTIONS_PAGE_SIZE
+  );
+  const transactionStart = transactionCount === 0 ? 0 : (safeTransactionsPage - 1) * TRANSACTIONS_PAGE_SIZE + 1;
+  const transactionEnd = Math.min(safeTransactionsPage * TRANSACTIONS_PAGE_SIZE, transactionCount);
+
+  useEffect(() => {
+    if (transactionsPage > totalTransactionPages) setTransactionsPage(totalTransactionPages);
+  }, [transactionsPage, totalTransactionPages]);
 
   if (!session) return null;
 
@@ -315,6 +330,8 @@ export default function TransacoesPage() {
       );
       setResult(res);
       setPreview([]);
+      setTransactionsPage(1);
+      reloadTransactions();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao importar");
     } finally {
@@ -338,6 +355,8 @@ export default function TransacoesPage() {
         { sessionToken: session.token }
       );
       setCleanupResult(res);
+      setTransactionsPage(1);
+      reloadTransactions();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao limpar duplicatas por prefixo Pix");
     } finally {
@@ -449,6 +468,9 @@ export default function TransacoesPage() {
 
       setPcloudResult(totals);
       setPcloudFiles((current) => current.map((file) => filesToImport.some((processed) => processed.fileKey === file.fileKey) ? { ...file, alreadyProcessed: true } : file));
+      setTransactionsPage(1);
+      reloadTransactions();
+      reloadPCloudProcessedFiles();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao importar arquivos do pCloud");
     } finally {
@@ -850,6 +872,15 @@ export default function TransacoesPage() {
           <div className="p-6 text-center text-gray-500 text-sm">Nenhuma transação importada ainda.</div>
         ) : (
           <div>
+            <div className="flex flex-col gap-3 border-b border-gray-800 bg-gray-950/30 px-4 py-3 text-xs text-gray-400 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Exibindo {transactionStart}–{transactionEnd} de {transactionCount} registro(s)
+              </span>
+              <span>
+                Página {safeTransactionsPage} de {totalTransactionPages}
+              </span>
+            </div>
+
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
                 <thead className="bg-gray-800/50">
@@ -861,8 +892,8 @@ export default function TransacoesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {txList.slice(0, 100).map((tx, i) => (
-                    <tr key={i} className="border-t border-gray-800/50 hover:bg-gray-800/20">
+                  {paginatedTransactions.map((tx, i) => (
+                    <tr key={tx._id ?? `${tx.date}-${tx.time}-${i}`} className="border-t border-gray-800/50 hover:bg-gray-800/20">
                       <td className="px-4 py-2 text-gray-300">{formatDate(tx.date)}</td>
                       <td className="px-4 py-2 text-gray-300 max-w-48 truncate">{tx.name}</td>
                       <td className="px-4 py-2 text-gray-400">{tx.detail}</td>
@@ -876,15 +907,46 @@ export default function TransacoesPage() {
             </div>
             <div className="space-y-3 p-4 md:hidden">
               <DesktopRecommendedNotice />
-              {txList.slice(0, 30).map((tx, i) => (
+              {paginatedTransactions.map((tx, i) => (
                 <TransactionMobileCard key={tx._id ?? `${tx.date}-${tx.name}-${i}`} tx={tx} />
               ))}
             </div>
-            {txList.length > 100 && (
-              <p className="text-center text-gray-500 text-xs py-3">Exibindo 100 de {txList.length} registros no desktop</p>
-            )}
-            {txList.length > 30 && (
-              <p className="text-center text-gray-500 text-xs pb-3 md:hidden">Exibindo 30 de {txList.length} cartões no celular</p>
+
+            {totalTransactionPages > 1 && (
+              <div className="flex flex-col gap-3 border-t border-gray-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={() => setTransactionsPage((page) => Math.max(1, page - 1))}
+                  disabled={safeTransactionsPage === 1}
+                  className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-medium text-gray-200 transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Anterior
+                </button>
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                  {Array.from({ length: totalTransactionPages }, (_, index) => index + 1)
+                    .filter((page) => page === 1 || page === totalTransactionPages || Math.abs(page - safeTransactionsPage) <= 1)
+                    .map((page, index, pages) => (
+                      <span key={page} className="flex items-center gap-2">
+                        {index > 0 && page - pages[index - 1] > 1 && <span className="text-gray-600">…</span>}
+                        <button
+                          type="button"
+                          onClick={() => setTransactionsPage(page)}
+                          className={`min-w-8 rounded-lg px-3 py-2 font-medium transition-colors ${page === safeTransactionsPage ? "bg-emerald-600 text-white" : "border border-gray-700 text-gray-300 hover:bg-gray-800"}`}
+                        >
+                          {page}
+                        </button>
+                      </span>
+                    ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTransactionsPage((page) => Math.min(totalTransactionPages, page + 1))}
+                  disabled={safeTransactionsPage === totalTransactionPages}
+                  className="rounded-lg border border-gray-700 px-3 py-2 text-xs font-medium text-gray-200 transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Próxima
+                </button>
+              </div>
             )}
           </div>
         )}
