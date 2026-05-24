@@ -14,7 +14,7 @@
 
 ## Técnica de uso guiado: Trilha Viva Santorini
 
-O Santorini adota a proposta de **Trilha Viva**, uma forma de instrução que ensina o usuário dentro do próprio contexto do app. Cada área deve explicar sua missão, as ações permitidas e o sinal de sucesso esperado. O objetivo é que a pessoa saiba **para que serve**, **o que pode ou deve fazer** e **como fazer** sem depender de suporte manual para tarefas simples.
+O Santorini adota a **Trilha Viva**, uma forma de instrução que ensina o usuário dentro do próprio contexto do app. A primeira versão já está implementada no portal do associado: cada rota principal exibe um card contextual com missão da tela, ações permitidas, passos recomendados, checklist local e próximo passo. O objetivo é que a pessoa saiba **para que serve**, **o que pode ou deve fazer** e **como fazer** sem depender de suporte manual para tarefas simples.
 
 | Pergunta do usuário | Resposta que cada tela deve oferecer |
 |---|---|
@@ -25,7 +25,7 @@ O Santorini adota a proposta de **Trilha Viva**, uma forma de instrução que en
 | Como sei que deu certo? | Mensagem, status, registro ou item visível confirmando a ação. |
 | E se eu tiver dúvida? | Usar Suporte quando for atendimento operacional ou Feedback quando for melhoria do app. |
 
-A documentação detalhada da estratégia está em [`docs/tutoriais-usuario.md`](tutoriais-usuario.md). Este guia resume as principais rotas de uso para consulta rápida.
+A documentação detalhada da estratégia está em [`docs/tutoriais-usuario.md`](tutoriais-usuario.md). Este guia resume as principais rotas de uso para consulta rápida, enquanto o app apresenta a instrução diretamente na tela quando o usuário navega pelo portal.
 
 ---
 
@@ -72,7 +72,7 @@ O dashboard carrega automaticamente as transações mais recentes. O indicador n
 
 ## Portal do Associado
 
-O Portal do Associado é a área em que o usuário acompanha sua relação cotidiana com a associação. A navegação principal deve orientar o associado pelos menus **Início**, **Extrato**, **Mensalidade**, **Meu Cadastro**, **Reservas**, **Comunicados** e **Suporte**.
+O Portal do Associado é a área em que o usuário acompanha sua relação cotidiana com a associação. A navegação principal orienta o associado pelos menus **Início**, **Extrato**, **Mensalidade**, **Meu Cadastro**, **Reservas**, **Comunicados** e **Suporte**. Em cada uma dessas rotas, a Trilha Viva apresenta um microtutorial contextual para explicar a missão da tela e as ações esperadas.
 
 > **Privacidade:** o associado visualiza apenas informações compatíveis com sua role. Dados pessoais sensíveis e operações administrativas ficam restritos à diretoria e ao sysadmin.
 

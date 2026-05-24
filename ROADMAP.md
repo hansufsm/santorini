@@ -14,7 +14,7 @@
 | 3    | Redirect inteligente pós-login + dashboard admin rico | 🔜 Próximo |
 | 4    | Inadimplência — relatório mensal e histórico | 🔜 Planejado |
 | 5    | Feedback Comunitário — canal global de escuta | ✅ MVP implementado |
-| 6    | Tutoriais Inteligentes por role, área e menu | 🧭 Aprovado para planejamento |
+| 6    | Tutoriais Inteligentes por role, área e menu | ✅ MVP in-app implementado |
 | 7+   | Funcionalidades avançadas e SaaS multiassociação | 💡 Backlog |
 
 ---
@@ -105,7 +105,7 @@ O Feedback Comunitário cria um canal de escuta contínua dentro do app. O MVP i
 
 ## Fase 6 — Tutoriais Inteligentes por role, área e menu
 
-O Santorini deve passar a ensinar o usuário enquanto ele usa o sistema. A experiência proposta, chamada **Trilha Viva Santorini**, combina documentação por perfil, cards de missão por tela, microtutorial contextual, checklist de primeira execução e feedback acoplado ao fim de cada instrução. O objetivo é orientar o usuário sobre **para que serve**, **o que pode ou deve fazer** e **como fazer** em cada funcionalidade visível para sua role.
+O Santorini já iniciou a experiência de ensinar o usuário enquanto ele usa o sistema. A **Trilha Viva Santorini** recebeu seu primeiro MVP in-app no portal do associado, combinando conteúdo por perfil, cards de missão por tela, microtutorial contextual e checklist local de primeira execução. O objetivo continua sendo orientar o usuário sobre **para que serve**, **o que pode ou deve fazer** e **como fazer** em cada funcionalidade visível para sua role.
 
 | Role | Menus iniciais a documentar | Intenção de instrução |
 |------|-----------------------------|------------------------|
@@ -113,6 +113,8 @@ O Santorini deve passar a ensinar o usuário enquanto ele usa o sistema. A exper
 | `associado` | Início, Extrato, Mensalidade, Meu Cadastro, Reservas, Comunicados, Suporte | Acompanhar finanças, manter cadastro e usar serviços. |
 | `diretoria` | Dashboard, Transações, Associados, Reservas, Comunicados, Manutenção, Feedbacks | Operar a associação com rastreabilidade e governança. |
 | `sysadmin` | Itens da diretoria, Usuários e parâmetros técnicos | Sustentar segurança, permissões e operação do sistema. |
+
+**MVP implementado:** o portal do associado agora carrega `TrilhaVivaGuideCard` em suas rotas principais, alimentado pelo registro `lib/trilha-viva-content.ts`, com checklist persistido localmente por rota e role.
 
 ---
 

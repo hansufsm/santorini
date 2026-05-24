@@ -11,6 +11,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
+import { TrilhaVivaGuideCard } from "@/components/trilha-viva-guide";
 
 // Definição das abas do portal
 const TABS = [
@@ -131,6 +132,7 @@ export default function PortalLayout({
 
       {/* Conteúdo da aba */}
       <main className="flex-1 p-4 sm:p-6 max-w-4xl mx-auto w-full">
+        <TrilhaVivaGuideCard pathname={pathname} role={session.role} />
         {children}
         <AppFooter />
       </main>

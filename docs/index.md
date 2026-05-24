@@ -20,7 +20,7 @@ Esta pasta reúne a documentação oficial do app Santorini. O objetivo é mante
 | [Modelo de negócio SaaS](modelo-negocio.md) | Diretoria, comercial e produto | Documenta assinatura mensal, Plano Básico, multiassociação e premissas comerciais. |
 | [Roadmap](roadmap.md) | Todos os envolvidos | Organiza entregas concluídas, próximas fases e backlog priorizado. |
 | [Feedback Comunitário](feedback-comunitario.md) | Produto, UX e desenvolvimento | Documenta o módulo global de feedback, o MVP implementado e as próximas etapas. |
-| [Tutoriais do usuário](tutoriais-usuario.md) | Produto, UX, suporte e usuários finais | Planeja a Trilha Viva Santorini, com instruções por role, área e menu permitido. |
+| [Tutoriais do usuário](tutoriais-usuario.md) | Produto, UX, suporte e usuários finais | Documenta e registra o MVP in-app da Trilha Viva Santorini, com instruções por role, rota e menu permitido. |
 | [Portal do Associado](portal-do-associado.md) | Produto, suporte e desenvolvimento | Define a experiência dedicada do associado, substituindo o uso de modal como solução principal. |
 | [Identidade visual](identidade-visual.md) | Produto, design e desenvolvimento | Registra uso da logo AMRTS, favicons, ícones e aplicação nos menus. |
 | [Arquitetura técnica](arquitetura.md) | Desenvolvimento | Explica a arquitetura Next.js, Convex, versão estática e estratégia de evolução. |
@@ -41,7 +41,7 @@ Esta pasta reúne a documentação oficial do app Santorini. O objetivo é mante
 | Sessão administrativa | Melhorada | Usuário autenticado não deve ser solicitado a logar novamente ao retornar à página inicial. |
 | Toggles Wide/Boxed | Implementados na topbar desktop | Padrão visual em formato pill. |
 | Feedback Comunitário | MVP implementado | Botão global, persistência Convex e painel `/admin/feedbacks`. |
-| Tutoriais Inteligentes por role | Aprovados para planejamento | Trilha Viva Santorini documentada para instruir usuários por menus e permissões. |
+| Tutoriais Inteligentes por role | MVP in-app implementado | Trilha Viva Santorini integrada ao portal do associado para instruir usuários por rotas, menus e permissões. |
 | Modelo SaaS multiassociação | Planejado | Estrutura documental considera `associationId` e escalabilidade para novas associações. |
 
 ## Convenções de manutenção documental

@@ -4,6 +4,18 @@ A **Trilha Viva Santorini** é a estratégia instrucional do app para que cada u
 
 > A experiência ideal é que o usuário nunca se sinta “perdido no menu”. Cada tela deve responder, em poucos segundos, três perguntas: **onde estou**, **o que posso resolver aqui** e **qual é o próximo passo seguro**.
 
+## Status da implementação
+
+A primeira versão in-app da Trilha Viva foi implementada no portal do associado. O app agora possui uma base estruturada de conteúdo em `lib/trilha-viva-content.ts`, um componente contextual reutilizável em `components/trilha-viva-guide.tsx` e integração direta no layout `app/portal/layout.tsx`. O card aparece nas principais rotas do portal e combina missão da tela, ações orientadas, checklist de conclusão local e próximo passo recomendado.
+
+| Item | Status | Observação |
+|---|---|---|
+| Conteúdo por rota do portal | Implementado | Cobre Início, Extrato, Mensalidade, Meu Cadastro, Reservas, Comunicados e Suporte. |
+| Segmentação por role | Implementado no MVP | A estrutura aceita roles e o portal usa o papel da sessão para exibir conteúdo compatível. |
+| Card contextual “Como usar esta tela” | Implementado | O usuário aprende sem sair da rota atual. |
+| Checklist local por rota e role | Implementado | O progresso fica salvo no navegador via `localStorage`. |
+| Integração com Feedback Comunitário | Planejada para evolução | O MVP já convive com o botão global de feedback; a conexão direta “esta orientação ajudou?” será a próxima etapa. |
+
 ## Princípio de experiência
 
 A técnica proposta combina documentação, onboarding e feedback contínuo. Em vez de criar um único tutorial longo, o Santorini deve oferecer microinstruções conectadas ao contexto de uso. Assim, o usuário aprende no momento em que a dúvida aparece, sem abandonar a tela em que está trabalhando.
@@ -30,16 +42,16 @@ A técnica principal da Trilha Viva é o modelo **Missão, Ação, Confirmação
 
 ## Arquitetura da ajuda dentro do app
 
-A implementação futura deve criar uma camada de ajuda reutilizável por rota. Cada tela poderá declarar seus tutoriais em uma estrutura simples, permitindo que o frontend apresente um botão “Como usar esta tela” e, quando necessário, destaque elementos do menu ou do formulário.
+A implementação atual criou uma camada de ajuda reutilizável por rota para o portal. Cada tela declara seus tutoriais em uma estrutura simples, permitindo que o frontend apresente um card “Como usar esta tela” com missão, ações, passos, confirmação e próximo passo. Em evoluções futuras, essa mesma base poderá acionar destaques visuais de botões e campos importantes.
 
-| Componente planejado | Descrição | Prioridade |
-|---|---|---:|
-| `HelpLauncher` | Botão discreto de ajuda contextual, próximo ao botão de Feedback. | Alta |
-| `RoleTutorialDrawer` | Painel lateral com missão, ações, passo a passo e dúvidas comuns. | Alta |
-| `FirstVisitChecklist` | Checklist exibido na primeira visita de cada role. | Média |
-| `MenuGuideRegistry` | Mapa técnico que relaciona rota, role, título, passos e permissões. | Alta |
-| `TutorialFeedback` | Pergunta final: “Esta orientação ajudou?” integrada ao Feedback Comunitário. | Média |
-| `GuidedSpotlight` | Destaque visual opcional de botões e campos importantes. | Baixa |
+| Componente | Descrição | Status |
+|---|---|---|
+| `TrilhaVivaGuideCard` | Card discreto de ajuda contextual dentro da área principal do portal. | Implementado |
+| `trilhaVivaGuides` | Registro técnico que relaciona rota, role, título, passos e permissões. | Implementado |
+| Checklist contextual | Lista de ações concluíveis pelo usuário, com persistência local por rota e role. | Implementado |
+| `TutorialFeedback` | Pergunta final: “Esta orientação ajudou?” integrada ao Feedback Comunitário. | Próxima evolução |
+| `GuidedSpotlight` | Destaque visual opcional de botões e campos importantes. | Futuro |
+| Painel lateral/drawer | Versão expandida do guia para fluxos longos e administração. | Futuro |
 
 ## Mapa por role
 
@@ -158,16 +170,16 @@ A Trilha Viva deve ser avaliada por indicadores simples, pois o objetivo é redu
 
 ## Plano de implementação
 
-A implementação deve ser gradual. Primeiro, a documentação por role e menu deve estar completa. Depois, o app deve receber um botão de ajuda contextual. Por fim, os tutoriais devem se tornar dados estruturados para permitir evolução contínua.
+A implementação é gradual e já saiu da fase puramente documental. O portal do associado recebeu a primeira camada viva de orientação contextual, enquanto as próximas etapas devem transformar feedback, métricas de uso e destaques visuais em uma experiência ainda mais inteligente.
 
-| Etapa | Entrega | Critério de conclusão |
+| Etapa | Entrega | Status |
 |---:|---|---|
-| 1 | Documentar menus por role. | Este documento e `guia-usuario.md` atualizados. |
-| 2 | Criar registro técnico de tutoriais. | Estrutura `MenuGuideRegistry` proposta e validada. |
-| 3 | Implementar botão “Como usar esta tela”. | Botão aparece em rotas principais e respeita role. |
-| 4 | Criar painel contextual. | Usuário lê missão, ações, passos e confirmação sem sair da tela. |
-| 5 | Integrar com Feedback Comunitário. | Tutorial pergunta se ajudou e permite enviar feedback com rota. |
-| 6 | Medir dúvidas recorrentes. | Diretoria identifica telas que precisam de melhor instrução. |
+| 1 | Documentar menus por role. | Concluída |
+| 2 | Criar registro técnico de tutoriais. | Concluída em `lib/trilha-viva-content.ts` |
+| 3 | Implementar card “Como usar esta tela”. | Concluída em `components/trilha-viva-guide.tsx` |
+| 4 | Integrar o card às rotas do portal. | Concluída em `app/portal/layout.tsx` |
+| 5 | Integrar diretamente com Feedback Comunitário. | Próxima evolução |
+| 6 | Medir dúvidas recorrentes e ajustar conteúdo. | Futuro |
 
 ## Decisão de produto
 

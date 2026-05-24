@@ -11,7 +11,7 @@ O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencia
 | 3 | Operações, portal e privacidade | Em evolução | Portal, usuários, permissões, reservas, manutenção e módulos operacionais. |
 | 4 | UX, identidade e sessão | Implementada em parte | Logo AMRTS, favicon, toggles pill e melhoria de persistência de sessão. |
 | 5 | Feedback Comunitário | MVP implementado | Canal global de escuta com painel administrativo. |
-| 6 | Tutoriais inteligentes por role | Aprovada para planejamento | Experiência de instrução contextual por perfil, área e item de menu. |
+| 6 | Tutoriais inteligentes por role | MVP in-app implementado | Trilha Viva contextual no portal, com conteúdo por rota, role e checklist local. |
 | 7 | SaaS multiassociação | Planejada | Isolamento por `associationId`, parametrização de marca e planos. |
 
 ## Entregas recentes registradas
@@ -25,7 +25,7 @@ O roadmap organiza a evolução do Santorini como dashboard financeiro, gerencia
 | Login com redirecionamento automático quando já autenticado | Implementada | [Portal do Associado](portal-do-associado.md). |
 | Modelo comercial de assinatura mensal | Aprovado | [Modelo de negócio SaaS](modelo-negocio.md). |
 | MVP de Feedback Comunitário com painel de triagem | Implementado | [Feedback Comunitário](feedback-comunitario.md). |
-| Plano de Tutoriais Inteligentes por role, área e menu | Aprovado para documentação | [Tutoriais do usuário](tutoriais-usuario.md). |
+| MVP da Trilha Viva no portal do associado | Implementado | [Tutoriais do usuário](tutoriais-usuario.md). |
 
 ## Entrega implementada: Feedback Comunitário
 
@@ -40,9 +40,9 @@ O MVP de Feedback Comunitário foi implementado como canal pequeno, rastreável 
 | Resposta ao usuário | Confirmação de envio, carregamento e tratamento de erro. |
 | Administração | Rota `/admin/feedbacks` com filtros e alteração de status. |
 
-## Frente aprovada: Tutoriais Inteligentes por role
+## Entrega implementada: Tutoriais Inteligentes por role
 
-A próxima camada de experiência deve transformar o Santorini em um sistema que **ensina enquanto o usuário trabalha**. Em vez de depender apenas de manuais estáticos, cada item de menu deve ter uma instrução clara, contextual e adequada ao papel autenticado. A meta é que qualquer associado, morador, diretoria ou sysadmin entenda imediatamente **para que serve** a funcionalidade, **o que pode ou deve fazer** e **como executar** as ações principais.
+A primeira camada de experiência da **Trilha Viva Santorini** foi implementada no portal do associado. O sistema agora ensina enquanto o usuário trabalha, com um card contextual que aparece dentro das rotas do portal e explica missão, ações, passos, confirmação e próximo destino. A meta permanece evoluir essa base para que associado, morador, diretoria ou sysadmin entendam imediatamente **para que serve** cada funcionalidade, **o que podem ou devem fazer** e **como executar** as ações principais.
 
 > A técnica proposta recebe o nome de **Trilha Viva Santorini**: uma combinação de manual por role, cards de missão, microtutorial contextual, checklist de primeira execução e canal de feedback na própria tela. A experiência deve parecer um guia de bordo do condomínio, não um arquivo de ajuda isolado.
 
@@ -51,9 +51,9 @@ A próxima camada de experiência deve transformar o Santorini em um sistema que
 | Manual por role | Documentação separada por `morador`, `associado`, `diretoria` e `sysadmin`. | O usuário vê apenas o que faz sentido para seu nível de permissão. |
 | Mapa do menu | Cada item de menu descreve objetivo, permissões, ações recomendadas e limites. | Reduz dúvidas sobre onde clicar e por que cada área existe. |
 | Cards de missão | Cada tela ganha uma pequena narrativa: “sua missão aqui é…”. | Aumenta autonomia e sensação de progresso. |
-| Microtutorial contextual | Botão de ajuda abre passos curtos dentro da própria tela. | Evita que o usuário abandone o fluxo para consultar manuais. |
-| Checklist de primeira vez | Primeira visita de cada role apresenta tarefas essenciais. | Acelera adoção e reduz suporte manual. |
-| Feedback acoplado | Ao final de cada tutorial, o usuário pode enviar dúvida ou sugestão. | A documentação evolui com base no uso real. |
+| Microtutorial contextual | Card contextual abre passos curtos dentro da própria tela. | Implementado no portal do associado. |
+| Checklist de primeira vez | Cada rota possui ações marcáveis, persistidas no navegador por role e rota. | Implementado no portal do associado. |
+| Feedback acoplado | Ao final de cada tutorial, o usuário poderá enviar dúvida ou sugestão. | Próxima evolução integrada ao Feedback Comunitário. |
 
 | Role | Menus prioritários para instrução inicial | Foco pedagógico |
 |---|---|---|
@@ -68,8 +68,8 @@ A próxima camada de experiência deve transformar o Santorini em um sistema que
 |---:|---|---|
 | Concluída | Implementar MVP de Feedback Comunitário | Cria canal de escuta e insumo para priorização. |
 | Concluída | Criar painel administrativo de feedbacks | Sem triagem, os registros perdem valor operacional. |
-| Alta | Criar documentação instrucional por role e menu | Transforma o app em uma experiência guiada e reduz suporte manual. |
-| Alta | Planejar microtutorial in-app “Trilha Viva Santorini” | Leva a instrução para dentro das telas, conectada ao papel do usuário. |
+| Concluída | Criar documentação instrucional por role e menu | Transforma o app em uma experiência guiada e reduz suporte manual. |
+| Concluída | Implementar microtutorial in-app “Trilha Viva Santorini” no portal | Leva a instrução para dentro das telas, conectada ao papel do usuário. |
 | Alta | Consolidar Portal do Associado como área dedicada | Aumenta valor percebido pelos moradores e reduz suporte manual. |
 | Média | Evoluir gestor de patrimônio | Organiza bens comuns e manutenção. |
 | Média | Estruturar divulgação de serviços | Cria utilidade comunitária e engajamento. |
