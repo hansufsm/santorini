@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { PublicSplashHero } from "@/components/public-splash-hero";
+import { SiteIntroVideo } from "@/components/site-intro-video";
 // ─── Ícones SVG ───────────────────────────────────────────────────────────────
 
 function Icon({ d, className = "h-5 w-5" }: { d: string | string[]; className?: string }) {
@@ -70,7 +70,6 @@ function StatCard({ label, value, sub, gradient, subColor = "text-white/60" }:
 
 export default function HomePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isLight, setIsLight]       = useState(false);
   const [isWide, setIsWide]         = useState(false);
   const { session } = useAuth();
@@ -109,19 +108,16 @@ export default function HomePage() {
       : "/portal/inicio"
     : "/login";
   const appCtaLabel = session ? "Meu painel" : "Entrar";
-  const helpHref = session
-    ? session.role === "sysadmin" || session.role === "diretoria"
-      ? "/admin/ajuda"
-      : "/portal/ajuda"
-    : "/login";
 
   return (
     <div className="min-h-screen flex flex-col page-fade"
       style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
+      <SiteIntroVideo />
+
       {/* ─── Overlay do drawer ───────────────────────────────────────────── */}
-      {(drawerOpen || settingsOpen) && (
+      {drawerOpen && (
         <div className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
-          onClick={() => { setDrawerOpen(false); setSettingsOpen(false); }} />
+          onClick={() => setDrawerOpen(false)} />
       )}
 
       {/* ─── Drawer lateral ──────────────────────────────────────────────── */}
@@ -183,14 +179,14 @@ export default function HomePage() {
         {/* Footer do drawer */}
         <div className="p-4 border-t space-y-0.5"
           style={{ borderColor: "var(--border-main)" }}>
-          <Link href={helpHref}
-            onClick={() => setDrawerOpen(false)}
+          <a href="https://github.com/zionsti/santorini/tree/main/docs"
+            target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
               font-medium transition-all hover:bg-black/10"
             style={{ color: "var(--text-dim)" }}>
             <Icon d={IC.book} className="h-4 w-4 shrink-0" />
-            Ajuda e Manuais
-          </Link>
+            Documentação
+          </a>
           {/* Acesso admin — discreto */}
           <Link href={appHref}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
@@ -202,67 +198,6 @@ export default function HomePage() {
           <p className="px-3 py-1 text-[10px]" style={{ color: "var(--text-very-dim)" }}>
             v3.0 · {new Date().getFullYear()}
           </p>
-        </div>
-      </aside>
-
-      {/* ─── Painel lateral de controles ─────────────────────────────────── */}
-      <aside className={`fixed right-0 top-0 h-full w-80 max-w-[86vw] z-[75] flex flex-col shadow-2xl
-        border-l transition-transform duration-300 ease-in-out
-        ${settingsOpen ? "translate-x-0" : "translate-x-full"}`}
-        style={{ backgroundColor: "var(--bg-drawer)", borderColor: "var(--border-main)" }}>
-        <div className="p-4 flex items-start justify-between gap-3 border-b" style={{ borderColor: "var(--border-main)" }}>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: "var(--text-accent)" }}>
-              Controles
-            </p>
-            <h2 className="mt-1 text-lg font-bold" style={{ color: "var(--text-primary)" }}>
-              Preferências rápidas
-            </h2>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
-              Painel inicial para concentrar funções secundárias e manter a topbar mais limpa no mobile.
-            </p>
-          </div>
-          <button onClick={() => setSettingsOpen(false)}
-            className="p-1.5 rounded-lg transition-colors hover:bg-black/10"
-            style={{ color: "var(--text-muted)" }} title="Fechar controles">
-            <Icon d={IC.close} className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          <section className="rounded-2xl border p-4" style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
-            <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Tema</p>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>Alterne entre claro e escuro sem sair da página.</p>
-            <button onClick={toggleTheme}
-              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-500">
-              <Icon d={isLight ? IC.moon : IC.sun} className="h-4 w-4" />
-              {isLight ? "Usar modo escuro" : "Usar modo claro"}
-            </button>
-          </section>
-
-          <section className="rounded-2xl border p-4" style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
-            <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Largura no desktop</p>
-            <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>Use Boxed para leitura confortável ou Wide para monitores maiores.</p>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold">
-              <button type="button" onClick={() => isWide && toggleLayout()}
-                className={`rounded-xl border px-3 py-2 ${!isWide ? "bg-emerald-600 text-white" : "hover:bg-black/10"}`}
-                style={isWide ? { borderColor: "var(--border-main)", color: "var(--text-muted)" } : { borderColor: "transparent" }}>
-                Boxed
-              </button>
-              <button type="button" onClick={() => !isWide && toggleLayout()}
-                className={`rounded-xl border px-3 py-2 ${isWide ? "bg-emerald-600 text-white" : "hover:bg-black/10"}`}
-                style={!isWide ? { borderColor: "var(--border-main)", color: "var(--text-muted)" } : { borderColor: "transparent" }}>
-                Wide
-              </button>
-            </div>
-          </section>
-
-          <Link href={helpHref}
-            className="flex items-center justify-between rounded-2xl border p-4 text-sm font-semibold transition hover:bg-black/10"
-            style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)", color: "var(--text-primary)" }}>
-            Ajuda e Manuais
-            <Icon d={IC.arrow} className="h-4 w-4" />
-          </Link>
         </div>
       </aside>
 
@@ -337,12 +272,12 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Painel lateral de controles */}
-            <button onClick={() => setSettingsOpen(true)}
+            {/* Toggle Tema */}
+            <button onClick={toggleTheme}
               className="p-2 rounded-lg transition-colors hover:bg-black/10"
               style={{ color: "var(--text-accent)" }}
-              title="Controles e preferências" aria-label="Abrir controles e preferências">
-              <Icon d={IC.cog} className="h-5 w-5" />
+              title={isLight ? "Modo escuro" : "Modo claro"}>
+              <Icon d={isLight ? IC.moon : IC.sun} className="h-5 w-5" />
             </button>
 
             {/* CTA principal */}
@@ -360,8 +295,41 @@ export default function HomePage() {
       {/* ─── Conteúdo ────────────────────────────────────────────────────── */}
       <main className={`flex-1 ${maxW} mx-auto w-full px-4 sm:px-6 py-6 md:py-8`}>
 
-        {/* Splash Hero Híbrido */}
-        <PublicSplashHero appHref={appHref} appCtaLabel={appCtaLabel} helpHref={helpHref} />
+        {/* Hero */}
+        <div className="relative h-40 sm:h-52 md:h-72 rounded-3xl overflow-hidden mb-6 md:mb-8
+          shadow-2xl group border"
+          style={{ borderColor: "var(--border-main)" }}>
+          {/* Imagem real do empreendimento com zoom suave no hover */}
+          <img
+            src="/santorini.webp"
+            alt="Vista aérea do Residencial Santorini"
+            className="absolute inset-0 h-full w-full object-cover object-center
+              transition-transform duration-700 ease-in-out group-hover:scale-105"
+          />
+          {/* Overlay gradiente esmeralda sobre a foto */}
+          <div className="absolute inset-0 bg-gradient-to-br
+            from-[#022c22]/85 via-[#064e3b]/75 to-[#065f46]/60" />
+          {/* Brilhos decorativos */}
+          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-emerald-500/15
+            blur-3xl group-hover:bg-emerald-400/20 transition-all duration-700" />
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-emerald-400/10 blur-2xl" />
+          <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-7 md:p-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+              <div>
+                <span className="bg-emerald-600 text-white text-[10px] font-bold uppercase
+                  tracking-widest px-3 py-1 rounded-full mb-2 md:mb-3 inline-block">
+                  Painel Financeiro
+                </span>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                  Residencial Santorini
+                </h2>
+                <p className="text-emerald-100/70 mt-1 md:mt-2 max-w-xl text-sm leading-relaxed hidden sm:block">
+                  Gestão de contribuições e acompanhamento financeiro do residencial.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Cards públicos sem dados financeiros ou pessoais */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
@@ -453,7 +421,8 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <Link href={appHref} className="transition-colors hover:opacity-80">{appCtaLabel}</Link>
             <span style={{ color: "var(--text-very-dim)" }}>·</span>
-            <Link href={helpHref} className="transition-colors hover:opacity-80">Ajuda e Manuais</Link>
+            {/* Documentação temporariamente desabilitada */}
+            <span className="opacity-30 cursor-not-allowed">Documentação</span>
           </div>
         </div>
         {/* Linha de versão — só aparece em produção (Vercel injeta o hash do commit) */}
