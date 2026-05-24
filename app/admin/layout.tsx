@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/transacoes", label: "Transações" },
   { href: "/admin/associados", label: "Associados" },
   { href: "/admin/diretoria", label: "Gestão da Diretoria", sysadminOnly: true },
+  { href: "/admin/auditoria-diretoria", label: "Auditoria da Diretoria", sysadminOnly: true },
   { href: "/admin/reservas", label: "Reservas" },
   { href: "/admin/comunicados", label: "Comunicados" },
   { href: "/admin/manutencao", label: "Manutenção" },

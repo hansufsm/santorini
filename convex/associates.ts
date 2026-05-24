@@ -10,6 +10,59 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "./_lib";
 
+const AUDITED_ASSOCIATE_FIELDS = [
+  "name",
+  "unit",
+  "cpf",
+  "cpfPrefix",
+  "phone",
+  "email",
+  "status",
+  "joinedAt",
+  "leftAt",
+  "notes",
+] as const;
+
+function snapshotAssociate(record: any) {
+  if (!record) return undefined;
+  const snapshot: Record<string, unknown> = {};
+  for (const field of AUDITED_ASSOCIATE_FIELDS) {
+    if (record[field] !== undefined) snapshot[field] = record[field];
+  }
+  return JSON.stringify(snapshot);
+}
+
+function cleanPatch(fields: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
+}
+
+async function logBoardAssociateAction(
+  ctx: any,
+  caller: any,
+  action: string,
+  associateId: string,
+  entityLabel: string | undefined,
+  summary: string,
+  before?: string,
+  after?: string
+) {
+  if (caller.role !== "diretoria") return;
+
+  await ctx.db.insert("boardActionLogs", {
+    actorUserId: caller._id,
+    actorName: caller.name,
+    actorRole: "diretoria",
+    action,
+    entity: "associates",
+    entityId: associateId,
+    entityLabel,
+    summary,
+    before,
+    after,
+    createdAt: Date.now(),
+  });
+}
+
 // ─── IMPORTAR LOTE DE ASSOCIADOS (CSV) ────────────────────────────────────────
 // Upsert por CPF: se já existe (mesmo inativado) atualiza, senão insere.
 // Status é derivado pelo chamador: se leftAt preenchido → "inativo", senão → "ativo".
@@ -98,14 +151,27 @@ export const createAssociate = mutation({
   },
   handler: async (ctx, { sessionToken, ...args }) => {
     // Apenas diretoria ou sysadmin podem cadastrar associados
-    await requireRole(ctx.db, sessionToken, "diretoria");
+    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
 
     const now = Date.now();
-    return await ctx.db.insert("associates", {
+    const id = await ctx.db.insert("associates", {
       ...args,
       createdAt: now,
       updatedAt: now,
     });
+
+    await logBoardAssociateAction(
+      ctx,
+      caller,
+      "associate.create",
+      id.toString(),
+      args.name,
+      `Criou o cadastro do associado ${args.name}.`,
+      undefined,
+      snapshotAssociate(args)
+    );
+
+    return id;
   },
 });
 
@@ -132,8 +198,25 @@ export const updateAssociate = mutation({
   },
   handler: async (ctx, { sessionToken, id, ...fields }) => {
     // Apenas diretoria ou sysadmin podem editar o cadastro completo
-    await requireRole(ctx.db, sessionToken, "diretoria");
-    await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
+    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
+    const existing = await ctx.db.get(id);
+    if (!existing || existing.deletedAt !== undefined) {
+      throw new Error("Associado não encontrado.");
+    }
+
+    const patch = cleanPatch(fields);
+    await ctx.db.patch(id, { ...patch, updatedAt: Date.now() });
+
+    await logBoardAssociateAction(
+      ctx,
+      caller,
+      "associate.update",
+      id.toString(),
+      String(patch.name ?? existing.name),
+      `Editou dados cadastrais do associado ${patch.name ?? existing.name}.`,
+      snapshotAssociate(existing),
+      snapshotAssociate({ ...existing, ...patch })
+    );
   },
 });
 
@@ -149,8 +232,24 @@ export const updateAssociateStatus = mutation({
   },
   handler: async (ctx, { sessionToken, id, status }) => {
     // Apenas diretoria ou sysadmin podem alterar o status
-    await requireRole(ctx.db, sessionToken, "diretoria");
+    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
+    const existing = await ctx.db.get(id);
+    if (!existing || existing.deletedAt !== undefined) {
+      throw new Error("Associado não encontrado.");
+    }
+
     await ctx.db.patch(id, { status, updatedAt: Date.now() });
+
+    await logBoardAssociateAction(
+      ctx,
+      caller,
+      "associate.status.update",
+      id.toString(),
+      existing.name,
+      `Alterou o status do associado ${existing.name} de ${existing.status} para ${status}.`,
+      snapshotAssociate(existing),
+      snapshotAssociate({ ...existing, status })
+    );
   },
 });
 

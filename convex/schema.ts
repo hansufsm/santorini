@@ -61,6 +61,26 @@ export default defineSchema({
     .index("by_name", ["name"])
     .index("by_cpf_prefix", ["cpfPrefix"]),
 
+  // ─── Auditoria de ações da Diretoria ──────────────────────────────────────
+  // Registros operacionais consultáveis apenas pelo Sysadmin.
+
+  boardActionLogs: defineTable({
+    actorUserId: v.id("users"),
+    actorName: v.string(),
+    actorRole: v.literal("diretoria"),
+    action: v.string(),
+    entity: v.string(),
+    entityId: v.string(),
+    entityLabel: v.optional(v.string()),
+    summary: v.string(),
+    before: v.optional(v.string()),
+    after: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_actor", ["actorUserId"])
+    .index("by_entity", ["entity", "entityId"])
+    .index("by_created_at", ["createdAt"]),
+
   // ─── Comunicados ──────────────────────────────────────────────────────────
 
   announcements: defineTable({
