@@ -28,7 +28,9 @@ export default function ComunicadosPage() {
   const { session } = useAuth();
 
   const { data: comunicados, loading, error } = useConvexQuery<Announcement[]>(
-    "announcements:getActiveAnnouncements"
+    "announcements:getActiveAnnouncements",
+    session ? { sessionToken: session.token } : {},
+    !session
   );
 
   if (!session) return null;

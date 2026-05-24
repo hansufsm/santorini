@@ -93,6 +93,12 @@ export default defineSchema({
       v.literal("evento")
     ),
     active: v.boolean(),
+    targetRoles: v.optional(v.array(v.union(
+      v.literal("morador"),
+      v.literal("associado"),
+      v.literal("diretoria"),
+      v.literal("sysadmin")
+    ))),
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),  // soft delete

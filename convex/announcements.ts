@@ -8,7 +8,49 @@
 
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./_lib";
+import { requireRole, isUserActive } from "./_lib";
+
+const USER_ROLES = ["morador", "associado", "diretoria", "sysadmin"] as const;
+
+const roleValidator = v.union(
+  v.literal("morador"),
+  v.literal("associado"),
+  v.literal("diretoria"),
+  v.literal("sysadmin")
+);
+
+const announcementTypeValidator = v.union(
+  v.literal("info"),
+  v.literal("urgente"),
+  v.literal("manutencao"),
+  v.literal("evento")
+);
+
+type UserRole = (typeof USER_ROLES)[number];
+
+function normalizeTargetRoles(targetRoles?: UserRole[]) {
+  if (!targetRoles || targetRoles.length === 0) return undefined;
+  const unique = Array.from(new Set(targetRoles.filter((role) => USER_ROLES.includes(role))));
+  return unique.length === USER_ROLES.length ? undefined : unique;
+}
+
+function isVisibleForRole(announcement: { targetRoles?: UserRole[] }, role?: string) {
+  if (!announcement.targetRoles || announcement.targetRoles.length === 0) return true;
+  return Boolean(role && announcement.targetRoles.includes(role as UserRole));
+}
+
+async function getRoleFromSession(db: any, sessionToken?: string) {
+  if (!sessionToken) return undefined;
+  const session = await db
+    .query("sessions")
+    .withIndex("by_token", (q: any) => q.eq("token", sessionToken))
+    .first();
+
+  if (!session || session.expiresAt < Date.now()) return undefined;
+  const user = await db.get(session.userId);
+  if (!user || !isUserActive(user)) return undefined;
+  return user.role as string | undefined;
+}
 
 // Retorna todos os comunicados não inativados (visão do painel admin)
 export const getAllAnnouncements = query({
@@ -20,15 +62,19 @@ export const getAllAnnouncements = query({
   },
 });
 
-// Retorna apenas comunicados ativos e não inativados (portal + público)
+// Retorna apenas comunicados ativos e não inativados filtrados pela role da sessão.
+// Comunicados antigos sem targetRoles continuam visíveis para todos.
 export const getActiveAnnouncements = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    sessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { sessionToken }) => {
+    const role = await getRoleFromSession(ctx.db, sessionToken);
     const all = await ctx.db
       .query("announcements")
       .withIndex("by_active", (q) => q.eq("active", true))
       .collect();
-    const visible = all.filter((a) => a.deletedAt === undefined);
+    const visible = all.filter((a) => a.deletedAt === undefined && isVisibleForRole(a, role));
     return visible.sort((a, b) => b.createdAt - a.createdAt);
   },
 });
@@ -38,15 +84,11 @@ export const createAnnouncement = mutation({
     sessionToken: v.string(),
     title: v.string(),
     content: v.string(),
-    type: v.union(
-      v.literal("info"),
-      v.literal("urgente"),
-      v.literal("manutencao"),
-      v.literal("evento")
-    ),
+    type: announcementTypeValidator,
     active: v.boolean(),
+    targetRoles: v.optional(v.array(roleValidator)),
   },
-  handler: async (ctx, { sessionToken, ...args }) => {
+  handler: async (ctx, { sessionToken, targetRoles, ...args }) => {
     // Apenas diretoria ou sysadmin podem criar comunicados
     await requireRole(ctx.db, sessionToken, "diretoria");
 
@@ -54,6 +96,7 @@ export const createAnnouncement = mutation({
     const now = Date.now();
     return await ctx.db.insert("announcements", {
       ...args,
+      targetRoles: normalizeTargetRoles(targetRoles),
       createdAt: now,
       updatedAt: now,
     });
@@ -66,20 +109,18 @@ export const updateAnnouncement = mutation({
     id: v.id("announcements"),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
-    type: v.optional(
-      v.union(
-        v.literal("info"),
-        v.literal("urgente"),
-        v.literal("manutencao"),
-        v.literal("evento")
-      )
-    ),
+    type: v.optional(announcementTypeValidator),
     active: v.optional(v.boolean()),
+    targetRoles: v.optional(v.array(roleValidator)),
   },
-  handler: async (ctx, { sessionToken, id, ...fields }) => {
+  handler: async (ctx, { sessionToken, id, targetRoles, ...fields }) => {
     // Apenas diretoria ou sysadmin podem editar comunicados
     await requireRole(ctx.db, sessionToken, "diretoria");
-    await ctx.db.patch(id, { ...fields, updatedAt: Date.now() });
+    await ctx.db.patch(id, {
+      ...fields,
+      ...(targetRoles !== undefined ? { targetRoles: normalizeTargetRoles(targetRoles) } : {}),
+      updatedAt: Date.now(),
+    });
   },
 });
 
