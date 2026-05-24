@@ -40,6 +40,45 @@ type AssociateHistory = {
   transactions: Transaction[];
 } | null;
 
+type PaymentPrefixDuplicateGroup = {
+  groupKey: string;
+  normalizedName: string;
+  date: string;
+  time: string;
+  value: number;
+  detail: string;
+  keep: {
+    id: string;
+    name: string;
+    transactionKey: string;
+    importedAt: number;
+  };
+  duplicates: Array<{
+    id: string;
+    name: string;
+    transactionKey: string;
+    importedAt: number;
+  }>;
+};
+
+type PaymentPrefixDuplicatesPreview = {
+  groups: PaymentPrefixDuplicateGroup[];
+  duplicateCount: number;
+  groupCount: number;
+};
+
+type ImportResult = {
+  inserted: number;
+  updated: number;
+  skipped: number;
+  total?: number;
+};
+
+type CleanupResult = {
+  deleted: number;
+  groupCount: number;
+};
+
 function DesktopRecommendedNotice({ className = "" }: { className?: string }) {
   return (
     <div className={`rounded-xl border border-sky-400/25 bg-sky-950/30 px-4 py-3 text-sm text-sky-100/80 ${className}`}>
@@ -99,6 +138,10 @@ function parseCSV(text: string): string[][] {
   });
 }
 
+function stripPaymentPrefix(value: string) {
+  return value.replace(/^(pix|ted|doc|transferencia|transferência|transf|pagamento|pagto)\s+/i, "").trim();
+}
+
 // Mapeia uma linha CSV para o formato de transação esperado pelo Convex
 // Ajuste os índices conforme o cabeçalho do seu CSV do InfinitePay
 function mapRow(headers: string[], row: string[]): Transaction | null {
@@ -112,14 +155,18 @@ function mapRow(headers: string[], row: string[]): Transaction | null {
   const value = parseFloat(rawValue);
   if (isNaN(value)) return null;
 
-  // Gerar chave única se não houver coluna específica
-  const key = get("chave") || get("key") || get("id") || `${get("data")}_${get("hora")}_${rawValue}_${get("nome")}`;
+  const rawName = get("nome");
+  const normalizedName = stripPaymentPrefix(rawName);
+
+  // Gerar chave única se não houver coluna específica. A chave derivada usa o nome
+  // sem prefixos de meio de pagamento para impedir duplicatas como "Pix NOME" e "NOME".
+  const key = get("chave") || get("key") || get("id") || `${get("data")}_${get("hora")}_${rawValue}_${normalizedName}`;
 
   return {
     date: get("data"),
     time: get("hora"),
     type: get("tipo"),
-    name: get("nome"),
+    name: normalizedName,
     detail: get("detalhe") || get("descri"),
     value,
     originalValue: get("valor"),
@@ -138,7 +185,9 @@ export default function TransacoesPage() {
   const [preview, setPreview] = useState<Transaction[]>([]);
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(null);
+  const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedAssociateId, setSelectedAssociateId] = useState("");
 
@@ -149,6 +198,13 @@ export default function TransacoesPage() {
     !session || !selectedAssociateId
   );
   const selectedTransactions = associateHistory?.transactions ?? [];
+  const { data: duplicatePreview, loading: duplicatesLoading } = useConvexQuery<PaymentPrefixDuplicatesPreview>(
+    "transactions:previewPaymentPrefixDuplicates",
+    { sessionToken: session?.token ?? "" },
+    !session
+  );
+  const duplicateGroups = duplicatePreview?.groups ?? [];
+  const duplicateCount = duplicatePreview?.duplicateCount ?? 0;
 
   if (!session) return null;
 
@@ -182,7 +238,7 @@ export default function TransacoesPage() {
     setImporting(true);
     setError(null);
     try {
-      const res = await convexMutation<{ inserted: number; skipped: number }>(
+      const res = await convexMutation<ImportResult>(
         "transactions:importTransactions",
         { transactions: preview, sessionToken: session.token }
       );
@@ -192,6 +248,29 @@ export default function TransacoesPage() {
       setError(err instanceof Error ? err.message : "Erro ao importar");
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function handleCleanupPaymentPrefixDuplicates() {
+    if (!session || duplicateCount === 0) return;
+    const confirmed = window.confirm(
+      `Foram encontradas ${duplicateCount} transação(ões) duplicada(s) em ${duplicatePreview?.groupCount ?? 0} grupo(s). Deseja remover as duplicatas e manter apenas o registro canônico de cada grupo?`
+    );
+    if (!confirmed) return;
+
+    setCleaningDuplicates(true);
+    setError(null);
+    setCleanupResult(null);
+    try {
+      const res = await convexMutation<CleanupResult>(
+        "transactions:cleanupPaymentPrefixDuplicates",
+        { sessionToken: session.token }
+      );
+      setCleanupResult(res);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao limpar duplicatas por prefixo Pix");
+    } finally {
+      setCleaningDuplicates(false);
     }
   }
 
@@ -274,7 +353,7 @@ export default function TransacoesPage() {
         {result && (
           <div className="bg-emerald-900/30 border border-emerald-700 rounded-lg p-4 text-sm">
             <p className="text-emerald-300 font-medium">Importação concluída</p>
-            <p className="text-gray-300 mt-1">✅ {result.inserted} inseridos &nbsp;·&nbsp; ⏭️ {result.skipped} duplicados ignorados</p>
+            <p className="text-gray-300 mt-1">{result.inserted} inseridos &nbsp;·&nbsp; {result.updated} atualizados &nbsp;·&nbsp; {result.skipped} duplicados ignorados</p>
           </div>
         )}
 
@@ -282,6 +361,83 @@ export default function TransacoesPage() {
           <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-sm text-red-300">{error}</div>
         )}
       </div>
+
+      {/* Correção de duplicatas por prefixo de pagamento */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-gray-300">Correção de duplicatas Pix</h3>
+            <p className="mt-1 max-w-3xl text-xs leading-relaxed text-gray-500">
+              Esta rotina procura transações com a mesma data, hora, valor, detalhe e nome normalizado, tratando prefixos como Pix, TED, DOC e Pagamento como variações do mesmo pagador. Antes de apagar, a tela mostra quais registros serão mantidos e quais serão removidos.
+            </p>
+          </div>
+          <button
+            onClick={handleCleanupPaymentPrefixDuplicates}
+            disabled={duplicatesLoading || cleaningDuplicates || duplicateCount === 0}
+            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {cleaningDuplicates ? "Limpando…" : duplicateCount > 0 ? `Remover ${duplicateCount} duplicata(s)` : "Nenhuma duplicata"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Status</p>
+            <p className="mt-1 text-sm font-semibold text-white">{duplicatesLoading ? "Verificando…" : duplicateCount > 0 ? "Ação recomendada" : "Sem duplicatas"}</p>
+          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Grupos afetados</p>
+            <p className="mt-1 text-sm font-semibold text-white">{duplicatesLoading ? "—" : duplicatePreview?.groupCount ?? 0}</p>
+          </div>
+          <div className="rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Duplicatas removíveis</p>
+            <p className="mt-1 text-sm font-semibold text-amber-300">{duplicatesLoading ? "—" : duplicateCount}</p>
+          </div>
+        </div>
+
+        {cleanupResult && (
+          <div className="rounded-lg border border-emerald-700 bg-emerald-900/30 p-4 text-sm">
+            <p className="font-medium text-emerald-300">Limpeza concluída</p>
+            <p className="mt-1 text-gray-300">{cleanupResult.deleted} duplicata(s) removida(s) em {cleanupResult.groupCount} grupo(s).</p>
+          </div>
+        )}
+
+        {duplicateGroups.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-gray-800">
+            <div className="hidden max-h-72 overflow-auto md:block">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-gray-800">
+                  <tr>
+                    {['Data', 'Nome normalizado', 'Manter', 'Remover', 'Valor'].map((header) => (
+                      <th key={header} className="px-3 py-2 text-left text-gray-400">{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {duplicateGroups.slice(0, 20).map((group) => (
+                    <tr key={group.groupKey} className="border-t border-gray-800 hover:bg-gray-800/30">
+                      <td className="px-3 py-2 text-gray-300">{formatDate(group.date)} {group.time?.slice(0, 5)}</td>
+                      <td className="px-3 py-2 text-gray-300">{group.normalizedName}</td>
+                      <td className="px-3 py-2 text-emerald-300">{group.keep.name}</td>
+                      <td className="px-3 py-2 text-amber-300">{group.duplicates.map((duplicate) => duplicate.name).join(', ')}</td>
+                      <td className="px-3 py-2 font-medium text-gray-200">{formatCurrency(group.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="space-y-3 p-3 md:hidden">
+              {duplicateGroups.slice(0, 8).map((group) => (
+                <article key={group.groupKey} className="rounded-xl border border-gray-800 bg-gray-950/50 p-3 text-sm">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">{formatDate(group.date)} · {formatCurrency(group.value)}</p>
+                  <p className="mt-2 text-gray-300">Manter: <span className="font-medium text-emerald-300">{group.keep.name}</span></p>
+                  <p className="mt-1 text-gray-400">Remover: {group.duplicates.map((duplicate) => duplicate.name).join(', ')}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Histórico por associado */}
       <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
