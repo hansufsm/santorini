@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
+import { SiteIntroVideo } from "@/components/site-intro-video";
 // ─── Ícones SVG ───────────────────────────────────────────────────────────────
 
 function Icon({ d, className = "h-5 w-5" }: { d: string | string[]; className?: string }) {
@@ -111,6 +112,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col page-fade"
       style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
+      <SiteIntroVideo />
 
       {/* ─── Overlay do drawer ───────────────────────────────────────────── */}
       {drawerOpen && (
