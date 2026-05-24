@@ -125,6 +125,22 @@
                     <div id="last-update" class="text-sm text-emerald-300/60">
                         Carregando dados...
                     </div>
+                    <div class="hidden lg:flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/50 p-1 shadow-inner shadow-emerald-950/30" aria-label="Alternar visualização do painel">
+                        <span class="px-2 text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">Visualização</span>
+                        <button id="layout-boxed-top" class="layout-pill px-3 py-1.5 text-xs rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-1.5" title="Usar largura padrão para leitura confortável">
+                            <span class="h-3 w-3 rounded-[3px] border border-current opacity-80"></span>
+                            Boxed
+                        </button>
+                        <button id="layout-wide-top" class="layout-pill px-3 py-1.5 text-xs rounded-full text-emerald-300 hover:text-white hover:bg-emerald-900/50 transition-all flex items-center gap-1.5" title="Usar largura ampliada para aproveitar monitores maiores">
+                            <span class="h-3 w-5 rounded-[3px] border border-current opacity-80"></span>
+                            Wide
+                        </button>
+                    </div>
+                    <button id="theme-toggle-top" class="hidden lg:flex p-2 bg-emerald-950/50 rounded-full text-emerald-400 hover:bg-emerald-900/50 transition-all" title="Alternar tema">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
                     <!-- Admin logado: só botão logout discreto -->
                     <div id="admin-controls" class="hidden flex items-center gap-1">
                         <button id="admin-logout-btn" class="p-1.5 hover:bg-red-900/30 rounded-lg transition-colors text-red-400/60 hover:text-red-400" title="Sair do modo admin">
@@ -243,10 +259,16 @@
         <div class="hidden md:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 controls-panel">
             <div class="flex flex-wrap items-center justify-between gap-4 bg-emerald-900/20 p-4 rounded-2xl border border-emerald-800/50 backdrop-blur-sm">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-500">Layout:</span>
-                    <div class="flex bg-emerald-950/50 rounded-lg p-1">
-                        <button id="layout-boxed" class="px-3 py-1 text-xs rounded-md bg-emerald-600 text-white shadow-lg transition-all">Boxed</button>
-                        <button id="layout-wide" class="px-3 py-1 text-xs rounded-md text-emerald-400 hover:text-emerald-200 transition-all">Wide</button>
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-500">Visualização:</span>
+                    <div class="flex items-center gap-1 bg-emerald-950/50 rounded-full p-1 border border-emerald-800/40" aria-label="Alternar visualização do painel">
+                        <button id="layout-boxed" class="layout-pill px-4 py-2 text-xs rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-1.5" title="Usar largura padrão para leitura confortável">
+                            <span class="h-3 w-3 rounded-[3px] border border-current opacity-80"></span>
+                            Boxed
+                        </button>
+                        <button id="layout-wide" class="layout-pill px-4 py-2 text-xs rounded-full text-emerald-300 hover:text-white hover:bg-emerald-900/50 transition-all flex items-center gap-1.5" title="Usar largura ampliada para aproveitar monitores maiores">
+                            <span class="h-3 w-5 rounded-[3px] border border-current opacity-80"></span>
+                            Wide
+                        </button>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">

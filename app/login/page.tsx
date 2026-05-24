@@ -7,9 +7,9 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { setSessionCookie, type SessionData } from "@/lib/auth";
+import { setSessionCookie, type SessionData, useAuth } from "@/lib/auth";
 
 // URL do Convex — vem do .env.local
 const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL!;
@@ -81,6 +81,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const router = useRouter();
+  const { session, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (authLoading || !session) return;
+
+    const destination = session.role === "sysadmin" || session.role === "diretoria"
+      ? "/admin"
+      : "/portal/inicio";
+    router.replace(destination);
+  }, [authLoading, session, router]);
 
   // ─── Login com CPF ───────────────────────────────────────────────────────────
 
@@ -156,7 +166,11 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🏖️</div>
+          <img
+            src="/logo-amtrs-96.png"
+            alt="Logo AMRTS Santorini"
+            className="mx-auto mb-3 h-20 w-20 rounded-2xl object-cover ring-1 ring-emerald-300/30 shadow-lg"
+          />
           <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>AMRTS Santorini</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Acesse sua área</p>
         </div>

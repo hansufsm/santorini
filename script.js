@@ -748,24 +748,51 @@ if (csvInput) {
 const body       = document.body;
 const mainWrapper = document.querySelector('.max-w-\\[1440px\\]');
 
-document.getElementById('layout-boxed')?.addEventListener('click', () => {
-    mainWrapper.style.maxWidth = '1440px';
-    document.getElementById('layout-boxed').className = 'px-3 py-1 text-xs rounded-md bg-emerald-600 text-white shadow-lg transition-all';
-    document.getElementById('layout-wide').className  = 'px-3 py-1 text-xs rounded-md text-emerald-400 hover:text-emerald-200 transition-all';
-});
+const layoutPairs = [
+    ['layout-boxed', 'layout-wide'],
+    ['layout-boxed-top', 'layout-wide-top'],
+    ['layout-boxed-mob', 'layout-wide-mob'],
+];
+const layoutActiveClass = 'layout-pill px-4 py-2 text-xs rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-1.5';
+const layoutTopActiveClass = 'layout-pill px-3 py-1.5 text-xs rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 transition-all flex items-center gap-1.5';
+const layoutInactiveClass = 'layout-pill px-4 py-2 text-xs rounded-full text-emerald-300 hover:text-white hover:bg-emerald-900/50 transition-all flex items-center gap-1.5';
+const layoutTopInactiveClass = 'layout-pill px-3 py-1.5 text-xs rounded-full text-emerald-300 hover:text-white hover:bg-emerald-900/50 transition-all flex items-center gap-1.5';
 
-document.getElementById('layout-wide')?.addEventListener('click', () => {
-    mainWrapper.style.maxWidth = '100%';
-    document.getElementById('layout-wide').className  = 'px-3 py-1 text-xs rounded-md bg-emerald-600 text-white shadow-lg transition-all';
-    document.getElementById('layout-boxed').className = 'px-3 py-1 text-xs rounded-md text-emerald-400 hover:text-emerald-200 transition-all';
-});
+function updateLayoutControls(isWide) {
+    layoutPairs.forEach(([boxedId, wideId]) => {
+        const boxed = document.getElementById(boxedId);
+        const wide = document.getElementById(wideId);
+        const isTopbar = boxedId.endsWith('-top');
+        if (boxed) boxed.className = isWide ? (isTopbar ? layoutTopInactiveClass : layoutInactiveClass) : (isTopbar ? layoutTopActiveClass : layoutActiveClass);
+        if (wide) wide.className = isWide ? (isTopbar ? layoutTopActiveClass : layoutActiveClass) : (isTopbar ? layoutTopInactiveClass : layoutInactiveClass);
+        boxed?.setAttribute('aria-pressed', String(!isWide));
+        wide?.setAttribute('aria-pressed', String(isWide));
+    });
+}
 
-document.getElementById('theme-toggle')?.addEventListener('click', () => {
+function setLayoutMode(isWide) {
+    if (mainWrapper) mainWrapper.style.maxWidth = isWide ? '100%' : '1440px';
+    localStorage.setItem('layoutMode', isWide ? 'wide' : 'boxed');
+    updateLayoutControls(isWide);
+}
+
+layoutPairs.forEach(([boxedId, wideId]) => {
+    document.getElementById(boxedId)?.addEventListener('click', () => setLayoutMode(false));
+    document.getElementById(wideId)?.addEventListener('click', () => setLayoutMode(true));
+});
+setLayoutMode(localStorage.getItem('layoutMode') === 'wide');
+
+function toggleTheme() {
     body.classList.toggle('light');
     const isLight = body.classList.contains('light');
-    document.getElementById('theme-toggle').innerHTML = isLight
+    const themeIcon = isLight
         ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.95 16.95l.707.707M7.05 7.05l.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
         : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>`;
+    document.getElementById('theme-toggle')?.replaceChildren();
+    ['theme-toggle', 'theme-toggle-top', 'theme-toggle-mob'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (btn) btn.innerHTML = themeIcon;
+    });
 
     if (window.monthlyChartInstance) {
         const color = isLight ? '#475569' : '#94a3b8';
@@ -773,7 +800,10 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
         window.monthlyChartInstance.options.scales.x.ticks.color = color;
         window.monthlyChartInstance.update();
     }
-});
+}
+
+document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+document.getElementById('theme-toggle-top')?.addEventListener('click', toggleTheme);
 
 document.getElementById('print-btn')?.addEventListener('click', () => window.print());
 
@@ -920,9 +950,9 @@ function showToast(msg, type = 'info', durationMs = 3000) {
 function setAdminMode(isAdmin, user = null) {
     // Persistência de sessão
     if (isAdmin) {
-        const stored = user || JSON.parse(sessionStorage.getItem('adminUser') || 'null');
-        if (stored) sessionStorage.setItem('adminUser', JSON.stringify(stored));
-        sessionStorage.setItem('adminSession', '1');
+            const stored = user || JSON.parse(localStorage.getItem('adminUser') || 'null');
+            if (stored) localStorage.setItem('adminUser', JSON.stringify(stored));
+            localStorage.setItem('adminSession', '1');
 
         // Atualiza info do usuário no drawer
         const nameEl = document.getElementById('drawer-user-name');
@@ -930,8 +960,8 @@ function setAdminMode(isAdmin, user = null) {
         if (nameEl) nameEl.textContent = stored?.name  || 'Admin';
         if (roleEl) roleEl.textContent = stored?.role  || 'admin';
     } else {
-        sessionStorage.removeItem('adminSession');
-        sessionStorage.removeItem('adminUser');
+        localStorage.removeItem('adminSession');
+        localStorage.removeItem('adminUser');
     }
 
     // Drawer admin sections
@@ -1027,8 +1057,8 @@ adminPassInput?.addEventListener('keydown', (e) => {
 adminLogoutBtn?.addEventListener('click', () => setAdminMode(false));
 
 // Restaurar sessão admin se já estava logado
-if (sessionStorage.getItem('adminSession') === '1') {
-    const storedUser = JSON.parse(sessionStorage.getItem('adminUser') || 'null');
+if (localStorage.getItem('adminSession') === '1') {
+    const storedUser = JSON.parse(localStorage.getItem('adminUser') || 'null');
     setAdminMode(true, storedUser);
 }
 
@@ -1056,8 +1086,6 @@ if (sessionStorage.getItem('adminSession') === '1') {
     const delegates = [
         ['contributor-portal-btn-mob', 'contributor-portal-btn'],
         ['theme-toggle-mob',           'theme-toggle'],
-        ['layout-boxed-mob',           'layout-boxed'],
-        ['layout-wide-mob',            'layout-wide'],
         ['print-btn-mob',              'print-btn'],
         ['refresh-btn-mob',            'refresh-btn'],
         ['admin-login-btn-mob',        'admin-login-btn'],

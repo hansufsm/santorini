@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth";
 // ─── Ícones SVG ───────────────────────────────────────────────────────────────
 
 function Icon({ d, className = "h-5 w-5" }: { d: string | string[]; className?: string }) {
@@ -70,6 +71,7 @@ export default function HomePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isLight, setIsLight]       = useState(false);
   const [isWide, setIsWide]         = useState(false);
+  const { session } = useAuth();
 
   // Carregar preferências salvas
   useEffect(() => {
@@ -99,6 +101,12 @@ export default function HomePage() {
   // ou histórico de moradores. Informações detalhadas ficam atrás do login.
 
   const maxW = isWide ? "max-w-[1400px]" : "max-w-7xl";
+  const appHref = session
+    ? session.role === "sysadmin" || session.role === "diretoria"
+      ? "/admin"
+      : "/portal/inicio"
+    : "/login";
+  const appCtaLabel = session ? "Meu painel" : "Entrar";
 
   return (
     <div className="min-h-screen flex flex-col page-fade"
@@ -143,7 +151,7 @@ export default function HomePage() {
           <p className="text-[10px] font-bold uppercase tracking-widest px-3 py-2"
             style={{ color: "var(--text-very-dim)" }}>Módulos</p>
           {MODULOS.map(m => (
-            <Link key={m.key} href="/login" onClick={() => setDrawerOpen(false)}
+            <Link key={m.key} href={appHref} onClick={() => setDrawerOpen(false)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
                 font-medium transition-all hover:bg-black/10"
               style={{ color: "var(--text-muted)" }}>
@@ -156,7 +164,7 @@ export default function HomePage() {
           <p className="text-[10px] font-bold uppercase tracking-widest px-3 py-2 pt-3"
             style={{ color: "var(--text-very-dim)" }}>Operacional</p>
           {OPERACIONAL.map(m => (
-            <Link key={m.key} href="/login" onClick={() => setDrawerOpen(false)}
+            <Link key={m.key} href={appHref} onClick={() => setDrawerOpen(false)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
                 font-medium transition-all hover:bg-black/10"
               style={{ color: "var(--text-muted)" }}>
@@ -178,12 +186,12 @@ export default function HomePage() {
             Documentação
           </a>
           {/* Acesso admin — discreto */}
-          <Link href="/login"
+          <Link href={appHref}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
               font-medium transition-all hover:bg-black/5"
             style={{ color: "var(--text-very-dim)" }}>
             <Icon d={IC.cog} className="h-4 w-4 shrink-0" />
-            Acesso Admin
+            {session ? "Meu painel" : "Acesso Admin"}
           </Link>
           <p className="px-3 py-1 text-[10px]" style={{ color: "var(--text-very-dim)" }}>
             v3.0 · {new Date().getFullYear()}
@@ -221,25 +229,45 @@ export default function HomePage() {
           {/* Direita: layout toggle + tema toggle + CTA */}
           <div className="flex items-center gap-1.5 md:gap-2">
 
-            {/* Toggle Boxed / Wide */}
-            <div className="hidden sm:flex items-center rounded-lg p-0.5 text-xs font-bold"
-              style={{ backgroundColor: "var(--bg-toggle)" }}>
-              <button onClick={() => !isWide && toggleLayout()}
-                className={`px-2.5 py-1 rounded-md transition-all ${
+            {/* Toggle Boxed / Wide — pill otimizado para desktop */}
+            <div
+              className="hidden md:flex items-center gap-1 rounded-full border p-1 text-[11px] font-semibold shadow-sm"
+              style={{
+                backgroundColor: "var(--bg-toggle)",
+                borderColor: "var(--border-main)",
+              }}
+              aria-label="Alternar largura de visualização"
+            >
+              <button
+                type="button"
+                onClick={() => isWide && toggleLayout()}
+                aria-pressed={!isWide}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
                   !isWide
-                    ? "bg-emerald-600 text-white shadow"
+                    ? "bg-emerald-600 text-white shadow shadow-emerald-900/20"
                     : "hover:bg-black/10"
                 }`}
                 style={isWide ? { color: "var(--text-muted)" } : {}}
-                title="Layout compacto">B</button>
-              <button onClick={() => isWide || toggleLayout()}
-                className={`px-2.5 py-1 rounded-md transition-all ${
+                title="Usar largura padrão para leitura confortável"
+              >
+                <span className="h-3.5 w-3 rounded-[4px] border border-current opacity-80" />
+                Boxed
+              </button>
+              <button
+                type="button"
+                onClick={() => !isWide && toggleLayout()}
+                aria-pressed={isWide}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
                   isWide
-                    ? "bg-emerald-600 text-white shadow"
+                    ? "bg-emerald-600 text-white shadow shadow-emerald-900/20"
                     : "hover:bg-black/10"
                 }`}
                 style={!isWide ? { color: "var(--text-muted)" } : {}}
-                title="Layout largo">W</button>
+                title="Usar largura ampliada para aproveitar monitores maiores"
+              >
+                <span className="h-3.5 w-5 rounded-[4px] border border-current opacity-80" />
+                Wide
+              </button>
             </div>
 
             {/* Toggle Tema */}
@@ -251,11 +279,11 @@ export default function HomePage() {
             </button>
 
             {/* CTA principal */}
-            <Link href="/login"
+            <Link href={appHref}
               className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500
                 text-white font-bold px-3 md:px-4 py-2 rounded-xl text-sm transition-colors
                 shadow-lg shadow-emerald-900/30">
-              <span className="hidden sm:inline">Entrar</span>
+              <span className="hidden sm:inline">{appCtaLabel}</span>
               <Icon d={IC.arrow} className="h-4 w-4" />
             </Link>
           </div>
@@ -344,7 +372,7 @@ export default function HomePage() {
               Associados autorizados acessam apenas suas próprias informações após login.
             </p>
           </div>
-          <Link href="/login"
+          <Link href={appHref}
             className="shrink-0 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500
               text-white font-bold px-5 py-2.5 rounded-xl transition-colors text-sm
               whitespace-nowrap shadow-lg shadow-emerald-900/30">
@@ -365,7 +393,7 @@ export default function HomePage() {
             { icon: IC.bag,      label: "Fornecedores",     desc: "Prestadores de serviço"      },
             { icon: IC.shield,   label: "Visitantes",       desc: "Controle de acesso"          },
           ].map(item => (
-            <Link key={item.label} href="/login"
+            <Link key={item.label} href={appHref}
               className="rounded-2xl p-4 border backdrop-blur-sm transition-all group"
               style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
               <Icon d={item.icon} className="h-6 w-6 mb-2 transition-colors"
@@ -389,7 +417,7 @@ export default function HomePage() {
           style={{ color: "var(--text-dim)" }}>
           <p>AMRTS Santorini &copy; {new Date().getFullYear()} — Gestão Residencial</p>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="transition-colors hover:opacity-80">Entrar</Link>
+            <Link href={appHref} className="transition-colors hover:opacity-80">{appCtaLabel}</Link>
             <span style={{ color: "var(--text-very-dim)" }}>·</span>
             {/* Documentação temporariamente desabilitada */}
             <span className="opacity-30 cursor-not-allowed">Documentação</span>
