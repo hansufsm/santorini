@@ -12,18 +12,26 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
 
+type NavItem = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  sysadminOnly?: boolean;
+};
+
 // Itens do menu lateral
-const NAV_ITEMS = [
+const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "📊 Dashboard", exact: true },
   { href: "/admin/transacoes", label: "💰 Transações" },
   { href: "/admin/associados", label: "👥 Associados" },
+  { href: "/admin/diretoria", label: "🛡️ Gestão da Diretoria", sysadminOnly: true },
   { href: "/admin/reservas", label: "📅 Reservas" },
   { href: "/admin/comunicados", label: "📢 Comunicados" },
   { href: "/admin/manutencao", label: "🔧 Manutenção" },
   { href: "/admin/feedbacks", label: "💬 Feedbacks" },
   { href: "/admin/trilha-viva", label: "🗺️ Trilha Viva" },
   { href: "/admin/ajuda", label: "Ajuda" },
-  { href: "/admin/usuarios", label: "🔑 Usuários" },
+  { href: "/admin/usuarios", label: "🔑 Usuários", sysadminOnly: true },
 ];
 
 export default function AdminLayout({
@@ -60,6 +68,8 @@ export default function AdminLayout({
     return null; // Será redirecionado pelo useEffect
   }
 
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.sysadminOnly || session.role === "sysadmin");
+
   function NavLink({ href, label, exact }: { href: string; label: string; exact?: boolean }) {
     const isActive = exact ? pathname === href : pathname.startsWith(href) && pathname !== "/admin" || (exact && pathname === href);
     const active = exact ? pathname === href : pathname.startsWith(href);
@@ -92,7 +102,7 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 space-y-1">
-          {NAV_ITEMS.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
 
@@ -147,7 +157,7 @@ export default function AdminLayout({
 
         {/* Nav mobile — horizontal scroll */}
         <nav className="md:hidden border-b px-2 py-2 flex gap-1 overflow-x-auto" style={{ backgroundColor: "var(--bg-drawer)", borderColor: "var(--border-main)" }}>
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = item.href === "/admin"
               ? pathname === "/admin"
               : pathname.startsWith(item.href);

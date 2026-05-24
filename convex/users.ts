@@ -74,6 +74,47 @@ export const getSysadminCount = query({
   },
 });
 
+/**
+ * Dados exclusivos para o painel de Gestão da Diretoria.
+ * Apenas Sysadmin pode consultar quem já pertence à diretoria e quais associados
+ * ativos podem receber esse papel administrativo sensível.
+ */
+export const getDirectoriaManagementData = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, { sessionToken }) => {
+    const caller = await requireRole(ctx.db, sessionToken, "sysadmin");
+    if (caller.role !== "sysadmin") {
+      throw new Error("Apenas Sysadmin pode acessar a gestão da Diretoria.");
+    }
+
+    const users = await ctx.db
+      .query("users")
+      .filter((q: any) => q.eq(q.field("deletedAt"), undefined))
+      .collect();
+
+    const serialize = (u: any) => ({
+      _id: u._id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      status: getEffectiveUserStatus(u),
+      unit: u.unit,
+      associateId: u.associateId,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+    });
+
+    return {
+      members: users
+        .filter((u: any) => u.role === "diretoria" && isUserActive(u))
+        .map(serialize),
+      candidates: users
+        .filter((u: any) => u.role === "associado" && isUserActive(u))
+        .map(serialize),
+    };
+  },
+});
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 /**
@@ -207,6 +248,10 @@ export const updateUser = mutation({
         throw new Error("Sysadmin não pode remover o próprio papel administrativo.");
       }
 
+      if (fields.role === "diretoria" && target.role !== "diretoria" && target.role !== "associado") {
+        throw new Error("Apenas usuários com papel Associado podem ser promovidos à Diretoria.");
+      }
+
       if (fields.role === "sysadmin" && target.role !== "sysadmin") {
         const existingSysadmins = await ctx.db
           .query("users")
@@ -229,6 +274,72 @@ export const updateUser = mutation({
     }
 
     await ctx.db.patch(id, patch);
+    return { success: true };
+  },
+});
+
+/**
+ * Promove um Associado ativo para Diretoria.
+ * A operação concede acesso administrativo a dados sensíveis, funcionais e financeiros.
+ */
+export const promoteAssociateToDirectoria = mutation({
+  args: {
+    sessionToken: v.string(),
+    id: v.id("users"),
+  },
+  handler: async (ctx, { sessionToken, id }) => {
+    const caller = await requireRole(ctx.db, sessionToken, "sysadmin");
+    if (caller.role !== "sysadmin") {
+      throw new Error("Apenas Sysadmin pode conceder papel de Diretoria.");
+    }
+
+    const target = await ctx.db.get(id);
+    if (!target || target.deletedAt !== undefined || !isUserActive(target)) {
+      throw new Error("Associado não encontrado ou inativo.");
+    }
+
+    if (target.role !== "associado") {
+      throw new Error("Apenas usuários com papel Associado podem ser promovidos à Diretoria.");
+    }
+
+    await ctx.db.patch(id, {
+      role: "diretoria",
+      updatedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Remove o papel Diretoria de um usuário, mantendo-o como Associado ativo.
+ * A operação revoga o acesso administrativo a dados sensíveis do sistema.
+ */
+export const removeDirectoriaRole = mutation({
+  args: {
+    sessionToken: v.string(),
+    id: v.id("users"),
+  },
+  handler: async (ctx, { sessionToken, id }) => {
+    const caller = await requireRole(ctx.db, sessionToken, "sysadmin");
+    if (caller.role !== "sysadmin") {
+      throw new Error("Apenas Sysadmin pode remover papel de Diretoria.");
+    }
+
+    const target = await ctx.db.get(id);
+    if (!target || target.deletedAt !== undefined || !isUserActive(target)) {
+      throw new Error("Membro da Diretoria não encontrado ou inativo.");
+    }
+
+    if (target.role !== "diretoria") {
+      throw new Error("Este usuário não pertence atualmente à Diretoria.");
+    }
+
+    await ctx.db.patch(id, {
+      role: "associado",
+      updatedAt: Date.now(),
+    });
+
     return { success: true };
   },
 });

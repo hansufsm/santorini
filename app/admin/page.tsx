@@ -13,6 +13,7 @@ import {
   FileText,
   Search,
   Settings,
+  ShieldCheck,
   Users,
   Wrench,
 } from "lucide-react";
@@ -209,11 +210,12 @@ export default function AdminPage() {
   const shortcuts: Shortcut[] = [
     { href: "/admin/transacoes", title: "Transações", description: "Importar CSV e revisar extrato", icon: Banknote },
     { href: "/admin/associados", title: "Associados", description: "Cadastro, status e inadimplência", icon: Users },
+    { href: "/admin/diretoria", title: "Gestão da Diretoria", description: "Promover associados e revogar acessos administrativos", icon: ShieldCheck },
     { href: "/admin/comunicados", title: "Comunicados", description: "Publicar avisos oficiais", icon: Bell },
     { href: "/admin/reservas", title: "Reservas", description: `${pendingReservations} pendente(s)`, icon: CalendarDays },
     { href: "/admin/manutencao", title: "Manutenção", description: `${openMaintenances} chamado(s) aberto(s)`, icon: Wrench },
     { href: "/admin/usuarios", title: "Usuários", description: "Acessos e permissões", icon: Settings },
-  ].filter((item) => session?.role === "sysadmin" || item.href !== "/admin/usuarios");
+  ].filter((item) => session?.role === "sysadmin" || !["/admin/usuarios", "/admin/diretoria"].includes(item.href));
 
   if (!session) return null;
 
