@@ -35,7 +35,7 @@ export default defineSchema({
     .index("by_date_detail", ["date", "detail"]),
 
   // ─── Arquivos CSV processados do pCloud ───────────────────────────────────
-  // Controle idempotente da sincronização por pasta pública, sem API autenticada.
+  // Controle idempotente da sincronização por API autenticada ou pasta pública.
 
   pcloudImportFiles: defineTable({
     fileKey: v.string(),

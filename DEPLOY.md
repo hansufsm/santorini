@@ -105,15 +105,21 @@ echo -n "SuaSenha123" | sha256sum
    - **Build Command:** `npm run build`
    - **Output Directory:** `.next`
 
-### Variável de ambiente obrigatória
+### Variáveis de ambiente
 
 Em **Project Settings → Environment Variables**:
 
 | Nome | Valor |
 |------|-------|
 | `NEXT_PUBLIC_CONVEX_URL` | `https://tough-kangaroo-90.convex.cloud` |
+| `PCLOUD_CLIENT_ID` | Client ID público do app pCloud, atualmente `9uBhtzMOviR` |
+| `PCLOUD_CLIENT_SECRET` | Segredo do app pCloud; configurar somente na Vercel, nunca no código |
+| `PCLOUD_REDIRECT_URI` | `https://santorni.org.br/api/pcloud-oauth/callback` |
+| `PCLOUD_API_HOST` | `api.pcloud.com` ou `eapi.pcloud.com`, conforme a região da conta |
+| `PCLOUD_FOLDER_ID` | Identificador da pasta onde ficam os CSVs dos extratos |
+| `PCLOUD_ACCESS_TOKEN` | Opcional: token administrativo persistente para uso sem depender de cookie de autorização |
 
-> Esta variável é embutida no bundle JavaScript no momento do build (prefixo `NEXT_PUBLIC_`). Se for alterada na Vercel, é necessário um novo deploy para surtir efeito.
+> Variáveis com prefixo `NEXT_PUBLIC_` são embutidas no bundle JavaScript no momento do build. As variáveis `PCLOUD_*` sem esse prefixo são lidas apenas no servidor pelas rotas internas de API e devem ser configuradas como segredos no ambiente de produção.
 
 ### Deploys automáticos
 
@@ -154,6 +160,7 @@ Para um deploy do zero (novo ambiente):
 - [ ] Fazer push em `main` com qualquer mudança em `convex/` para disparar o deploy do backend
 - [ ] Criar projeto na Vercel apontando para este repositório
 - [ ] Configurar `NEXT_PUBLIC_CONVEX_URL` nas variáveis de ambiente da Vercel
+- [ ] Configurar as variáveis `PCLOUD_*` na Vercel se a sincronização autenticada do pCloud for usada
 - [ ] Fazer deploy da Vercel (automático após configuração)
 - [ ] Executar `auth:seedFirstSysadmin` pelo painel Convex para criar o primeiro admin
 - [ ] Testar login em `/login` com email+senha do admin criado

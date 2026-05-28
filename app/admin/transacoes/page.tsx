@@ -247,7 +247,10 @@ export default function TransacoesPage() {
   const [result, setResult] = useState<ImportResult | null>(null);
   const [cleanupResult, setCleanupResult] = useState<CleanupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pcloudSourceMode, setPcloudSourceMode] = useState<"public" | "api">("public");
   const [pcloudUrl, setPcloudUrl] = useState(DEFAULT_PCLOUD_FOLDER_URL);
+  const [pcloudFolderId, setPcloudFolderId] = useState("");
+  const [pcloudSourceUrl, setPcloudSourceUrl] = useState(DEFAULT_PCLOUD_FOLDER_URL);
   const [pcloudChecking, setPcloudChecking] = useState(false);
   const [pcloudImporting, setPcloudImporting] = useState(false);
   const [pcloudFiles, setPcloudFiles] = useState<PCloudFilePreview[]>([]);
@@ -365,7 +368,8 @@ export default function TransacoesPage() {
   }
 
   async function handleCheckPCloudFolder() {
-    if (!pcloudUrl.trim()) {
+    const isApiMode = pcloudSourceMode === "api";
+    if (!isApiMode && !pcloudUrl.trim()) {
       setError("Informe o link público da pasta pCloud.");
       return;
     }
@@ -376,10 +380,13 @@ export default function TransacoesPage() {
     setPcloudFolderName("");
     setError(null);
     try {
-      const response = await fetch("/api/pcloud-csv", {
+      const response = await fetch(isApiMode ? "/api/pcloud-api" : "/api/pcloud-csv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: pcloudUrl.trim(), sessionToken: session.token }),
+        body: JSON.stringify(isApiMode
+          ? { folderId: pcloudFolderId.trim() || undefined, sessionToken: session.token }
+          : { url: pcloudUrl.trim(), sessionToken: session.token }
+        ),
       });
       const data = await response.json() as PCloudApiResponse;
       if (!response.ok) throw new Error(data.error || "Erro ao consultar pasta pCloud.");
@@ -406,10 +413,11 @@ export default function TransacoesPage() {
         };
       });
 
+      setPcloudSourceUrl(data.sourceUrl || (isApiMode ? "pcloud-api" : pcloudUrl.trim()));
       setPcloudFolderName(data.folderName);
       setPcloudFiles(mappedFiles);
       if (!mappedFiles.length) {
-        setError("Nenhum arquivo .csv foi encontrado na pasta pública do pCloud.");
+        setError(isApiMode ? "Nenhum arquivo .csv foi encontrado na pasta autenticada do pCloud." : "Nenhum arquivo .csv foi encontrado na pasta pública do pCloud.");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao consultar pasta pCloud");
@@ -450,7 +458,7 @@ export default function TransacoesPage() {
             fileHash: file.fileHash,
             fileSize: file.fileSize,
             modified: file.modified,
-            sourceUrl: pcloudUrl.trim(),
+            sourceUrl: pcloudSourceUrl,
             rowsImported: file.transactions.length,
             inserted: importRes.inserted,
             updated: importRes.updated,
@@ -573,16 +581,22 @@ export default function TransacoesPage() {
           <div>
             <h3 className="text-sm font-medium text-gray-300">Sincronizar CSVs do pCloud</h3>
             <p className="mt-1 max-w-3xl text-xs leading-relaxed text-gray-500">
-              Lê uma pasta pública do pCloud, baixa os arquivos `.csv`, aplica a mesma sanitização de nomes Pix da importação manual e registra cada arquivo processado para evitar cargas repetidas.
+              Lê arquivos `.csv` do pCloud, aplica a mesma sanitização de nomes Pix da importação manual e registra cada arquivo processado para evitar cargas repetidas. A API autenticada é a rota principal; o link público continua disponível como fallback.
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
+            <a
+              href="/api/pcloud-oauth/start"
+              className="rounded-lg border border-sky-500/60 px-4 py-2 text-center text-sm font-medium text-sky-100 transition-colors hover:bg-sky-500/10"
+            >
+              Conectar pCloud
+            </a>
             <button
               onClick={handleCheckPCloudFolder}
               disabled={pcloudChecking || pcloudImporting}
               className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {pcloudChecking ? "Verificando…" : "Verificar pasta"}
+              {pcloudChecking ? "Verificando…" : pcloudSourceMode === "api" ? "Verificar API" : "Verificar pasta"}
             </button>
             <button
               onClick={() => handleImportPCloudFiles(false)}
@@ -594,16 +608,59 @@ export default function TransacoesPage() {
           </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-xs text-gray-400">Repositório dos extratos</label>
-          <input
-            value={pcloudUrl}
-            onChange={(event) => setPcloudUrl(event.target.value)}
-            placeholder="https://u.pcloud.link/publink/show?code=..."
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500"
-          />
-          <p className="mt-2 text-xs leading-relaxed text-gray-500">
-            Esta primeira versão usa somente o link público da pasta. Não precisa de login nem API autenticada do pCloud.
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <label className={`cursor-pointer rounded-xl border p-4 transition-colors ${pcloudSourceMode === "api" ? "border-emerald-500/70 bg-emerald-950/20" : "border-gray-800 bg-gray-950/40 hover:border-gray-700"}`}>
+            <div className="flex items-start gap-3">
+              <input
+                type="radio"
+                checked={pcloudSourceMode === "api"}
+                onChange={() => setPcloudSourceMode("api")}
+                className="mt-1 accent-emerald-500"
+              />
+              <div>
+                <p className="text-sm font-semibold text-white">API pCloud autenticada</p>
+                <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                  Usa OAuth2 e variáveis da Vercel. Informe o folderid apenas se ele não estiver configurado em <code className="text-gray-300">PCLOUD_FOLDER_ID</code>.
+                </p>
+              </div>
+            </div>
+            <input
+              value={pcloudFolderId}
+              onChange={(event) => setPcloudFolderId(event.target.value)}
+              disabled={pcloudSourceMode !== "api"}
+              placeholder="folderid opcional, se não estiver na Vercel"
+              className="mt-3 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </label>
+
+          <label className={`cursor-pointer rounded-xl border p-4 transition-colors ${pcloudSourceMode === "public" ? "border-sky-500/70 bg-sky-950/20" : "border-gray-800 bg-gray-950/40 hover:border-gray-700"}`}>
+            <div className="flex items-start gap-3">
+              <input
+                type="radio"
+                checked={pcloudSourceMode === "public"}
+                onChange={() => setPcloudSourceMode("public")}
+                className="mt-1 accent-sky-500"
+              />
+              <div>
+                <p className="text-sm font-semibold text-white">Repositório dos extratos</p>
+                <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                  Fallback por link público da pasta. Não precisa de login nem segredo pCloud.
+                </p>
+              </div>
+            </div>
+            <input
+              value={pcloudUrl}
+              onChange={(event) => setPcloudUrl(event.target.value)}
+              disabled={pcloudSourceMode !== "public"}
+              placeholder="https://u.pcloud.link/publink/show?code=..."
+              className="mt-3 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </label>
+        </div>
+
+        <div className="rounded-xl border border-gray-800 bg-gray-950/40 p-4 text-xs leading-relaxed text-gray-500">
+          <p>
+            Redirect URI registrada: <code className="text-gray-300">https://santorni.org.br/api/pcloud-oauth/callback</code>. Na Vercel, configure <code className="text-gray-300">PCLOUD_CLIENT_ID</code>, <code className="text-gray-300">PCLOUD_CLIENT_SECRET</code>, <code className="text-gray-300">PCLOUD_API_HOST</code> e <code className="text-gray-300">PCLOUD_FOLDER_ID</code> para uma conexão persistente.
           </p>
         </div>
 
