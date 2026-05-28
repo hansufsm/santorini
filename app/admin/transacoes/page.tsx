@@ -115,6 +115,26 @@ type PCloudApiResponse = {
   error?: string;
 };
 
+type PCloudFolderOption = {
+  folderId: string;
+  name: string;
+  path: string;
+  level: number;
+  csvCount: number;
+  directCsvCount: number;
+  childFolderCount: number;
+  modified?: string;
+};
+
+type PCloudFoldersResponse = {
+  rootFolderName: string;
+  folderCount: number;
+  truncated: boolean;
+  selectedFolderId?: string;
+  folders: PCloudFolderOption[];
+  error?: string;
+};
+
 type PCloudFilePreview = PCloudApiFile & {
   fileKey: string;
   transactions: Transaction[];
@@ -250,6 +270,10 @@ export default function TransacoesPage() {
   const [pcloudSourceMode, setPcloudSourceMode] = useState<"public" | "api">("public");
   const [pcloudUrl, setPcloudUrl] = useState(DEFAULT_PCLOUD_FOLDER_URL);
   const [pcloudFolderId, setPcloudFolderId] = useState("");
+  const [pcloudFolders, setPcloudFolders] = useState<PCloudFolderOption[]>([]);
+  const [pcloudFoldersRootName, setPcloudFoldersRootName] = useState("");
+  const [pcloudFoldersTruncated, setPcloudFoldersTruncated] = useState(false);
+  const [pcloudListingFolders, setPcloudListingFolders] = useState(false);
   const [pcloudSourceUrl, setPcloudSourceUrl] = useState(DEFAULT_PCLOUD_FOLDER_URL);
   const [pcloudChecking, setPcloudChecking] = useState(false);
   const [pcloudImporting, setPcloudImporting] = useState(false);
@@ -426,6 +450,38 @@ export default function TransacoesPage() {
     }
   }
 
+  async function handleListPCloudFolders() {
+    if (!session) return;
+
+    setPcloudSourceMode("api");
+    setPcloudListingFolders(true);
+    setPcloudResult(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/pcloud-folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionToken: session.token }),
+      });
+      const data = await response.json() as PCloudFoldersResponse;
+      if (!response.ok) throw new Error(data.error || "Erro ao listar pastas pCloud.");
+
+      setPcloudFolders(data.folders);
+      setPcloudFoldersRootName(data.rootFolderName);
+      setPcloudFoldersTruncated(Boolean(data.truncated));
+      if (!pcloudFolderId.trim() && data.selectedFolderId) {
+        setPcloudFolderId(data.selectedFolderId);
+      }
+      if (!data.folders.length) {
+        setError("Nenhuma pasta foi encontrada na conta pCloud conectada.");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao listar pastas pCloud");
+    } finally {
+      setPcloudListingFolders(false);
+    }
+  }
+
   async function handleImportPCloudFiles(reprocess = false) {
     if (!session) return;
     const filesToImport = (reprocess ? pcloudReprocessableFiles : pcloudReadyFiles);
@@ -592,8 +648,15 @@ export default function TransacoesPage() {
               Conectar pCloud
             </a>
             <button
+              onClick={handleListPCloudFolders}
+              disabled={pcloudListingFolders || pcloudChecking || pcloudImporting}
+              className="rounded-lg border border-emerald-500/60 px-4 py-2 text-sm font-medium text-emerald-100 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pcloudListingFolders ? "Listando…" : "Localizar pasta pCloud"}
+            </button>
+            <button
               onClick={handleCheckPCloudFolder}
-              disabled={pcloudChecking || pcloudImporting}
+              disabled={pcloudChecking || pcloudListingFolders || pcloudImporting}
               className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {pcloudChecking ? "Verificando…" : pcloudSourceMode === "api" ? "Verificar API" : "Verificar pasta"}
@@ -631,6 +694,47 @@ export default function TransacoesPage() {
               placeholder="folderid opcional, se não estiver na Vercel"
               className="mt-3 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
             />
+            {pcloudFolders.length > 0 && (
+              <div className="mt-3 rounded-lg border border-gray-800 bg-gray-950/50 p-3">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Pastas localizadas</p>
+                  <p className="text-[11px] text-gray-500">Raiz: {pcloudFoldersRootName || "pCloud"}</p>
+                </div>
+                <select
+                  value={pcloudFolderId}
+                  onChange={(event) => setPcloudFolderId(event.target.value)}
+                  disabled={pcloudSourceMode !== "api"}
+                  className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Selecionar folderid encontrado…</option>
+                  {pcloudFolders.map((folder) => (
+                    <option key={`${folder.folderId}:${folder.path}`} value={folder.folderId}>
+                      {`${"— ".repeat(Math.min(folder.level, 4))}${folder.name} · ID ${folder.folderId} · ${folder.csvCount} CSV(s)`}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-3 max-h-44 space-y-2 overflow-auto pr-1">
+                  {pcloudFolders
+                    .filter((folder) => folder.csvCount > 0 || folder.folderId === pcloudFolderId)
+                    .slice(0, 30)
+                    .map((folder) => (
+                      <button
+                        key={`${folder.folderId}:${folder.path}:card`}
+                        type="button"
+                        onClick={() => setPcloudFolderId(folder.folderId)}
+                        className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${pcloudFolderId === folder.folderId ? "border-emerald-500/70 bg-emerald-950/30" : "border-gray-800 bg-gray-900/50 hover:border-gray-700"}`}
+                      >
+                        <span className="block text-xs font-semibold text-white">{folder.name} <span className="text-gray-500">#{folder.folderId}</span></span>
+                        <span className="mt-1 block truncate text-[11px] text-gray-500">{folder.path || "/"} · {folder.csvCount} CSV(s), {folder.childFolderCount} subpasta(s)</span>
+                      </button>
+                    ))}
+                </div>
+                {pcloudFoldersTruncated && (
+                  <p className="mt-2 text-[11px] text-amber-200/80">Lista limitada às primeiras pastas encontradas. Se necessário, mova os CSVs para uma pasta mais próxima da raiz.</p>
+                )}
+                <p className="mt-2 text-[11px] text-gray-500">Depois de escolher, copie o ID selecionado para <code className="text-gray-300">PCLOUD_FOLDER_ID</code> na Vercel para uso persistente.</p>
+              </div>
+            )}
           </label>
 
           <label className={`cursor-pointer rounded-xl border p-4 transition-colors ${pcloudSourceMode === "public" ? "border-sky-500/70 bg-sky-950/20" : "border-gray-800 bg-gray-950/40 hover:border-gray-700"}`}>
@@ -660,7 +764,7 @@ export default function TransacoesPage() {
 
         <div className="rounded-xl border border-gray-800 bg-gray-950/40 p-4 text-xs leading-relaxed text-gray-500">
           <p>
-            Redirect URI registrada: <code className="text-gray-300">https://santorni.org.br/api/pcloud-oauth/callback</code>. Na Vercel, configure <code className="text-gray-300">PCLOUD_CLIENT_ID</code>, <code className="text-gray-300">PCLOUD_CLIENT_SECRET</code>, <code className="text-gray-300">PCLOUD_API_HOST</code> e <code className="text-gray-300">PCLOUD_FOLDER_ID</code> para uma conexão persistente.
+            Redirect URI registrada: <code className="text-gray-300">https://santorni.org.br/api/pcloud-oauth/callback</code>. Use <strong className="text-gray-300">Localizar pasta pCloud</strong> para descobrir o <code className="text-gray-300">folderid</code>; depois, na Vercel, configure <code className="text-gray-300">PCLOUD_CLIENT_ID</code>, <code className="text-gray-300">PCLOUD_CLIENT_SECRET</code>, <code className="text-gray-300">PCLOUD_API_HOST</code> e <code className="text-gray-300">PCLOUD_FOLDER_ID</code> para uma conexão persistente.
           </p>
         </div>
 
