@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const DEFAULT_PCLOUD_CLIENT_ID = "9uBhtzMOviR";
-const DEFAULT_PCLOUD_REDIRECT_URI = "https://santorni.org.br/api/pcloud-oauth/callback";
+const DEFAULT_PCLOUD_REDIRECT_URI = "https://santorini.org.br/api/pcloud-oauth/callback";
 
 export async function GET(request: NextRequest) {
   const clientId = process.env.PCLOUD_CLIENT_ID || DEFAULT_PCLOUD_CLIENT_ID;

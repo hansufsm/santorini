@@ -114,7 +114,7 @@ Em **Project Settings → Environment Variables**:
 | `NEXT_PUBLIC_CONVEX_URL` | `https://tough-kangaroo-90.convex.cloud` |
 | `PCLOUD_CLIENT_ID` | Client ID público do app pCloud, atualmente `9uBhtzMOviR` |
 | `PCLOUD_CLIENT_SECRET` | Segredo do app pCloud; configurar somente na Vercel, nunca no código |
-| `PCLOUD_REDIRECT_URI` | `https://santorni.org.br/api/pcloud-oauth/callback` |
+| `PCLOUD_REDIRECT_URI` | `https://santorini.org.br/api/pcloud-oauth/callback` |
 | `PCLOUD_API_HOST` | `api.pcloud.com` ou `eapi.pcloud.com`, conforme a região da conta |
 | `PCLOUD_FOLDER_ID` | Identificador da pasta onde ficam os CSVs dos extratos |
 | `PCLOUD_ACCESS_TOKEN` | Opcional: token administrativo persistente para uso sem depender de cookie de autorização |

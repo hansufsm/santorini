@@ -764,7 +764,7 @@ export default function TransacoesPage() {
 
         <div className="rounded-xl border border-gray-800 bg-gray-950/40 p-4 text-xs leading-relaxed text-gray-500">
           <p>
-            Redirect URI registrada: <code className="text-gray-300">https://santorni.org.br/api/pcloud-oauth/callback</code>. Use <strong className="text-gray-300">Localizar pasta pCloud</strong> para descobrir o <code className="text-gray-300">folderid</code>; depois, na Vercel, configure <code className="text-gray-300">PCLOUD_CLIENT_ID</code>, <code className="text-gray-300">PCLOUD_CLIENT_SECRET</code>, <code className="text-gray-300">PCLOUD_API_HOST</code> e <code className="text-gray-300">PCLOUD_FOLDER_ID</code> para uma conexão persistente.
+            Redirect URI registrada: <code className="text-gray-300">https://santorini.org.br/api/pcloud-oauth/callback</code>. Use <strong className="text-gray-300">Localizar pasta pCloud</strong> para descobrir o <code className="text-gray-300">folderid</code>; depois, na Vercel, configure <code className="text-gray-300">PCLOUD_CLIENT_ID</code>, <code className="text-gray-300">PCLOUD_CLIENT_SECRET</code>, <code className="text-gray-300">PCLOUD_API_HOST</code> e <code className="text-gray-300">PCLOUD_FOLDER_ID</code> para uma conexão persistente.
           </p>
         </div>
 
