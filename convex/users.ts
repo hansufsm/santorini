@@ -215,13 +215,13 @@ const buildResidencePatch = async (
 
 /**
  * Lista todos os usuários ativos.
- * Diretoria não vê Sysadmins; Sysadmin vê todos.
+ * Apenas Sysadmin pode consultar a gestão completa de usuários.
  */
 export const getAllUsers = query({
   args: { sessionToken: v.string() },
   handler: async (ctx, { sessionToken }) => {
-    // Verificar autenticação — mínimo: Diretoria
-    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
+    // Verificar autenticação — exclusivo Sysadmin
+    await requireRole(ctx.db, sessionToken, "sysadmin");
 
     // Buscar todos os usuários não inativados
     const all = await ctx.db
@@ -229,11 +229,7 @@ export const getAllUsers = query({
       .filter((q: any) => q.eq(q.field("deletedAt"), undefined))
       .collect();
 
-    // Diretoria não pode ver Sysadmins (privacidade e segurança)
-    const visible =
-      caller.role === "sysadmin"
-        ? all
-        : all.filter((u: any) => u.role !== "sysadmin");
+    const visible = all;
 
     // Retornar apenas campos necessários (sem passwordHash!)
     return visible.map((u: any) => ({
@@ -317,8 +313,7 @@ export const getDirectoriaManagementData = query({
  * Cria um novo usuário no sistema.
  *
  * Regras de quem pode criar quem:
- *   - Diretoria → pode criar Associado e Morador
- *   - Sysadmin  → pode criar qualquer papel (incluindo Diretoria e Sysadmin)
+ *   - Sysadmin → pode criar qualquer papel, incluindo Diretoria e Sysadmin.
  */
 export const createUser = mutation({
   args: {
@@ -340,10 +335,10 @@ export const createUser = mutation({
     parentAssociateId: v.optional(v.id("associates")),
   },
   handler: async (ctx, { sessionToken, ...fields }) => {
-    // Verificar autenticação — mínimo: Diretoria
-    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
+    // Verificar autenticação — exclusivo Sysadmin
+    const caller = await requireRole(ctx.db, sessionToken, "sysadmin");
 
-    // Diretoria NÃO pode criar Sysadmin nem outro Diretoria
+    // Apenas Sysadmin pode criar usuários pela gestão administrativa
     if (fields.role === "sysadmin" || fields.role === "diretoria") {
       if (caller.role !== "sysadmin") {
         throw new Error(
@@ -422,8 +417,7 @@ export const createUser = mutation({
 });
 
 /**
- * Atualiza dados de um usuário. Diretoria pode atualizar dados básicos de perfis operacionais;
- * apenas Sysadmin pode alterar papéis ou editar perfis administrativos sensíveis.
+ * Atualiza dados de um usuário. A gestão administrativa de usuários é exclusiva do Sysadmin.
  */
 export const updateUser = mutation({
   args: {
@@ -443,7 +437,7 @@ export const updateUser = mutation({
     parentAssociateId: v.optional(v.id("associates")),
   },
   handler: async (ctx, { sessionToken, id, ...fields }) => {
-    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
+    const caller = await requireRole(ctx.db, sessionToken, "sysadmin");
 
     // Buscar o usuário que será editado
     const target = await ctx.db.get(id);
@@ -596,7 +590,7 @@ export const deactivateUser = mutation({
     id: v.id("users"),
   },
   handler: async (ctx, { sessionToken, id }) => {
-    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
+    const caller = await requireRole(ctx.db, sessionToken, "sysadmin");
 
     const target = await ctx.db.get(id);
     if (!target || target.deletedAt !== undefined) {
@@ -648,7 +642,7 @@ export const reactivateUser = mutation({
     id: v.id("users"),
   },
   handler: async (ctx, { sessionToken, id }) => {
-    const caller = await requireRole(ctx.db, sessionToken, "diretoria");
+    const caller = await requireRole(ctx.db, sessionToken, "sysadmin");
 
     const target = await ctx.db.get(id);
     if (!target) {

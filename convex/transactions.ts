@@ -147,8 +147,8 @@ export const importTransactions = mutation({
     })),
   },
   handler: async (ctx, { sessionToken, transactions }) => {
-    // Apenas diretoria ou sysadmin podem importar transações
-    await requireRole(ctx.db, sessionToken, "diretoria");
+    // Apenas sysadmin pode importar transações
+    await requireRole(ctx.db, sessionToken, "sysadmin");
 
     let inserted = 0;
     let updated = 0;
@@ -194,7 +194,7 @@ export const importTransactions = mutation({
 export const previewPaymentPrefixDuplicates = query({
   args: { sessionToken: v.string() },
   handler: async (ctx, { sessionToken }) => {
-    await requireRole(ctx.db, sessionToken, "diretoria");
+    await requireRole(ctx.db, sessionToken, "sysadmin");
     const all = await ctx.db.query("transactions").collect();
     const groups = summarizeDuplicateGroups(all);
     return {
@@ -208,7 +208,7 @@ export const previewPaymentPrefixDuplicates = query({
 export const cleanupPaymentPrefixDuplicates = mutation({
   args: { sessionToken: v.string() },
   handler: async (ctx, { sessionToken }) => {
-    await requireRole(ctx.db, sessionToken, "diretoria");
+    await requireRole(ctx.db, sessionToken, "sysadmin");
     const all = await ctx.db.query("transactions").collect();
     const groups = summarizeDuplicateGroups(all);
     const duplicateIds = groups.flatMap((group) => group.duplicates.map((duplicate) => duplicate.id));
@@ -228,7 +228,7 @@ export const cleanupPaymentPrefixDuplicates = mutation({
 export const getPCloudImportFiles = query({
   args: { sessionToken: v.string() },
   handler: async (ctx, { sessionToken }) => {
-    await requireRole(ctx.db, sessionToken, "diretoria");
+    await requireRole(ctx.db, sessionToken, "sysadmin");
     return await ctx.db.query("pcloudImportFiles").withIndex("by_imported_at").order("desc").collect();
   },
 });
@@ -251,7 +251,7 @@ export const markPCloudImportFile = mutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx.db, args.sessionToken, "diretoria");
+    await requireRole(ctx.db, args.sessionToken, "sysadmin");
     const importedAt = Date.now();
     const existing = await ctx.db
       .query("pcloudImportFiles")

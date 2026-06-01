@@ -1,6 +1,6 @@
 /*
  * admin/usuarios/page.tsx — Gestão de Usuários
- * Diretoria e Sysadmin podem consultar e cadastrar usuários conforme suas permissões.
+ * Apenas Sysadmin pode consultar e cadastrar usuários.
  */
 "use client";
 
@@ -138,11 +138,15 @@ export default function UsuariosPage() {
   const { data: users, loading, error, reload } = useConvexQuery<User[]>(
     "users:getAllUsers",
     { sessionToken: session?.token ?? "" },
-    !session
+    !session || session.role !== "sysadmin"
   );
 
   // Cadastro financeiro/titular usado como origem operacional das unidades.
-  const { data: associates } = useConvexQuery<Associate[]>("associates:getAllAssociates");
+  const { data: associates } = useConvexQuery<Associate[]>(
+    "associates:getAllAssociates",
+    {},
+    !session || session.role !== "sysadmin"
+  );
 
   const [form, setForm] = useState<UserFormState>(emptyForm("associado"));
   const [submitting, setSubmitting] = useState(false);
@@ -154,9 +158,9 @@ export default function UsuariosPage() {
   const [roleFilter, setRoleFilter] = useState<"todos" | User["role"]>("todos");
   const [statusFilter, setStatusFilter] = useState<"todos" | User["status"]>("todos");
 
-  const canManageUsers = session?.role === "sysadmin" || session?.role === "diretoria";
+  const canManageUsers = session?.role === "sysadmin";
   const canEditUsers = session?.role === "sysadmin";
-  const roleOptions = session?.role === "sysadmin" ? SYSTEM_ADMIN_ROLES : MANAGEMENT_ROLES;
+  const roleOptions = SYSTEM_ADMIN_ROLES;
 
   const associateById = useMemo(() => {
     const map = new Map<string, Associate>();
@@ -240,7 +244,7 @@ export default function UsuariosPage() {
     return (
       <div className="text-center py-12 text-gray-400">
         <p className="text-4xl mb-3">🔒</p>
-        <p className="text-lg">Acesso restrito à Diretoria ou Sysadmin</p>
+        <p className="text-lg">Acesso restrito ao Sysadmin</p>
       </div>
     );
   }

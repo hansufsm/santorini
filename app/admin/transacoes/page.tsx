@@ -1,6 +1,8 @@
 /**
  * admin/transacoes/page.tsx — Importação de transações via CSV e listagem
  *
+ * Rota restrita ao papel sysadmin.
+ *
  * O CSV exportado pelo InfinitePay tem colunas separadas por vírgula ou ponto-e-vírgula.
  * O parser aqui suporta ambos e trata campos com aspas.
  */
@@ -254,10 +256,19 @@ function mapRow(headers: string[], row: string[]): Transaction | null {
 
 export default function TransacoesPage() {
   const { session } = useAuth();
+  const isSysadmin = session?.role === "sysadmin";
 
   // Lista de transações existentes
-  const { data: txList, loading: listLoading, reload: reloadTransactions } = useConvexQuery<Transaction[]>("transactions:getAllTransactions");
-  const { data: associates, loading: associatesLoading } = useConvexQuery<AssociateOption[]>("associates:getAllAssociates");
+  const { data: txList, loading: listLoading, reload: reloadTransactions } = useConvexQuery<Transaction[]>(
+    "transactions:getAllTransactions",
+    {},
+    !isSysadmin
+  );
+  const { data: associates, loading: associatesLoading } = useConvexQuery<AssociateOption[]>(
+    "associates:getAllAssociates",
+    {},
+    !isSysadmin
+  );
 
   // Estado do import
   const [preview, setPreview] = useState<Transaction[]>([]);
@@ -287,18 +298,18 @@ export default function TransacoesPage() {
   const { data: associateHistory, loading: historyLoading, error: historyError } = useConvexQuery<AssociateHistory>(
     "transactions:getAssociateHistory",
     { search: "", associateId: selectedAssociateId || undefined, sessionToken: session?.token ?? "" },
-    !session || !selectedAssociateId
+    !isSysadmin || !selectedAssociateId
   );
   const selectedTransactions = associateHistory?.transactions ?? [];
   const { data: duplicatePreview, loading: duplicatesLoading } = useConvexQuery<PaymentPrefixDuplicatesPreview>(
     "transactions:previewPaymentPrefixDuplicates",
     { sessionToken: session?.token ?? "" },
-    !session
+    !isSysadmin
   );
   const { data: pcloudProcessedFiles, loading: pcloudHistoryLoading, reload: reloadPCloudProcessedFiles } = useConvexQuery<PCloudProcessedFile[]>(
     "transactions:getPCloudImportFiles",
     { sessionToken: session?.token ?? "" },
-    !session
+    !isSysadmin
   );
   const duplicateGroups = duplicatePreview?.groups ?? [];
   const duplicateCount = duplicatePreview?.duplicateCount ?? 0;
@@ -320,6 +331,17 @@ export default function TransacoesPage() {
   }, [transactionsPage, totalTransactionPages]);
 
   if (!session) return null;
+
+  if (!isSysadmin) {
+    return (
+      <div className="rounded-2xl border border-red-900/60 bg-red-950/30 p-6 text-red-100">
+        <h2 className="text-xl font-bold">Acesso restrito</h2>
+        <p className="mt-2 text-sm text-red-100/80">
+          O histórico e a importação de transações são acessíveis apenas pelo sysadmin.
+        </p>
+      </div>
+    );
+  }
 
   // Ler o arquivo CSV e montar preview
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -392,6 +414,8 @@ export default function TransacoesPage() {
   }
 
   async function handleCheckPCloudFolder() {
+    if (!session || !isSysadmin) return;
+
     const isApiMode = pcloudSourceMode === "api";
     if (!isApiMode && !pcloudUrl.trim()) {
       setError("Informe o link público da pasta pCloud.");

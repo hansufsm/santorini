@@ -24,14 +24,14 @@ O painel de usuários separa duas responsabilidades que antes podiam ser confund
 
 ## 3. Papéis de usuário e permissões
 
-O Santorini trabalha com quatro papéis principais. O sysadmin é o perfil com maior responsabilidade administrativa e deve usar o painel de usuários para manter a base consistente. Diretoria pode operar perfis comuns quando autorizada, enquanto associado e morador acessam o portal residencial.
+O Santorini trabalha com quatro papéis principais. O sysadmin é o perfil com maior responsabilidade administrativa e deve usar o painel de usuários para manter a base consistente. As rotas administrativas `Admin → Usuários` e `Admin → Transações` são exclusivas do **sysadmin**; diretoria mantém apenas os acessos administrativos que forem explicitamente disponibilizados em outras áreas, enquanto associado e morador acessam o portal residencial.
 
 | Papel | Finalidade | Quem pode cadastrar/editar | Observações |
 |---|---|---|---|
 | **Sysadmin** | Administração técnica e gestão completa do sistema. | Apenas sysadmin. | Há limite operacional de até 2 sysadmins ativos. |
 | **Diretoria** | Administração institucional e operacional. | Sysadmin. | Deve ter senha manual definida pelo sysadmin. |
-| **Associado** | Titular financeiro ou associado principal da unidade. | Sysadmin; diretoria conforme permissões. | Deve ter vínculo financeiro com o próprio cadastro financeiro. |
-| **Morador** | Usuário vinculado à unidade de um titular financeiro. | Sysadmin; diretoria conforme permissões. | Deve ter vínculo com o titular financeiro da unidade. |
+| **Associado** | Titular financeiro ou associado principal da unidade. | Sysadmin. | Deve ter vínculo financeiro com o próprio cadastro financeiro. |
+| **Morador** | Usuário vinculado à unidade de um titular financeiro. | Sysadmin. | Deve ter vínculo com o titular financeiro da unidade. |
 
 ## 4. Regra central do novo fluxo
 
@@ -118,7 +118,7 @@ Existem dois fluxos de login, e eles não têm a mesma finalidade. A aba **Assoc
 | Aba de login | Quando usar | Credenciais |
 |---|---|---|
 | **Associado / Morador** | Quando a pessoa vai acessar diretamente pelo CPF existente no cadastro financeiro. | CPF do titular financeiro. |
-| **E-mail + senha** | Quando o usuário foi criado pelo sysadmin ou diretoria. | E-mail cadastrado e senha definida. Para primeiro acesso de associado/morador, usar CPF completo do titular financeiro como senha inicial, somente números. |
+| **E-mail + senha** | Quando o usuário foi criado pelo sysadmin. | E-mail cadastrado e senha definida. Para primeiro acesso de associado/morador, usar CPF completo do titular financeiro como senha inicial, somente números. |
 
 Se o usuário recém-criado tentar entrar pela aba **Associado / Morador** e receber **“CPF não encontrado no cadastro”**, isso indica que o CPF não foi localizado no cadastro financeiro usado por aquela aba. Para contas criadas pelo sysadmin, oriente o usuário a entrar pela aba **E-mail + senha**.
 

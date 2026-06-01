@@ -21,7 +21,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Dashboard", exact: true },
-  { href: "/admin/transacoes", label: "Transações" },
+  { href: "/admin/transacoes", label: "Transações", sysadminOnly: true },
   { href: "/admin/associados", label: "Associados" },
   { href: "/admin/diretoria", label: "Gestão da Diretoria", sysadminOnly: true },
   { href: "/admin/auditoria-diretoria", label: "Auditoria da Diretoria", sysadminOnly: true },
