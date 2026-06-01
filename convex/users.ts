@@ -20,6 +20,51 @@ const normalizeUnit = (unit?: string) => {
   return cleaned || undefined;
 };
 
+const normalizeLookupText = (text?: string) =>
+  text
+    ?.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]+/gi, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase() || "";
+
+const uniqueAssociate = (matches: any[]) => (matches.length === 1 ? matches[0] : undefined);
+
+const findAutomaticAssociateLink = async (
+  ctx: any,
+  fields: {
+    role: "sysadmin" | "diretoria" | "associado" | "morador";
+    name?: string;
+    unit?: string;
+  }
+) => {
+  if (fields.role !== "associado" && fields.role !== "morador") return undefined;
+
+  const activeAssociates = (await ctx.db.query("associates").collect()).filter(
+    (associate: any) => associate.deletedAt === undefined && associate.status === "ativo"
+  );
+  const normalizedName = normalizeLookupText(fields.name);
+  const normalizedUnit = normalizeUnit(fields.unit);
+
+  if (normalizedName) {
+    const exactNameMatch = uniqueAssociate(
+      activeAssociates.filter((associate: any) => normalizeLookupText(associate.name) === normalizedName)
+    );
+    if (exactNameMatch) return exactNameMatch;
+  }
+
+  if (normalizedUnit) {
+    const unitMatches = activeAssociates.filter(
+      (associate: any) => normalizeUnit(associate.unit) === normalizedUnit
+    );
+    const exactUnitMatch = uniqueAssociate(unitMatches);
+    if (exactUnitMatch) return exactUnitMatch;
+  }
+
+  return undefined;
+};
+
 const getActiveAssociateOrThrow = async (ctx: any, associateId: any) => {
   const associate = await ctx.db.get(associateId);
   if (!associate || associate.deletedAt !== undefined) {
@@ -49,6 +94,7 @@ const buildResidencePatch = async (
   ctx: any,
   fields: {
     role: "sysadmin" | "diretoria" | "associado" | "morador";
+    name?: string;
     unit?: string;
     associateId?: any;
     parentAssociateId?: any;
@@ -58,25 +104,29 @@ const buildResidencePatch = async (
     unit: normalizeUnit(fields.unit),
   };
 
+  const automaticAssociate = await findAutomaticAssociateLink(ctx, fields);
+
   if (fields.role === "associado") {
-    if (!fields.associateId) {
+    const associateId = fields.associateId ?? automaticAssociate?._id;
+    if (!associateId) {
       throw new Error("Selecione o cadastro financeiro vinculado para usuários Associados.");
     }
 
     patch.parentAssociateId = undefined;
-    patch.associateId = fields.associateId;
+    patch.associateId = associateId;
 
-    const associate = await getActiveAssociateOrThrow(ctx, fields.associateId);
+    const associate = await getActiveAssociateOrThrow(ctx, associateId);
     patch.unit = normalizeUnit(associate.unit) ?? patch.unit;
   } else if (fields.role === "morador") {
-    if (!fields.parentAssociateId) {
+    const parentAssociateId = fields.parentAssociateId ?? automaticAssociate?._id;
+    if (!parentAssociateId) {
       throw new Error("Selecione o titular financeiro da unidade para usuários Moradores.");
     }
 
     patch.associateId = undefined;
-    patch.parentAssociateId = fields.parentAssociateId;
+    patch.parentAssociateId = parentAssociateId;
 
-    const parentAssociate = await getActiveAssociateOrThrow(ctx, fields.parentAssociateId);
+    const parentAssociate = await getActiveAssociateOrThrow(ctx, parentAssociateId);
     patch.unit = normalizeUnit(parentAssociate.unit) ?? patch.unit;
   } else {
     // Perfis administrativos podem ter unidade informativa, mas não devem assumir
@@ -265,6 +315,7 @@ export const createUser = mutation({
     const now = Date.now();
     const residencePatch = await buildResidencePatch(ctx, {
       role: fields.role,
+      name: fields.name,
       unit: fields.unit,
       associateId: fields.associateId,
       parentAssociateId: fields.parentAssociateId,
@@ -365,6 +416,7 @@ export const updateUser = mutation({
     const nextRole = fields.role ?? target.role;
     const residencePatch = await buildResidencePatch(ctx, {
       role: nextRole,
+      name: fields.name ?? target.name,
       unit: fields.unit ?? target.unit,
       associateId: fields.associateId ?? target.associateId,
       parentAssociateId: fields.parentAssociateId ?? target.parentAssociateId,

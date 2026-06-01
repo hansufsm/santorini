@@ -90,6 +90,20 @@ function requiresManualPassword(role: User["role"]) {
   return role === "sysadmin" || role === "diretoria";
 }
 
+function normalizeLookupText(text?: string) {
+  return (text ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]+/gi, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function normalizeUnitValue(unit?: string) {
+  return unit?.trim().replace(/\s+/g, " ").toUpperCase() || "";
+}
+
 function buildResidencePayload(form: UserFormState) {
   const unit = form.unit.trim() || undefined;
   if (form.role === "associado") {
@@ -159,6 +173,44 @@ export default function UsuariosPage() {
     [associates]
   );
 
+  const findSuggestedAssociate = (state: UserFormState) => {
+    if (!usesFinancialLink(state.role)) return undefined;
+
+    const normalizedName = normalizeLookupText(state.name);
+    if (normalizedName) {
+      const nameMatches = activeAssociates.filter(
+        (associate) => normalizeLookupText(associate.name) === normalizedName
+      );
+      if (nameMatches.length === 1) return nameMatches[0];
+    }
+
+    const normalizedUnit = normalizeUnitValue(state.unit);
+    if (normalizedUnit) {
+      const unitMatches = activeAssociates.filter(
+        (associate) => normalizeUnitValue(associate.unit) === normalizedUnit
+      );
+      if (unitMatches.length === 1) return unitMatches[0];
+    }
+
+    return undefined;
+  };
+
+  const applyAutomaticFinancialLink = (state: UserFormState, allowOverride = false) => {
+    if (!usesFinancialLink(state.role)) {
+      return { ...state, residenceAssociateId: "" };
+    }
+    if (state.residenceAssociateId && !allowOverride) return state;
+
+    const suggestedAssociate = findSuggestedAssociate(state);
+    if (!suggestedAssociate) return state;
+
+    return {
+      ...state,
+      residenceAssociateId: suggestedAssociate._id,
+      unit: suggestedAssociate.unit?.trim() ? suggestedAssociate.unit.trim().toUpperCase() : state.unit,
+    };
+  };
+
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (users ?? []).filter((user) => {
@@ -205,27 +257,28 @@ export default function UsuariosPage() {
       setMsg({ type: "err", text: "Senha é obrigatória para Sysadmin e Diretoria." });
       return;
     }
-    if (usesFinancialLink(form.role) && !form.residenceAssociateId) {
-      setMsg({ type: "err", text: "Selecione o cadastro financeiro vinculado antes de criar Associado ou Morador." });
+    const createForm = applyAutomaticFinancialLink(form);
+    if (usesFinancialLink(createForm.role) && !createForm.residenceAssociateId) {
+      setMsg({ type: "err", text: "Não foi possível identificar automaticamente o cadastro financeiro. Selecione o vínculo antes de criar Associado ou Morador." });
       return;
     }
-    if (!roleOptions.includes(form.role)) {
+    if (!roleOptions.includes(createForm.role)) {
       setMsg({ type: "err", text: "Seu perfil não pode cadastrar usuários com este papel." });
       return;
     }
     setSubmitting(true);
     setMsg(null);
     try {
-      const passwordHash = form.password.trim() ? await sha256(form.password) : undefined;
+      const passwordHash = createForm.password.trim() ? await sha256(createForm.password) : undefined;
       await convexMutation("users:createUser", {
         sessionToken: session.token,
-        name: form.name.trim(),
-        email: form.email.trim(),
+        name: createForm.name.trim(),
+        email: createForm.email.trim(),
         passwordHash,
-        role: form.role,
-        ...buildResidencePayload(form),
+        role: createForm.role,
+        ...buildResidencePayload(createForm),
       });
-      setMsg({ type: "ok", text: usesFinancialLink(form.role) && !passwordHash ? "Usuário criado com sucesso. A senha inicial é o CPF completo do titular, somente números." : "Usuário criado com sucesso!" });
+      setMsg({ type: "ok", text: usesFinancialLink(createForm.role) && !passwordHash ? "Usuário criado com sucesso. O vínculo financeiro foi aplicado e a senha inicial é o CPF completo do titular, somente números." : "Usuário criado com sucesso!" });
       setForm(emptyForm(roleOptions[0] ?? "associado"));
       reload();
     } catch (err: unknown) {
@@ -264,6 +317,11 @@ export default function UsuariosPage() {
       setMsg({ type: "err", text: "Nome é obrigatório para editar o usuário." });
       return;
     }
+    const nextEditForm = applyAutomaticFinancialLink(editForm);
+    if (usesFinancialLink(nextEditForm.role) && !nextEditForm.residenceAssociateId) {
+      setMsg({ type: "err", text: "Não foi possível identificar automaticamente o cadastro financeiro. Selecione o vínculo antes de salvar." });
+      return;
+    }
     setSavingEdit(true);
     setMsg(null);
     try {
@@ -280,14 +338,14 @@ export default function UsuariosPage() {
       } = {
         sessionToken: session.token,
         id: editingId,
-        name: editForm.name.trim(),
-        email: editForm.email.trim() || undefined,
-        role: editForm.role,
-        ...buildResidencePayload(editForm),
+        name: nextEditForm.name.trim(),
+        email: nextEditForm.email.trim() || undefined,
+        role: nextEditForm.role,
+        ...buildResidencePayload(nextEditForm),
       };
 
-      if (editForm.password.trim()) {
-        payload.passwordHash = await sha256(editForm.password);
+      if (nextEditForm.password.trim()) {
+        payload.passwordHash = await sha256(nextEditForm.password);
       }
 
       await convexMutation("users:updateUser", payload);
@@ -320,6 +378,9 @@ export default function UsuariosPage() {
   ) => {
     const hasFinancialLink = usesFinancialLink(state.role);
     const borderClass = accent === "blue" ? "focus:border-blue-500" : "focus:border-emerald-500";
+    const suggestedAssociate = findSuggestedAssociate(state);
+    const selectedAssociate = associateById.get(state.residenceAssociateId);
+    const canApplySuggestion = hasFinancialLink && suggestedAssociate && suggestedAssociate._id !== state.residenceAssociateId;
 
     return (
       <>
@@ -336,9 +397,46 @@ export default function UsuariosPage() {
                 <option key={associate._id} value={associate._id}>{formatAssociateOption(associate)}</option>
               ))}
             </select>
-            <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
-              O vínculo garante que CPF, unidade e futura conciliação de pagamentos apontem para o titular financeiro correto.
-            </p>
+            <div className="mt-2 rounded-lg border border-gray-800 bg-gray-950/40 px-3 py-2 text-[11px] leading-relaxed text-gray-400">
+              {selectedAssociate ? (
+                <p>
+                  Vínculo atual: <strong className="text-gray-200">{selectedAssociate.name}</strong>
+                  {selectedAssociate.cpfPrefix ? ` · CPF ${selectedAssociate.cpfPrefix}…` : ""}
+                  {selectedAssociate.unit ? ` · Unidade ${selectedAssociate.unit}` : ""}.
+                </p>
+              ) : suggestedAssociate ? (
+                <p>
+                  Sugestão automática: <strong className="text-gray-200">{suggestedAssociate.name}</strong>
+                  {suggestedAssociate.cpfPrefix ? ` · CPF ${suggestedAssociate.cpfPrefix}…` : ""}
+                  {suggestedAssociate.unit ? ` · Unidade ${suggestedAssociate.unit}` : ""}.
+                </p>
+              ) : (
+                <p>Nenhum vínculo seguro identificado automaticamente. O sysadmin pode selecionar manualmente.</p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {canApplySuggestion && (
+                  <button
+                    type="button"
+                    onClick={() => onChange(applyAutomaticFinancialLink(state, true))}
+                    className="rounded bg-emerald-700 px-2 py-1 text-[11px] font-medium text-white hover:bg-emerald-600"
+                  >
+                    Aplicar vínculo sugerido
+                  </button>
+                )}
+                {state.residenceAssociateId && (
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...state, residenceAssociateId: "" })}
+                    className="rounded bg-gray-800 px-2 py-1 text-[11px] font-medium text-gray-200 hover:bg-gray-700"
+                  >
+                    Alterar manualmente
+                  </button>
+                )}
+              </div>
+              <p className="mt-2 text-gray-500">
+                O vínculo garante que CPF, unidade e rastreabilidade apontem para o titular financeiro correto.
+              </p>
+            </div>
           </div>
         )}
 
@@ -394,7 +492,8 @@ export default function UsuariosPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs text-gray-400 mb-1">Nome</label>
-            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+            <input type="text" value={form.name} onChange={(e) => setForm(applyAutomaticFinancialLink({ ...form, name: e.target.value }))}
+              onBlur={() => setForm(applyAutomaticFinancialLink(form))}
               placeholder="Nome completo"
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500" />
           </div>
@@ -422,7 +521,7 @@ export default function UsuariosPage() {
 
           <div>
             <label className="block text-xs text-gray-400 mb-1">Papel</label>
-            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as User["role"], residenceAssociateId: e.target.value === "associado" || e.target.value === "morador" ? form.residenceAssociateId : "" })}
+            <select value={form.role} onChange={(e) => setForm(applyAutomaticFinancialLink({ ...form, role: e.target.value as User["role"], residenceAssociateId: e.target.value === "associado" || e.target.value === "morador" ? form.residenceAssociateId : "" }))}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
               {roleOptions.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
             </select>
@@ -463,7 +562,8 @@ export default function UsuariosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-gray-400 mb-1">Nome</label>
-              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              <input type="text" value={editForm.name} onChange={(e) => setEditForm(applyAutomaticFinancialLink({ ...editForm, name: e.target.value }))}
+                onBlur={() => setEditForm(applyAutomaticFinancialLink(editForm))}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" />
             </div>
             <div>
@@ -479,7 +579,7 @@ export default function UsuariosPage() {
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Papel</label>
-              <select value={editForm.role} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as User["role"], residenceAssociateId: e.target.value === "associado" || e.target.value === "morador" ? editForm.residenceAssociateId : "" })}
+              <select value={editForm.role} onChange={(e) => setEditForm(applyAutomaticFinancialLink({ ...editForm, role: e.target.value as User["role"], residenceAssociateId: e.target.value === "associado" || e.target.value === "morador" ? editForm.residenceAssociateId : "" }))}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 {SYSTEM_ADMIN_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
               </select>
