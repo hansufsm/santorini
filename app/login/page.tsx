@@ -231,6 +231,9 @@ export default function LoginPage() {
                   required
                   className="w-full bg-emerald-950/60 border border-emerald-800/70 rounded-lg px-4 py-3 text-white placeholder-emerald-900 focus:outline-none focus:border-emerald-400 text-lg tracking-widest"
                 />
+                <p className="mt-2 text-xs text-emerald-200/55 leading-relaxed">
+                  Esta entrada consulta o CPF no cadastro financeiro. Se você recebeu uma conta criada pela administração, use a aba <strong>E-mail + senha</strong> e informe o CPF como senha inicial.
+                </p>
               </div>
               {error && (
                 <p className="text-red-400 text-sm">{error}</p>
@@ -273,6 +276,9 @@ export default function LoginPage() {
                   required
                   className="w-full bg-emerald-950/60 border border-emerald-800/70 rounded-lg px-4 py-3 text-white placeholder-emerald-900 focus:outline-none focus:border-emerald-400"
                 />
+                <p className="mt-2 text-xs text-emerald-200/55 leading-relaxed">
+                  No primeiro acesso de associado ou morador cadastrado pela administração, use o CPF do titular financeiro como senha inicial.
+                </p>
               </div>
               {error && (
                 <p className="text-red-400 text-sm">{error}</p>
