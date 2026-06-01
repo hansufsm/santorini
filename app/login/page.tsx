@@ -55,6 +55,13 @@ async function sha256(text: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function normalizePasswordForHash(value: string): string {
+  const trimmed = value.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  const looksLikeCpf = digits.length === 11 && /^[\d.\-\s]+$/.test(trimmed);
+  return looksLikeCpf ? digits : value;
+}
+
 // ─── Helper: formatar CPF enquanto o usuário digita ─────────────────────────
 
 function formatCPF(value: string): string {
@@ -130,8 +137,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Nunca enviar a senha em texto puro — enviar o hash SHA-256
-      const passwordHash = await sha256(password);
+      // Nunca enviar a senha em texto puro — enviar o hash SHA-256.
+      // Se a senha inicial for o CPF, aceitar com ou sem pontuação.
+      const passwordHash = await sha256(normalizePasswordForHash(password));
 
       const result = await convexMutation("auth:loginWithPassword", {
         email,
@@ -147,8 +155,10 @@ export default function LoginPage() {
       const session: SessionData = { ...result.user, token: result.token };
       setSessionCookie(session);
 
-      // Diretoria e Sysadmin vão para o painel admin
-      router.push("/admin");
+      const destination = result.user.role === "sysadmin" || result.user.role === "diretoria"
+        ? "/admin"
+        : "/portal/inicio";
+      router.push(destination);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -200,7 +210,7 @@ export default function LoginPage() {
                   : "text-emerald-200/70 hover:text-white"
               }`}
             >
-              Diretoria / Admin
+              E-mail + senha
             </button>
           </div>
 
@@ -257,7 +267,7 @@ export default function LoginPage() {
                 </label>
                 <input
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Senha ou CPF inicial"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required

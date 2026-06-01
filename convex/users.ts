@@ -28,6 +28,23 @@ const getActiveAssociateOrThrow = async (ctx: any, associateId: any) => {
   return associate;
 };
 
+const sha256Hex = async (text: string) => {
+  const data = new TextEncoder().encode(text);
+  const hash = await globalThis.crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+};
+
+const passwordHashFromAssociateCpf = async (ctx: any, associateId: any) => {
+  const associate = await getActiveAssociateOrThrow(ctx, associateId);
+  const cpfDigits = associate.cpf?.replace(/\D/g, "") ?? "";
+  if (cpfDigits.length !== 11) {
+    throw new Error("O cadastro financeiro vinculado precisa ter CPF completo para gerar a senha inicial.");
+  }
+  return sha256Hex(cpfDigits);
+};
+
 const buildResidencePatch = async (
   ctx: any,
   fields: {
@@ -42,21 +59,25 @@ const buildResidencePatch = async (
   };
 
   if (fields.role === "associado") {
+    if (!fields.associateId) {
+      throw new Error("Selecione o cadastro financeiro vinculado para usuários Associados.");
+    }
+
     patch.parentAssociateId = undefined;
     patch.associateId = fields.associateId;
 
-    if (fields.associateId) {
-      const associate = await getActiveAssociateOrThrow(ctx, fields.associateId);
-      patch.unit = normalizeUnit(associate.unit) ?? patch.unit;
-    }
+    const associate = await getActiveAssociateOrThrow(ctx, fields.associateId);
+    patch.unit = normalizeUnit(associate.unit) ?? patch.unit;
   } else if (fields.role === "morador") {
+    if (!fields.parentAssociateId) {
+      throw new Error("Selecione o titular financeiro da unidade para usuários Moradores.");
+    }
+
     patch.associateId = undefined;
     patch.parentAssociateId = fields.parentAssociateId;
 
-    if (fields.parentAssociateId) {
-      const parentAssociate = await getActiveAssociateOrThrow(ctx, fields.parentAssociateId);
-      patch.unit = normalizeUnit(parentAssociate.unit) ?? patch.unit;
-    }
+    const parentAssociate = await getActiveAssociateOrThrow(ctx, fields.parentAssociateId);
+    patch.unit = normalizeUnit(parentAssociate.unit) ?? patch.unit;
   } else {
     // Perfis administrativos podem ter unidade informativa, mas não devem assumir
     // automaticamente um vínculo financeiro/titular de associado.
@@ -237,6 +258,10 @@ export const createUser = mutation({
       }
     }
 
+    if ((fields.role === "sysadmin" || fields.role === "diretoria") && !fields.passwordHash) {
+      throw new Error("Senha é obrigatória para usuários Sysadmin e Diretoria.");
+    }
+
     const now = Date.now();
     const residencePatch = await buildResidencePatch(ctx, {
       role: fields.role,
@@ -245,8 +270,17 @@ export const createUser = mutation({
       parentAssociateId: fields.parentAssociateId,
     });
 
+    const passwordHash = fields.passwordHash ?? (
+      fields.role === "associado"
+        ? await passwordHashFromAssociateCpf(ctx, fields.associateId)
+        : fields.role === "morador"
+          ? await passwordHashFromAssociateCpf(ctx, fields.parentAssociateId)
+          : undefined
+    );
+
     const newId = await ctx.db.insert("users", {
       ...fields,
+      passwordHash,
       ...residencePatch,
       status: "ativo",
       createdBy: caller._id, // registrar quem criou

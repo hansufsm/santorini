@@ -82,6 +82,14 @@ function residenceLabel(role: User["role"]) {
   return "Unidade administrativa/informativa";
 }
 
+function usesFinancialLink(role: User["role"]) {
+  return role === "associado" || role === "morador";
+}
+
+function requiresManualPassword(role: User["role"]) {
+  return role === "sysadmin" || role === "diretoria";
+}
+
 function buildResidencePayload(form: UserFormState) {
   const unit = form.unit.trim() || undefined;
   if (form.role === "associado") {
@@ -189,8 +197,16 @@ export default function UsuariosPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!session || !form.name || !form.email || !form.password) {
-      setMsg({ type: "err", text: "Nome, e-mail e senha são obrigatórios." });
+    if (!session || !form.name.trim() || !form.email.trim()) {
+      setMsg({ type: "err", text: "Nome e e-mail são obrigatórios." });
+      return;
+    }
+    if (requiresManualPassword(form.role) && !form.password.trim()) {
+      setMsg({ type: "err", text: "Senha é obrigatória para Sysadmin e Diretoria." });
+      return;
+    }
+    if (usesFinancialLink(form.role) && !form.residenceAssociateId) {
+      setMsg({ type: "err", text: "Selecione o cadastro financeiro vinculado antes de criar Associado ou Morador." });
       return;
     }
     if (!roleOptions.includes(form.role)) {
@@ -200,7 +216,7 @@ export default function UsuariosPage() {
     setSubmitting(true);
     setMsg(null);
     try {
-      const passwordHash = await sha256(form.password);
+      const passwordHash = form.password.trim() ? await sha256(form.password) : undefined;
       await convexMutation("users:createUser", {
         sessionToken: session.token,
         name: form.name.trim(),
@@ -209,7 +225,7 @@ export default function UsuariosPage() {
         role: form.role,
         ...buildResidencePayload(form),
       });
-      setMsg({ type: "ok", text: "Usuário criado com sucesso!" });
+      setMsg({ type: "ok", text: usesFinancialLink(form.role) && !passwordHash ? "Usuário criado com sucesso. A senha inicial é o CPF completo do titular, somente números." : "Usuário criado com sucesso!" });
       setForm(emptyForm(roleOptions[0] ?? "associado"));
       reload();
     } catch (err: unknown) {
@@ -302,12 +318,12 @@ export default function UsuariosPage() {
     onChange: (next: UserFormState) => void,
     accent: "emerald" | "blue"
   ) => {
-    const usesFinancialLink = state.role === "associado" || state.role === "morador";
+    const hasFinancialLink = usesFinancialLink(state.role);
     const borderClass = accent === "blue" ? "focus:border-blue-500" : "focus:border-emerald-500";
 
     return (
       <>
-        {usesFinancialLink && (
+        {hasFinancialLink && (
           <div>
             <label className="block text-xs text-gray-400 mb-1">{residenceLabel(state.role)}</label>
             <select
@@ -328,7 +344,7 @@ export default function UsuariosPage() {
 
         <div>
           <label className="block text-xs text-gray-400 mb-1">
-            {usesFinancialLink ? "Unidade derivada ou informada" : residenceLabel(state.role)}
+            {hasFinancialLink ? "Unidade derivada ou informada" : residenceLabel(state.role)}
           </label>
           <input
             type="text"
@@ -391,10 +407,17 @@ export default function UsuariosPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-gray-400 mb-1">Senha</label>
-            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Senha do usuário"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500" />
+                          <label className="block text-xs text-gray-400 mb-1">Senha{usesFinancialLink(form.role) ? " (opcional)" : ""}</label>
+              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder={usesFinancialLink(form.role) ? "Em branco: CPF completo do titular" : "Senha do usuário"}
+                required={requiresManualPassword(form.role)}
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500" />
+              {usesFinancialLink(form.role) && (
+                <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+                  Com vínculo financeiro selecionado, deixar em branco define a senha inicial como CPF completo do titular, somente números.
+                </p>
+              )}
+
           </div>
 
           <div>
