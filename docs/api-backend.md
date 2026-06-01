@@ -64,17 +64,18 @@ O Convex pode retornar erro de aplicação dentro de uma resposta HTTP bem-suced
 | `auth:loginWithPassword` | mutation | Login administrativo. |
 | `auth:loginWithCpf` | mutation | Login simplificado de associado quando aplicável. |
 | `auth:getSession` | query | Restaura sessão pelo token. |
-| `users:*` | query/mutation | Gestão de usuários e papéis; Diretoria consulta/cadastra perfis operacionais e Sysadmin administra perfis sensíveis, incluindo edição de cadastro, papel e redefinição de senha. |
+| `users:*` | query/mutation | Gestão de usuários e papéis. As funções usadas pela rota `/admin/usuarios` são exclusivas de **sysadmin**, incluindo listagem, criação, edição, redefinição de senha, inativação e reativação. |
 
 ## Contratos administrativos de usuários e transações
 
 | Contrato | Campos principais | Regra de autorização |
 |---|---|---|
-| Consulta de usuários | `users:getAllUsers`, `sessionToken`. | Diretoria e Sysadmin listam usuários visíveis; Sysadmin preserva acesso total. |
-| Criação de usuários | `users:createUser`, `sessionToken`, `name`, `email`, `passwordHash`, `role`, `unit` opcional. | Diretoria cria apenas `associado` e `morador`; Sysadmin também cria `diretoria` e `sysadmin`, respeitando o limite de sysadmins ativos. |
-| Edição de usuários | `users:updateUser`, `sessionToken`, `id`, campos opcionais de cadastro, `role` e `passwordHash`. | Sysadmin pode editar cadastro, papel e redefinir senha; Diretoria permanece limitada a dados básicos de perfis operacionais e não altera papéis sensíveis. |
-| Inativação/reativação | `users:deactivateUser` ou `users:reactivateUser`, `sessionToken`, `id`. | Diretoria não altera perfis `diretoria` ou `sysadmin`; Sysadmin mantém proteção contra remoção do último sysadmin ativo. |
-| Histórico financeiro por associado | `transactions:getAssociateHistory`, `sessionToken`, `associateId`. | Associado consulta somente o próprio vínculo; Diretoria/Sysadmin consultam por combobox administrativo em `/admin/transacoes`. |
+| Consulta de usuários | `users:getAllUsers`, `sessionToken`. | Exclusivo de **sysadmin**. A página `/admin/usuarios` não deve carregar a query para outros papéis. |
+| Criação de usuários | `users:createUser`, `sessionToken`, `name`, `email`, `passwordHash`, `role`, `unit` opcional. | Exclusivo de **sysadmin**, respeitando o limite de sysadmins ativos. |
+| Edição de usuários | `users:updateUser`, `sessionToken`, `id`, campos opcionais de cadastro, `role` e `passwordHash`. | Exclusivo de **sysadmin**, incluindo alteração de papel e redefinição de senha. |
+| Inativação/reativação | `users:deactivateUser` ou `users:reactivateUser`, `sessionToken`, `id`. | Exclusivo de **sysadmin**, mantendo proteção contra remoção do último sysadmin ativo. |
+| Histórico financeiro administrativo | `transactions:getAllTransactions`, `transactions:getPaymentPrefixDuplicatesPreview`, `transactions:getPCloudProcessedFiles`, `transactions:getAssociateHistory`, `sessionToken`. | Exclusivo de **sysadmin** quando consumido pela rota `/admin/transacoes`; associado continua limitado ao próprio vínculo nas superfícies de portal quando a função permitir esse fluxo. |
+| Mutations financeiras administrativas | `transactions:importTransactions`, `transactions:clearAllTransactions`, `transactions:cleanupPaymentPrefixDuplicates`, `transactions:registerPCloudProcessedFiles`, `sessionToken`. | Exclusivas de **sysadmin**. O frontend deve bloquear a rota e o backend deve manter `requireRole(ctx.db, sessionToken, "sysadmin")`. |
 
 ## API implementada para Feedback Comunitário
 
@@ -127,6 +128,7 @@ As integrações com serviços externos devem ser planejadas como módulos isola
 | Evitar mutations destrutivas sem confirmação | Dados financeiros e cadastrais exigem rastreabilidade. |
 | Usar soft delete em registros sensíveis | Preserva auditoria e reduz risco operacional. |
 | Proteger histórico financeiro por sessão | Evita que dados de contribuição sejam recuperados por nome digitado ou consulta sem vínculo autenticado. |
+| Manter defesa em profundidade para rotas sensíveis | `/admin/transacoes` e `/admin/usuarios` devem combinar ocultação de menu, bloqueio visual por papel e autorização Convex com `requireRole(..., "sysadmin")`. |
 | Auditar integrações externas | Redomus, CamobiSegura e serviços semelhantes podem afetar segurança física, privacidade ou acesso a recursos sensíveis. |
 | Filtrar por `associationId` em novos módulos | Prepara o produto para SaaS multiassociação. |
 | Manter fallback local em experiências de orientação | Evita perda de usabilidade quando a sincronização remota falha. |

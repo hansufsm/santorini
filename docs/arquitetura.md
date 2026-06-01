@@ -48,7 +48,7 @@ A premissa técnica é manter o frontend desacoplado de servidores próprios sem
 | Grupo | Rotas atuais | Finalidade |
 |---|---|---|
 | Público | `/`, `/login` | Entrada pública, autenticação e redirecionamento contextual. |
-| Admin | `/admin`, `/admin/associados`, `/admin/comunicados`, `/admin/feedbacks`, `/admin/manutencao`, `/admin/reservas`, `/admin/transacoes`, `/admin/usuarios` | Gestão operacional e administrativa, incluindo triagem de Feedback Comunitário. |
+| Admin | `/admin`, `/admin/associados`, `/admin/comunicados`, `/admin/feedbacks`, `/admin/manutencao`, `/admin/reservas`, `/admin/transacoes`, `/admin/usuarios` | Gestão operacional e administrativa, incluindo triagem de Feedback Comunitário. As rotas `/admin/transacoes` e `/admin/usuarios` são exclusivas de **sysadmin**. |
 | Portal | `/portal`, `/portal/inicio`, `/portal/extrato`, `/portal/mensalidade`, `/portal/comunicados`, `/portal/reservas`, `/portal/suporte`, `/portal/cadastro` | Área dedicada para associados e moradores. |
 
 ## Backend Convex
@@ -76,6 +76,7 @@ O frontend usa `lib/auth.tsx` para armazenar a sessão em cookie com validade de
 | Cookie | `santorini_session`, com `SameSite=Lax` e expiração configurada. |
 | Papéis | `sysadmin`, `diretoria`, `associado` e `morador`. |
 | Redirecionamento | Usuário autenticado deve ser encaminhado ao contexto adequado sem novo login. |
+| Rotas exclusivas de sysadmin | `/admin/transacoes` e `/admin/usuarios` devem validar `session.role === "sysadmin"` no frontend, ocultar itens de navegação para outros papéis e depender de `requireRole(..., "sysadmin")` no Convex para defesa em profundidade. |
 | Logout | Remove cookie e atualiza o estado global. |
 
 ## Estratégia SaaS
