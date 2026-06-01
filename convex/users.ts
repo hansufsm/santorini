@@ -29,6 +29,8 @@ const normalizeLookupText = (text?: string) =>
     .replace(/\s+/g, " ")
     .toUpperCase() || "";
 
+const normalizeCpfDigits = (cpf?: string) => cpf?.replace(/\D/g, "") || undefined;
+
 const uniqueAssociate = (matches: any[]) => (matches.length === 1 ? matches[0] : undefined);
 
 const findAutomaticAssociateLink = async (
@@ -83,11 +85,67 @@ const sha256Hex = async (text: string) => {
 
 const passwordHashFromAssociateCpf = async (ctx: any, associateId: any) => {
   const associate = await getActiveAssociateOrThrow(ctx, associateId);
-  const cpfDigits = associate.cpf?.replace(/\D/g, "") ?? "";
+  const cpfDigits = normalizeCpfDigits(associate.cpf) ?? "";
   if (cpfDigits.length !== 11) {
     throw new Error("O cadastro financeiro vinculado precisa ter CPF completo para gerar a senha inicial.");
   }
   return sha256Hex(cpfDigits);
+};
+
+const materializeAssociateForUser = async (
+  ctx: any,
+  fields: {
+    name: string;
+    email?: string;
+    unit?: string;
+    cpf?: string;
+  },
+  now: number
+) => {
+  const cpfDigits = normalizeCpfDigits(fields.cpf);
+  if (!cpfDigits || cpfDigits.length !== 11) {
+    throw new Error("Informe o CPF completo do Associado para criar automaticamente o cadastro financeiro.");
+  }
+
+  const existingByCpf = await ctx.db
+    .query("associates")
+    .filter((q: any) => q.eq(q.field("cpf"), cpfDigits))
+    .first();
+
+  if (existingByCpf && existingByCpf.deletedAt === undefined && existingByCpf.status === "ativo") {
+    return existingByCpf._id;
+  }
+
+  const unit = normalizeUnit(fields.unit);
+  const name = fields.name.trim();
+  const joinedAt = new Date(now).toISOString().slice(0, 10);
+
+  if (existingByCpf) {
+    await ctx.db.patch(existingByCpf._id, {
+      name,
+      unit,
+      cpf: cpfDigits,
+      cpfPrefix: cpfDigits.slice(0, 5),
+      email: fields.email?.trim() || undefined,
+      status: "ativo",
+      joinedAt,
+      deletedAt: undefined,
+      updatedAt: now,
+    });
+    return existingByCpf._id;
+  }
+
+  return ctx.db.insert("associates", {
+    name,
+    unit,
+    cpf: cpfDigits,
+    cpfPrefix: cpfDigits.slice(0, 5),
+    email: fields.email?.trim() || undefined,
+    status: "ativo",
+    joinedAt,
+    createdAt: now,
+    updatedAt: now,
+  });
 };
 
 const buildResidencePatch = async (
@@ -95,10 +153,13 @@ const buildResidencePatch = async (
   fields: {
     role: "sysadmin" | "diretoria" | "associado" | "morador";
     name?: string;
+    email?: string;
     unit?: string;
+    cpf?: string;
     associateId?: any;
     parentAssociateId?: any;
-  }
+  },
+  options?: { materializeMissingAssociate?: boolean; now?: number }
 ) => {
   const patch: Record<string, unknown> = {
     unit: normalizeUnit(fields.unit),
@@ -107,9 +168,21 @@ const buildResidencePatch = async (
   const automaticAssociate = await findAutomaticAssociateLink(ctx, fields);
 
   if (fields.role === "associado") {
-    const associateId = fields.associateId ?? automaticAssociate?._id;
+    let associateId = fields.associateId ?? automaticAssociate?._id;
+    if (!associateId && options?.materializeMissingAssociate) {
+      associateId = await materializeAssociateForUser(
+        ctx,
+        {
+          name: fields.name ?? "",
+          email: fields.email,
+          unit: fields.unit,
+          cpf: fields.cpf,
+        },
+        options.now ?? Date.now()
+      );
+    }
     if (!associateId) {
-      throw new Error("Selecione o cadastro financeiro vinculado para usuários Associados.");
+      throw new Error("Selecione o cadastro financeiro vinculado para usuários Associados ou informe CPF completo para criá-lo automaticamente.");
     }
 
     patch.parentAssociateId = undefined;
@@ -260,6 +333,7 @@ export const createUser = mutation({
       v.literal("morador")
     ),
     unit: v.optional(v.string()),
+    cpf: v.optional(v.string()),
     // Para Associado: ID do registro na tabela associates (dados financeiros)
     associateId: v.optional(v.id("associates")),
     // Para Morador: ID do Associado titular da mesma unidade
@@ -316,21 +390,25 @@ export const createUser = mutation({
     const residencePatch = await buildResidencePatch(ctx, {
       role: fields.role,
       name: fields.name,
+      email: fields.email,
       unit: fields.unit,
+      cpf: fields.cpf,
       associateId: fields.associateId,
       parentAssociateId: fields.parentAssociateId,
-    });
+    }, { materializeMissingAssociate: true, now });
 
     const passwordHash = fields.passwordHash ?? (
       fields.role === "associado"
-        ? await passwordHashFromAssociateCpf(ctx, fields.associateId)
+        ? await passwordHashFromAssociateCpf(ctx, residencePatch.associateId)
         : fields.role === "morador"
-          ? await passwordHashFromAssociateCpf(ctx, fields.parentAssociateId)
+          ? await passwordHashFromAssociateCpf(ctx, residencePatch.parentAssociateId)
           : undefined
     );
 
     const newId = await ctx.db.insert("users", {
-      ...fields,
+      name: fields.name,
+      email: fields.email,
+      role: fields.role,
       passwordHash,
       ...residencePatch,
       status: "ativo",

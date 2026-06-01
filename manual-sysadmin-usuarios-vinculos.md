@@ -35,16 +35,17 @@ O Santorini trabalha com quatro papéis principais. O sysadmin é o perfil com m
 
 ## 4. Regra central do novo fluxo
 
-A regra central é simples: **associado e morador não devem ser criados sem vínculo financeiro**. Ao preencher o nome, a unidade ou o papel do usuário, o painel tenta localizar automaticamente uma correspondência segura no cadastro financeiro. Quando encontra uma correspondência única, o vínculo é sugerido ou aplicado. Quando não encontra uma correspondência segura, o sysadmin deve escolher manualmente o cadastro financeiro correto antes de salvar.
+A regra central é simples: **associado e morador não devem ser criados sem vínculo financeiro**. Ao preencher o nome, a unidade ou o papel do usuário, o painel tenta localizar automaticamente uma correspondência segura no cadastro financeiro. Quando encontra uma correspondência única, o vínculo é sugerido ou aplicado. Quando não encontra uma correspondência segura para um novo **Associado**, o sysadmin pode informar o CPF completo para que o backend materialize automaticamente a linha correspondente em `associates` e já grave o novo vínculo em `users.associateId`. Para **Morador**, o titular financeiro da unidade continua obrigatório e deve existir previamente.
 
-> **Regra de segurança:** o sistema só deve autovincular quando houver correspondência segura. Se houver dúvida, ausência de cadastro financeiro ou ambiguidade entre unidades/nomes, o sysadmin deve revisar e selecionar manualmente.
+> **Regra de segurança:** o sistema só deve autovincular quando houver correspondência segura. Se não houver cadastro financeiro para um novo **Associado**, o CPF completo é obrigatório para criar o registro financeiro junto com o usuário. Se houver dúvida, ambiguidade entre unidades/nomes ou CPF divergente, o sysadmin deve revisar antes de salvar.
 
 | Situação | Comportamento esperado | Ação do sysadmin |
 |---|---|---|
 | Nome do usuário coincide exatamente com um cadastro financeiro ativo. | O sistema sugere ou aplica o vínculo correspondente. | Confirmar a sugestão e salvar. |
 | Unidade informada coincide com uma única unidade ativa no cadastro financeiro. | O sistema sugere o titular financeiro daquela unidade. | Confirmar se é o titular correto e salvar. |
 | Existem vários cadastros possíveis para a mesma unidade ou nome semelhante. | O sistema evita autovínculo inseguro. | Selecionar manualmente o titular correto. |
-| Não existe cadastro financeiro correspondente. | O sistema não consegue criar corretamente associado/morador com senha automática por CPF. | Criar ou corrigir antes o cadastro financeiro. |
+| Não existe cadastro financeiro correspondente para novo **Associado**. | O sistema exige CPF completo e cria automaticamente a linha em `associates`, vinculando o novo `_id` ao usuário. | Informar CPF completo, nome e unidade com cuidado antes de salvar. |
+| Não existe titular financeiro para novo **Morador**. | O sistema não deve criar morador sem titular financeiro existente. | Criar ou localizar primeiro o cadastro financeiro do titular da unidade. |
 
 ## 5. Como cadastrar um novo usuário
 
@@ -52,7 +53,7 @@ Para cadastrar um usuário, acesse **Admin → Usuários** e use o bloco **Novo 
 
 ### 5.1 Cadastro de associado
 
-O papel **Associado** deve ser usado quando a pessoa é o próprio titular financeiro. Nesse caso, o campo **Associado financeiro vinculado** deve apontar para o cadastro financeiro da própria pessoa. Se o nome digitado coincidir com um cadastro financeiro ativo, o painel poderá sugerir automaticamente o vínculo.
+O papel **Associado** deve ser usado quando a pessoa é o próprio titular financeiro. Nesse caso, o campo **Associado financeiro vinculado** deve apontar para o cadastro financeiro da própria pessoa. Se o nome digitado coincidir com um cadastro financeiro ativo, o painel poderá sugerir automaticamente o vínculo. Se não existir cadastro financeiro correspondente, o sysadmin deve informar o CPF completo; ao salvar, o backend cria a linha em `associates`, define `cpfPrefix`, status ativo, datas de criação/atualização e vincula o novo `_id` em `users.associateId`.
 
 | Campo | Preenchimento recomendado |
 |---|---|
@@ -60,8 +61,9 @@ O papel **Associado** deve ser usado quando a pessoa é o próprio titular finan
 | **E-mail** | E-mail de acesso do associado. |
 | **Senha** | Pode ficar em branco se o vínculo financeiro estiver correto; a senha inicial será o CPF completo do titular, somente números. |
 | **Papel** | Selecionar **Associado**. |
-| **Associado financeiro vinculado** | Confirmar sugestão automática ou selecionar manualmente o cadastro financeiro correto. |
-| **Unidade derivada ou informada** | Normalmente será preenchida a partir do vínculo financeiro; revisar antes de salvar. |
+| **Associado financeiro vinculado** | Confirmar sugestão automática, selecionar manualmente o cadastro financeiro correto ou deixar vazio somente quando for criar o cadastro financeiro automaticamente por CPF. |
+| **CPF do associado financeiro** | Obrigatório quando não há vínculo selecionado; deve ser o CPF completo do titular, com ou sem pontuação. |
+| **Unidade derivada ou informada** | Normalmente será preenchida a partir do vínculo financeiro; quando o cadastro for materializado automaticamente, revisar a unidade antes de salvar. |
 
 ### 5.2 Cadastro de morador
 
@@ -165,7 +167,7 @@ Antes de criar ou editar um usuário, o sysadmin deve fazer uma verificação cu
 | Nome completo revisado | Sim | Sim | Sim |
 | E-mail correto | Sim | Sim | Sim |
 | Papel correto | Sim | Sim | Sim |
-| Vínculo financeiro selecionado | Sim | Sim | Não obrigatório |
+| Vínculo financeiro selecionado ou CPF completo para novo associado | Sim | Sim | Não obrigatório |
 | Unidade coerente com titular | Sim | Sim | Informativa |
 | Senha manual preenchida | Opcional | Opcional | Sim |
 | Orientação de login definida | E-mail + senha, CPF do titular como senha inicial | E-mail + senha, CPF do titular como senha inicial | E-mail + senha manual |
@@ -174,7 +176,7 @@ Antes de criar ou editar um usuário, o sysadmin deve fazer uma verificação cu
 
 | Problema observado | Causa provável | Solução recomendada |
 |---|---|---|
-| Usuário aparece **sem vínculo**. | Foi criado sem selecionar o cadastro financeiro, ou o autovínculo não encontrou correspondência segura. | Editar usuário, aplicar sugestão automática ou selecionar manualmente o titular correto. |
+| Usuário aparece **sem vínculo**. | Foi criado antes da regra de materialização automática, sem selecionar o cadastro financeiro, ou o autovínculo não encontrou correspondência segura. | Editar usuário, aplicar sugestão automática ou selecionar manualmente o titular correto; se for associado sem cadastro financeiro, criar/reativar o cadastro financeiro com CPF completo e vincular. |
 | Usuário não consegue entrar com CPF como senha. | Pode estar usando a aba errada ou o usuário não tem vínculo financeiro correto. | Orientar entrada pela aba **E-mail + senha** e revisar o vínculo financeiro no painel. |
 | Aba **Associado / Morador** mostra “CPF não encontrado”. | O CPF não existe no cadastro financeiro consultado por essa aba. | Conferir se o cadastro financeiro existe e está ativo; para usuários criados pelo sysadmin, usar **E-mail + senha**. |
 | Sistema não sugere vínculo automático. | Nome ou unidade não teve correspondência única e segura. | Selecionar manualmente no campo de vínculo. |
@@ -183,7 +185,7 @@ Antes de criar ou editar um usuário, o sysadmin deve fazer uma verificação cu
 
 ## 14. Observação sobre publicação do backend Convex
 
-A interface do painel já pode exibir as melhorias de sugestão e revisão de vínculo quando o frontend estiver publicado. Entretanto, a blindagem de servidor — isto é, o backend preencher ou exigir o vínculo mesmo que o frontend não envie corretamente — depende do deploy do Convex. Se o workflow de backend estiver bloqueado por falta do segredo **`CONVEX_DEPLOY_KEY`**, a aplicação pode apresentar parte visual atualizada, mas o reforço no servidor ainda não estará ativo.
+A interface do painel já pode exibir as melhorias de sugestão, revisão de vínculo e coleta de CPF quando o frontend estiver publicado. Entretanto, a blindagem de servidor — isto é, o backend preencher, exigir ou materializar o vínculo mesmo que o frontend não envie corretamente — depende do deploy do Convex. Se o workflow de backend estiver bloqueado por falta do segredo **`CONVEX_DEPLOY_KEY`**, a aplicação pode apresentar parte visual atualizada, mas a criação automática da linha em `associates` e o vínculo em `users.associateId` ainda não estarão ativos em produção.
 
 > **Procedimento administrativo:** se houver mudanças em arquivos `convex/**`, confirme se o segredo `CONVEX_DEPLOY_KEY` está configurado no GitHub Actions e reexecute o workflow de deploy do backend. Sem isso, alterações de backend não entram em produção.
 
@@ -213,11 +215,11 @@ Também é recomendável evitar senhas manuais para associado/morador quando o v
 
 ## 17. Resumo executivo do novo processo
 
-O novo processo torna o cadastro mais seguro porque impede ou reduz a criação de usuários operacionais sem vínculo financeiro. O painel tenta identificar o vínculo automaticamente por nome ou unidade, mas mantém o controle final nas mãos do sysadmin. A tabela de usuários mostra explicitamente se a conta está vinculada como titular, morador da unidade ou sem vínculo, facilitando auditoria e correção.
+O novo processo torna o cadastro mais seguro porque impede ou reduz a criação de usuários operacionais sem vínculo financeiro. O painel tenta identificar o vínculo automaticamente por nome ou unidade, mas mantém o controle final nas mãos do sysadmin. Para novos **Associados** sem cadastro financeiro prévio, o CPF completo permite materializar automaticamente a linha em `associates`, evitando que o usuário fique isolado em `users`. A tabela de usuários mostra explicitamente se a conta está vinculada como titular, morador da unidade ou sem vínculo, facilitando auditoria e correção.
 
 | Decisão operacional | Regra prática |
 |---|---|
-| Criar associado | Vincular ao próprio cadastro financeiro. |
+| Criar associado | Vincular ao próprio cadastro financeiro existente ou informar CPF completo para materializar automaticamente o cadastro financeiro. |
 | Criar morador | Vincular ao titular financeiro da unidade. |
 | Criar diretoria/sysadmin | Definir senha manual; vínculo financeiro não é obrigatório. |
 | Senha em branco para associado/morador | Usa CPF completo do titular financeiro como senha inicial, desde que backend esteja publicado e vínculo/CPF estejam corretos. |

@@ -34,6 +34,7 @@ type UserFormState = {
   role: User["role"];
   unit: string;
   residenceAssociateId: string;
+  cpf: string;
 };
 
 const ROLE_BADGE: Record<string, string> = {
@@ -67,6 +68,7 @@ const emptyForm = (role: User["role"] = "associado"): UserFormState => ({
   role,
   unit: "",
   residenceAssociateId: "",
+  cpf: "",
 });
 
 function formatAssociateOption(associate: Associate) {
@@ -104,12 +106,17 @@ function normalizeUnitValue(unit?: string) {
   return unit?.trim().replace(/\s+/g, " ").toUpperCase() || "";
 }
 
-function buildResidencePayload(form: UserFormState) {
+function normalizeCpfDigits(cpf?: string) {
+  return cpf?.replace(/\D/g, "") || "";
+}
+
+function buildResidencePayload(form: UserFormState, includeMaterializationData = false) {
   const unit = form.unit.trim() || undefined;
   if (form.role === "associado") {
     return {
       unit,
       associateId: form.residenceAssociateId || undefined,
+      ...(includeMaterializationData && !form.residenceAssociateId ? { cpf: normalizeCpfDigits(form.cpf) || undefined } : {}),
     };
   }
   if (form.role === "morador") {
@@ -258,8 +265,12 @@ export default function UsuariosPage() {
       return;
     }
     const createForm = applyAutomaticFinancialLink(form);
-    if (usesFinancialLink(createForm.role) && !createForm.residenceAssociateId) {
-      setMsg({ type: "err", text: "Não foi possível identificar automaticamente o cadastro financeiro. Selecione o vínculo antes de criar Associado ou Morador." });
+    if (createForm.role === "morador" && !createForm.residenceAssociateId) {
+      setMsg({ type: "err", text: "Não foi possível identificar automaticamente o titular financeiro. Selecione o vínculo antes de criar Morador." });
+      return;
+    }
+    if (createForm.role === "associado" && !createForm.residenceAssociateId && normalizeCpfDigits(createForm.cpf).length !== 11) {
+      setMsg({ type: "err", text: "Para criar Associado sem cadastro financeiro existente, informe o CPF completo. O sistema criará o registro em Associados automaticamente." });
       return;
     }
     if (!roleOptions.includes(createForm.role)) {
@@ -276,9 +287,9 @@ export default function UsuariosPage() {
         email: createForm.email.trim(),
         passwordHash,
         role: createForm.role,
-        ...buildResidencePayload(createForm),
+        ...buildResidencePayload(createForm, true),
       });
-      setMsg({ type: "ok", text: usesFinancialLink(createForm.role) && !passwordHash ? "Usuário criado com sucesso. O vínculo financeiro foi aplicado e a senha inicial é o CPF completo do titular, somente números." : "Usuário criado com sucesso!" });
+      setMsg({ type: "ok", text: usesFinancialLink(createForm.role) && !passwordHash ? "Usuário criado com sucesso. O vínculo financeiro foi aplicado ou criado automaticamente, e a senha inicial é o CPF completo do titular, somente números." : "Usuário criado com sucesso!" });
       setForm(emptyForm(roleOptions[0] ?? "associado"));
       reload();
     } catch (err: unknown) {
@@ -297,6 +308,7 @@ export default function UsuariosPage() {
       role: user.role,
       unit: user.unit ?? "",
       residenceAssociateId: user.associateId ?? user.parentAssociateId ?? "",
+      cpf: "",
     });
     setMsg(null);
   }
@@ -374,7 +386,8 @@ export default function UsuariosPage() {
   const renderResidenceFields = (
     state: UserFormState,
     onChange: (next: UserFormState) => void,
-    accent: "emerald" | "blue"
+    accent: "emerald" | "blue",
+    allowAssociateMaterialization = false
   ) => {
     const hasFinancialLink = usesFinancialLink(state.role);
     const borderClass = accent === "blue" ? "focus:border-blue-500" : "focus:border-emerald-500";
@@ -411,7 +424,11 @@ export default function UsuariosPage() {
                   {suggestedAssociate.unit ? ` · Unidade ${suggestedAssociate.unit}` : ""}.
                 </p>
               ) : (
-                <p>Nenhum vínculo seguro identificado automaticamente. O sysadmin pode selecionar manualmente.</p>
+                <p>
+                  {state.role === "associado" && allowAssociateMaterialization
+                    ? "Nenhum vínculo seguro identificado automaticamente. O sysadmin pode selecionar um cadastro existente ou informar CPF completo para criar o associado financeiro junto com o usuário."
+                    : "Nenhum vínculo seguro identificado automaticamente. O sysadmin deve selecionar manualmente."}
+                </p>
               )}
               <div className="mt-2 flex flex-wrap gap-2">
                 {canApplySuggestion && (
@@ -434,9 +451,28 @@ export default function UsuariosPage() {
                 )}
               </div>
               <p className="mt-2 text-gray-500">
-                O vínculo garante que CPF, unidade e rastreabilidade apontem para o titular financeiro correto.
+                {allowAssociateMaterialization
+                  ? "O vínculo garante que CPF, unidade e rastreabilidade apontem para o titular financeiro correto. Para novo Associado sem vínculo existente, o CPF abaixo materializa o registro financeiro automaticamente."
+                  : "O vínculo garante que CPF, unidade e rastreabilidade apontem para o titular financeiro correto."}
               </p>
             </div>
+          </div>
+        )}
+
+        {allowAssociateMaterialization && state.role === "associado" && !state.residenceAssociateId && (
+          <div>
+            <label className="block text-xs text-gray-400 mb-1">CPF do associado financeiro</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={state.cpf}
+              onChange={(e) => onChange({ ...state, cpf: e.target.value })}
+              placeholder="Somente números ou CPF formatado"
+              className={`w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none ${borderClass}`}
+            />
+            <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+              Obrigatório quando não há cadastro financeiro selecionado. O backend usa este CPF para criar a linha em Associados e definir a senha inicial.
+            </p>
           </div>
         )}
 
@@ -469,7 +505,7 @@ export default function UsuariosPage() {
       <div>
         <h2 className="text-xl font-bold text-white">Usuários do Sistema</h2>
         <p className="text-sm text-gray-400 mt-1">
-          Cadastre usuários vinculando a unidade operacional e, quando aplicável, o associado financeiro/titular.
+          Cadastre usuários vinculando a unidade operacional e, quando aplicável, o associado financeiro/titular. Para novo Associado sem cadastro financeiro, informe CPF para criar o registro em Associados automaticamente.
           {session.role === "sysadmin" && typeof sysCount === "number" && (
             <span className={`ml-2 ${sysCount >= 2 ? "text-yellow-400" : "text-gray-400"}`}>
               {sysCount}/2 sysadmins ativos
@@ -481,7 +517,7 @@ export default function UsuariosPage() {
       <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4 text-sm text-emerald-100">
         <p className="font-medium">Regra operacional recomendada</p>
         <p className="mt-1 text-xs leading-relaxed text-emerald-200/80">
-          Use a <strong>Unidade</strong> para verificar inadimplência e agrupar moradores. Use o <strong>CPF</strong> e o cadastro financeiro para autenticação, rastreabilidade e futura conciliação de pagadores alternativos.
+          Use a <strong>Unidade</strong> para verificar inadimplência e agrupar moradores. Use o <strong>CPF</strong> e o cadastro financeiro para autenticação, rastreabilidade e futura conciliação de pagadores alternativos. Ao criar um novo <strong>Associado</strong> sem vínculo existente, o sistema materializa automaticamente a linha em Associados.
         </p>
       </div>
 
@@ -527,7 +563,7 @@ export default function UsuariosPage() {
             </select>
           </div>
 
-          {renderResidenceFields(form, setForm, "emerald")}
+          {renderResidenceFields(form, setForm, "emerald", true)}
         </div>
 
         {/* Alerta quando limite de sysadmins for atingido */}
