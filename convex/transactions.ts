@@ -35,6 +35,20 @@ type PCloudImportFileRecord = {
   importedAt: number;
 };
 
+type AssociateRecord = {
+  _id: Id<"associates">;
+  name: string;
+  unit?: string;
+  status: "ativo" | "inativo" | "inadimplente";
+};
+
+const MANUAL_ASSOCIATE_PAYMENT_ALIASES = [
+  {
+    associateNameIncludes: "amilton",
+    paymentNames: ["Amilton", "MACPELA EMP IMOBILIARIOS LTDA", "MACPELA"],
+  },
+];
+
 const PAYMENT_PREFIX_PATTERN = /^(pix|ted|doc|transferencia|transferência|transf|pagamento|pagto)\s+/i;
 
 function stripPaymentPrefix(value: string) {
@@ -130,6 +144,14 @@ function matchesAssociateName(transactionName: string, possibleNames: string[]) 
     const name = normalizeAssociateName(rawName);
     return name.length >= 3 && (txName === name || txName.includes(name) || name.includes(txName));
   });
+}
+
+function getAssociatePaymentNames(associate: Pick<AssociateRecord, "name">) {
+  const associateName = normalizeAssociateName(associate.name);
+  const aliases = MANUAL_ASSOCIATE_PAYMENT_ALIASES
+    .filter((rule) => associateName.includes(normalizeAssociateName(rule.associateNameIncludes)))
+    .flatMap((rule) => rule.paymentNames);
+  return [...new Set([associate.name, ...aliases])];
 }
 
 export const importTransactions = mutation({
@@ -388,7 +410,7 @@ export const getAssociateHistory = query({
 
     const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
     const userTxs = received
-      .filter((t) => matchesAssociateName(t.name, [associate.name]))
+      .filter((t) => matchesAssociateName(t.name, getAssociatePaymentNames(associate)))
       .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
     if (!userTxs.length) return null;
     const total = userTxs.reduce((acc, t) => acc + t.value, 0);
@@ -409,11 +431,14 @@ export const getDefaulters = query({
   args: { monthKey: v.string() },
   handler: async (ctx, { monthKey }) => {
     const activeAssociates = await ctx.db.query("associates").withIndex("by_status", (q) => q.eq("status", "ativo")).collect();
-    const monthTxs = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    const paidThisMonth = new Set(monthTxs.filter((t) => t.date.startsWith(monthKey)).map((t) => normalizeAssociateName(t.name)));
     const allReceived = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    return activeAssociates.filter((a) => !paidThisMonth.has(normalizeAssociateName(a.name))).map((a) => {
-      const lastPayment = allReceived.filter((t) => matchesAssociateName(t.name, [a.name])).sort((x, y) => y.date.localeCompare(x.date))[0];
+    const monthTxs = allReceived.filter((t) => t.date.startsWith(monthKey));
+    return activeAssociates.filter((a) => {
+      const paymentNames = getAssociatePaymentNames(a);
+      return !monthTxs.some((t) => matchesAssociateName(t.name, paymentNames));
+    }).map((a) => {
+      const paymentNames = getAssociatePaymentNames(a);
+      const lastPayment = allReceived.filter((t) => matchesAssociateName(t.name, paymentNames)).sort((x, y) => y.date.localeCompare(x.date))[0];
       return { id: a._id, name: a.name, unit: a.unit, status: a.status, lastPaymentDate: lastPayment?.date ?? null };
     }).sort((a, b) => (a.unit ?? "").localeCompare(b.unit ?? ""));
   },
