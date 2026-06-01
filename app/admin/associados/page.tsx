@@ -22,6 +22,7 @@ type Associate = {
   joinedAt?: string;
   leftAt?: string;
   notes?: string;
+  paymentAliases?: string[];
 };
 
 type AssociateForm = {
@@ -35,6 +36,7 @@ type AssociateForm = {
   joinedAt: string;
   leftAt: string;
   notes: string;
+  paymentAliases: string;
 };
 
 const emptyForm: AssociateForm = {
@@ -48,6 +50,7 @@ const emptyForm: AssociateForm = {
   joinedAt: "",
   leftAt: "",
   notes: "",
+  paymentAliases: "",
 };
 
 function toForm(associate: Associate): AssociateForm {
@@ -62,12 +65,21 @@ function toForm(associate: Associate): AssociateForm {
     joinedAt: associate.joinedAt ?? "",
     leftAt: associate.leftAt ?? "",
     notes: associate.notes ?? "",
+    paymentAliases: (associate.paymentAliases ?? []).join("\n"),
   };
 }
 
 function optional(value: string) {
   const trimmed = value.trim();
   return trimmed ? trimmed : undefined;
+}
+
+function parsePaymentAliases(value: string) {
+  const aliases = value
+    .split(/[\n,;]/)
+    .map((alias) => alias.trim())
+    .filter(Boolean);
+  return aliases.length ? [...new Set(aliases)] : undefined;
 }
 
 // Badge de status
@@ -105,7 +117,8 @@ export default function AssociadosPage() {
     return (
       a.name.toLowerCase().includes(term) ||
       (a.unit ?? "").toLowerCase().includes(term) ||
-      (a.cpfPrefix && a.cpfPrefix.includes(term))
+      (a.cpfPrefix && a.cpfPrefix.includes(term)) ||
+      (a.paymentAliases ?? []).some((alias) => alias.toLowerCase().includes(term))
     );
   });
 
@@ -167,6 +180,7 @@ export default function AssociadosPage() {
         joinedAt: optional(form.joinedAt),
         leftAt: optional(form.leftAt),
         notes: optional(form.notes),
+        paymentAliases: parsePaymentAliases(form.paymentAliases),
       });
       setMsg("Dados do associado atualizados com sucesso.");
       cancelEdit();
@@ -256,6 +270,11 @@ export default function AssociadosPage() {
               <input type="date" value={form.leftAt} onChange={(e) => updateForm("leftAt", e.target.value)} className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-emerald-500" />
             </label>
             <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
+              <span className="text-gray-300">Aliases de pagamento</span>
+              <textarea value={form.paymentAliases} onChange={(e) => updateForm("paymentAliases", e.target.value)} rows={3} placeholder="Um por linha. Ex.: ELISEU GERALDO VIDOTTO DELLA FLORA" className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-emerald-500" />
+              <span className="text-xs text-gray-500">Use este campo quando o nome no extrato bancário/PIX for diferente do titular financeiro cadastrado.</span>
+            </label>
+            <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
               <span className="text-gray-300">Observações</span>
               <textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={3} className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-emerald-500" />
             </label>
@@ -303,6 +322,11 @@ export default function AssociadosPage() {
                     <td className="px-4 py-3 text-gray-300">
                       <div className="font-medium text-gray-200">{a.name}</div>
                       {a.cpfPrefix && <div className="mt-1 text-xs text-gray-500">CPF: {a.cpfPrefix}…</div>}
+                      {(a.paymentAliases?.length ?? 0) > 0 && (
+                        <div className="mt-1 text-xs text-emerald-300/80">
+                          Alias: {a.paymentAliases?.join(", ")}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3"><StatusBadge status={a.status} /></td>
                     <td className="px-4 py-3 text-gray-400 text-xs">
