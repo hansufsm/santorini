@@ -132,10 +132,6 @@ function matchesAssociateName(transactionName: string, possibleNames: string[]) 
   });
 }
 
-function getAssociatePaymentNames(associate: { name: string; paymentAliases?: string[] }) {
-  return [associate.name, ...(associate.paymentAliases ?? [])].filter((name) => name.trim().length >= 3);
-}
-
 export const importTransactions = mutation({
   args: {
     sessionToken: v.string(),
@@ -391,9 +387,8 @@ export const getAssociateHistory = query({
     if (!associate || associate.status !== "ativo") return null;
 
     const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    const paymentNames = getAssociatePaymentNames(associate);
     const userTxs = received
-      .filter((t) => matchesAssociateName(t.name, paymentNames))
+      .filter((t) => matchesAssociateName(t.name, [associate.name]))
       .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
     if (!userTxs.length) return null;
     const total = userTxs.reduce((acc, t) => acc + t.value, 0);
@@ -414,14 +409,11 @@ export const getDefaulters = query({
   args: { monthKey: v.string() },
   handler: async (ctx, { monthKey }) => {
     const activeAssociates = await ctx.db.query("associates").withIndex("by_status", (q) => q.eq("status", "ativo")).collect();
+    const monthTxs = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
+    const paidThisMonth = new Set(monthTxs.filter((t) => t.date.startsWith(monthKey)).map((t) => normalizeAssociateName(t.name)));
     const allReceived = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    const monthTxs = allReceived.filter((t) => t.date.startsWith(monthKey));
-    return activeAssociates.filter((a) => {
-      const paymentNames = getAssociatePaymentNames(a);
-      return !monthTxs.some((t) => matchesAssociateName(t.name, paymentNames));
-    }).map((a) => {
-      const paymentNames = getAssociatePaymentNames(a);
-      const lastPayment = allReceived.filter((t) => matchesAssociateName(t.name, paymentNames)).sort((x, y) => y.date.localeCompare(x.date))[0];
+    return activeAssociates.filter((a) => !paidThisMonth.has(normalizeAssociateName(a.name))).map((a) => {
+      const lastPayment = allReceived.filter((t) => matchesAssociateName(t.name, [a.name])).sort((x, y) => y.date.localeCompare(x.date))[0];
       return { id: a._id, name: a.name, unit: a.unit, status: a.status, lastPaymentDate: lastPayment?.date ?? null };
     }).sort((a, b) => (a.unit ?? "").localeCompare(b.unit ?? ""));
   },

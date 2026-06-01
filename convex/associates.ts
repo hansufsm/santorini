@@ -21,7 +21,6 @@ const AUDITED_ASSOCIATE_FIELDS = [
   "joinedAt",
   "leftAt",
   "notes",
-  "paymentAliases",
 ] as const;
 
 function snapshotAssociate(record: any) {
@@ -80,7 +79,6 @@ export const importAssociates = mutation({
       joinedAt: v.optional(v.string()),
       leftAt: v.optional(v.string()),
       notes: v.optional(v.string()),
-      paymentAliases: v.optional(v.array(v.string())),
       status: v.union(
         v.literal("ativo"),
         v.literal("inativo"),
@@ -150,7 +148,6 @@ export const createAssociate = mutation({
     joinedAt: v.optional(v.string()),
     leftAt: v.optional(v.string()),
     notes: v.optional(v.string()),
-    paymentAliases: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { sessionToken, ...args }) => {
     // Apenas diretoria ou sysadmin podem cadastrar associados
@@ -198,7 +195,6 @@ export const updateAssociate = mutation({
     joinedAt: v.optional(v.string()),
     leftAt: v.optional(v.string()),
     notes: v.optional(v.string()),
-    paymentAliases: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { sessionToken, id, ...fields }) => {
     // Apenas diretoria ou sysadmin podem editar o cadastro completo

@@ -74,7 +74,6 @@ export default defineSchema({
     joinedAt: v.optional(v.string()),   // data de adesão (formato ISO: YYYY-MM-DD)
     leftAt: v.optional(v.string()),     // data de desligamento (formato ISO)
     notes: v.optional(v.string()),
-    paymentAliases: v.optional(v.array(v.string())), // nomes alternativos do pagador no extrato
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),  // soft delete
