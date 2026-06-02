@@ -397,9 +397,6 @@ export const getAssociateHistory = query({
     sessionToken: v.optional(v.string()),
   },
   handler: async (ctx, { associateId, sessionToken }) => {
-    // Regra de privacidade: histórico financeiro só pode ser resolvido por vínculo
-    // explícito de associado e por uma sessão autenticada. Diretoria/Sysadmin podem
-    // consultar qualquer associado; Associado só pode consultar o próprio vínculo.
     if (!associateId || !sessionToken) return null;
 
     const caller = await requireRole(ctx.db, sessionToken, "associado");

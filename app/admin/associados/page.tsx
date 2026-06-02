@@ -369,7 +369,6 @@ export default function AssociadosPage() {
                         )}
                       </div>
                     </td>
-2
                   </tr>
                 ))}
               </tbody>
