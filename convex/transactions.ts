@@ -1,6 +1,160 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./auth";
+import { requireRole } from "./_lib";
+import type { Id } from "./_generated/dataModel";
+
+type TransactionRecord = {
+  _id: Id<"transactions">;
+  date: string;
+  time: string;
+  type: string;
+  name: string;
+  detail: string;
+  value: number;
+  originalValue: string;
+  transactionKey: string;
+  importedAt: number;
+  deletedAt?: number;
+};
+
+type PCloudImportFileRecord = {
+  _id: Id<"pcloudImportFiles">;
+  fileKey: string;
+  fileId?: string;
+  fileName: string;
+  fileHash?: string;
+  fileSize?: number;
+  modified?: string;
+  sourceUrl: string;
+  rowsImported: number;
+  inserted: number;
+  updated: number;
+  skipped: number;
+  status: "processed" | "failed";
+  error?: string;
+  importedAt: number;
+};
+
+type AssociateRecord = {
+  _id: Id<"associates">;
+  name: string;
+  unit?: string;
+  status: "ativo" | "inativo" | "inadimplente";
+};
+
+const MANUAL_ASSOCIATE_PAYMENT_ALIASES = [
+  {
+    associateNameIncludes: "amilton",
+    paymentNames: ["Amilton", "MACPELA EMP IMOBILIARIOS LTDA", "MACPELA"],
+  },
+];
+
+const PAYMENT_PREFIX_PATTERN = /^(pix|ted|doc|transferencia|transferência|transf|pagamento|pagto)\s+/i;
+
+function stripPaymentPrefix(value: string) {
+  return value.replace(PAYMENT_PREFIX_PATTERN, "").trim();
+}
+
+function normalizeAssociateName(value: string) {
+  return stripPaymentPrefix(value)
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function hasPaymentPrefix(value: string) {
+  return PAYMENT_PREFIX_PATTERN.test(value.trim());
+}
+
+function normalizeOriginalValue(value: string) {
+  return value.replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+}
+
+function buildNormalizedTransactionKey(tx: Pick<TransactionRecord, "date" | "time" | "value" | "originalValue" | "name">) {
+  const rawValue = normalizeOriginalValue(tx.originalValue) || String(tx.value);
+  return `${tx.date}_${tx.time}_${rawValue}_${stripPaymentPrefix(tx.name)}`;
+}
+
+function buildLegacyTransactionKey(tx: Pick<TransactionRecord, "date" | "time" | "value" | "originalValue" | "name">) {
+  const rawValue = normalizeOriginalValue(tx.originalValue) || String(tx.value);
+  return `${tx.date}_${tx.time}_${rawValue}_${tx.name}`;
+}
+
+function buildDuplicateGroupKey(tx: Pick<TransactionRecord, "date" | "time" | "value" | "detail" | "name">) {
+  return [tx.date, tx.time, tx.value.toFixed(2), tx.detail, normalizeAssociateName(tx.name)].join("|");
+}
+
+function chooseCanonicalTransaction(group: TransactionRecord[]) {
+  return [...group].sort((a, b) => {
+    const aPrefixed = hasPaymentPrefix(a.name);
+    const bPrefixed = hasPaymentPrefix(b.name);
+    if (aPrefixed !== bPrefixed) return aPrefixed ? 1 : -1;
+    if (a.importedAt !== b.importedAt) return a.importedAt - b.importedAt;
+    return a.transactionKey.localeCompare(b.transactionKey);
+  })[0];
+}
+
+function summarizeDuplicateGroups(all: TransactionRecord[]) {
+  const grouped = new Map<string, TransactionRecord[]>();
+  for (const tx of all.filter((item) => !item.deletedAt)) {
+    const key = buildDuplicateGroupKey(tx);
+    grouped.set(key, [...(grouped.get(key) ?? []), tx]);
+  }
+
+  return [...grouped.values()]
+    .filter((group) => {
+      if (group.length <= 1) return false;
+      const hasPrefixedName = group.some((tx) => hasPaymentPrefix(tx.name));
+      const uniqueKeys = new Set(group.map((tx) => tx.transactionKey));
+      return hasPrefixedName || uniqueKeys.size < group.length;
+    })
+    .map((group) => {
+      const keep = chooseCanonicalTransaction(group);
+      const duplicates = group.filter((tx) => tx._id !== keep._id);
+      return {
+        groupKey: buildDuplicateGroupKey(keep),
+        normalizedName: normalizeAssociateName(keep.name),
+        date: keep.date,
+        time: keep.time,
+        value: keep.value,
+        detail: keep.detail,
+        keep: {
+          id: keep._id,
+          name: keep.name,
+          transactionKey: keep.transactionKey,
+          importedAt: keep.importedAt,
+        },
+        duplicates: duplicates.map((tx) => ({
+          id: tx._id,
+          name: tx.name,
+          transactionKey: tx.transactionKey,
+          importedAt: tx.importedAt,
+        })),
+      };
+    })
+    .filter((group) => group.duplicates.length > 0)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+}
+
+function matchesAssociateName(transactionName: string, possibleNames: string[]) {
+  const txName = normalizeAssociateName(transactionName);
+  return possibleNames.some((rawName) => {
+    const name = normalizeAssociateName(rawName);
+    return name.length >= 3 && (txName === name || txName.includes(name) || name.includes(txName));
+  });
+}
+
+// Retorna todos os nomes de pagamento associados a um associado:
+// nome principal + aliases hardcoded + payerNames cadastrados no banco
+function getAssociatePaymentNames(associate: Pick<AssociateRecord, "name"> & { payerNames?: string[] }) {
+  const associateName = normalizeAssociateName(associate.name);
+  const aliases = MANUAL_ASSOCIATE_PAYMENT_ALIASES
+    .filter((rule) => associateName.includes(normalizeAssociateName(rule.associateNameIncludes)))
+    .flatMap((rule) => rule.paymentNames);
+  return [...new Set([associate.name, ...aliases, ...(associate.payerNames ?? [])])];
+}
 
 export const importTransactions = mutation({
   args: {
@@ -17,22 +171,152 @@ export const importTransactions = mutation({
     })),
   },
   handler: async (ctx, { sessionToken, transactions }) => {
-    // Apenas diretoria ou sysadmin podem importar transações
-    await requireRole(ctx.db, sessionToken, "diretoria");
+    // Apenas sysadmin pode importar transações
+    await requireRole(ctx.db, sessionToken, "sysadmin");
 
     let inserted = 0;
+    let updated = 0;
     let skipped = 0;
     const importedAt = Date.now();
     for (const tx of transactions) {
-      const existing = await ctx.db
-        .query("transactions")
-        .withIndex("by_key", (q) => q.eq("transactionKey", tx.transactionKey))
-        .first();
-      if (existing) { skipped++; continue; }
-      await ctx.db.insert("transactions", { ...tx, importedAt });
+      const normalizedKey = buildNormalizedTransactionKey({ ...tx, importedAt });
+      const legacyKey = buildLegacyTransactionKey({ ...tx, importedAt });
+      const candidateKeys = [...new Set([tx.transactionKey, normalizedKey, legacyKey])];
+
+      let existing: TransactionRecord | null = null;
+      for (const candidateKey of candidateKeys) {
+        existing = await ctx.db
+          .query("transactions")
+          .withIndex("by_key", (q) => q.eq("transactionKey", candidateKey))
+          .first();
+        if (existing) break;
+      }
+
+      if (existing) {
+        // Upsert: atualiza nome, chave e dados se o registro já existe (ex: reimport com nomes reais)
+        const sanitizedName = stripPaymentPrefix(tx.name);
+        const patch: Partial<Pick<TransactionRecord, "name" | "type" | "originalValue" | "transactionKey">> = {};
+        if (existing.name !== sanitizedName) patch.name = sanitizedName;
+        if (existing.type !== tx.type) patch.type = tx.type;
+        if (existing.originalValue !== tx.originalValue) patch.originalValue = tx.originalValue;
+        if (existing.transactionKey !== normalizedKey) patch.transactionKey = normalizedKey;
+        if (Object.keys(patch).length > 0) {
+          await ctx.db.patch(existing._id, patch);
+          updated++;
+        } else {
+          skipped++;
+        }
+        continue;
+      }
+      await ctx.db.insert("transactions", { ...tx, name: stripPaymentPrefix(tx.name), transactionKey: normalizedKey, importedAt });
       inserted++;
     }
-    return { inserted, skipped, total: transactions.length };
+    return { inserted, updated, skipped, total: transactions.length };
+  },
+});
+
+export const previewPaymentPrefixDuplicates = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, { sessionToken }) => {
+    await requireRole(ctx.db, sessionToken, "sysadmin");
+    const all = await ctx.db.query("transactions").collect();
+    const groups = summarizeDuplicateGroups(all);
+    return {
+      groups,
+      duplicateCount: groups.reduce((total, group) => total + group.duplicates.length, 0),
+      groupCount: groups.length,
+    };
+  },
+});
+
+export const cleanupPaymentPrefixDuplicates = mutation({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, { sessionToken }) => {
+    await requireRole(ctx.db, sessionToken, "sysadmin");
+    const all = await ctx.db.query("transactions").collect();
+    const groups = summarizeDuplicateGroups(all);
+    const duplicateIds = groups.flatMap((group) => group.duplicates.map((duplicate) => duplicate.id));
+
+    for (const duplicateId of duplicateIds) {
+      await ctx.db.delete(duplicateId);
+    }
+
+    return {
+      deleted: duplicateIds.length,
+      groupCount: groups.length,
+      groups,
+    };
+  },
+});
+
+export const getPCloudImportFiles = query({
+  args: { sessionToken: v.string() },
+  handler: async (ctx, { sessionToken }) => {
+    await requireRole(ctx.db, sessionToken, "sysadmin");
+    return await ctx.db.query("pcloudImportFiles").withIndex("by_imported_at").order("desc").collect();
+  },
+});
+
+export const markPCloudImportFile = mutation({
+  args: {
+    sessionToken: v.string(),
+    fileKey: v.string(),
+    fileId: v.optional(v.string()),
+    fileName: v.string(),
+    fileHash: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
+    modified: v.optional(v.string()),
+    sourceUrl: v.string(),
+    rowsImported: v.number(),
+    inserted: v.number(),
+    updated: v.number(),
+    skipped: v.number(),
+    status: v.union(v.literal("processed"), v.literal("failed")),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireRole(ctx.db, args.sessionToken, "sysadmin");
+    const importedAt = Date.now();
+    const existing = await ctx.db
+      .query("pcloudImportFiles")
+      .withIndex("by_file_key", (q) => q.eq("fileKey", args.fileKey))
+      .first() as PCloudImportFileRecord | null;
+
+    const payload = {
+      fileKey: args.fileKey,
+      fileId: args.fileId,
+      fileName: args.fileName,
+      fileHash: args.fileHash,
+      fileSize: args.fileSize,
+      modified: args.modified,
+      sourceUrl: args.sourceUrl,
+      rowsImported: args.rowsImported,
+      inserted: args.inserted,
+      updated: args.updated,
+      skipped: args.skipped,
+      status: args.status,
+      error: args.error,
+      importedAt,
+    };
+
+    if (existing) {
+      await ctx.db.patch(existing._id, payload);
+      return { id: existing._id, updated: true, importedAt };
+    }
+
+    const id = await ctx.db.insert("pcloudImportFiles", payload);
+    return { id, updated: false, importedAt };
+  },
+});
+
+// ─── LIMPAR TODAS AS TRANSAÇÕES ───────────────────────────────────────────────
+// Apaga todo o histórico — usar antes de reimportar CSV com dados corrigidos.
+export const clearAllTransactions = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("transactions").collect();
+    await Promise.all(all.map((t) => ctx.db.delete(t._id)));
+    return { deleted: all.length };
   },
 });
 
@@ -60,7 +344,7 @@ export const getSummary = query({
     const sent = all.filter((t) => t.value < 0);
     const totalReceived = received.reduce((acc, t) => acc + t.value, 0);
     const totalSent = Math.abs(sent.reduce((acc, t) => acc + t.value, 0));
-    const contributors = new Set(received.map((t) => t.name));
+    const contributors = new Set(received.map((t) => normalizeAssociateName(t.name)));
     return {
       totalReceived, totalSent,
       netBalance: totalReceived - totalSent,
@@ -76,9 +360,16 @@ export const getTopContributors = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 5 }) => {
     const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    const totals: Record<string, number> = {};
-    for (const t of received) { totals[t.name] = (totals[t.name] || 0) + t.value; }
-    return Object.entries(totals).map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total).slice(0, limit);
+    const totals: Record<string, { name: string; total: number }> = {};
+    for (const t of received) {
+      const normalizedName = normalizeAssociateName(t.name);
+      const displayName = stripPaymentPrefix(t.name);
+      totals[normalizedName] = {
+        name: totals[normalizedName]?.name ?? displayName,
+        total: (totals[normalizedName]?.total ?? 0) + t.value,
+      };
+    }
+    return Object.values(totals).sort((a, b) => b.total - a.total).slice(0, limit);
   },
 });
 
@@ -100,15 +391,42 @@ export const getMonthlyFlow = query({
 });
 
 export const getAssociateHistory = query({
-  args: { search: v.string() },
-  handler: async (ctx, { search }) => {
-    const term = search.toLowerCase().trim();
+  args: {
+    search: v.string(),
+    associateId: v.optional(v.id("associates")),
+    sessionToken: v.optional(v.string()),
+  },
+  handler: async (ctx, { associateId, sessionToken }) => {
+    // Regra de privacidade: histórico financeiro só pode ser resolvido por vínculo
+    // explícito de associado e por uma sessão autenticada. Diretoria/Sysadmin podem
+    // consultar qualquer associado; Associado só pode consultar o próprio vínculo.
+    if (!associateId || !sessionToken) return null;
+
+    const caller = await requireRole(ctx.db, sessionToken, "associado");
+    if (caller.role === "associado" && String(caller.associateId ?? "") !== String(associateId)) {
+      throw new Error("Você só pode consultar o histórico financeiro do seu próprio vínculo de associado.");
+    }
+
+    const associate = await ctx.db.get(associateId);
+    if (!associate || associate.status !== "ativo") return null;
+
     const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    const userTxs = received.filter((t) => t.name.toLowerCase().includes(term)).sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+    // Combina nome principal + aliases hardcoded + payerNames do banco
+    const userTxs = received
+      .filter((t) => matchesAssociateName(t.name, getAssociatePaymentNames(associate)))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
     if (!userTxs.length) return null;
     const total = userTxs.reduce((acc, t) => acc + t.value, 0);
     const months = new Set(userTxs.map((t) => t.date.slice(0, 7))).size;
-    return { name: userTxs[0].name, total, monthsActive: months, lastDate: userTxs[0].date, transactions: userTxs };
+    return {
+      name: associate.name,
+      unit: associate.unit ?? null,
+      total,
+      monthsActive: months,
+      lastDate: userTxs[0].date,
+      paidThisMonth: userTxs.some((t) => t.date.startsWith(new Date().toISOString().slice(0, 7))),
+      transactions: userTxs,
+    };
   },
 });
 
@@ -116,11 +434,14 @@ export const getDefaulters = query({
   args: { monthKey: v.string() },
   handler: async (ctx, { monthKey }) => {
     const activeAssociates = await ctx.db.query("associates").withIndex("by_status", (q) => q.eq("status", "ativo")).collect();
-    const monthTxs = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    const paidThisMonth = new Set(monthTxs.filter((t) => t.date.startsWith(monthKey)).map((t) => t.name.toLowerCase()));
     const allReceived = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
-    return activeAssociates.filter((a) => !paidThisMonth.has(a.name.toLowerCase())).map((a) => {
-      const lastPayment = allReceived.filter((t) => t.name.toLowerCase().includes(a.name.toLowerCase())).sort((x, y) => y.date.localeCompare(x.date))[0];
+    const monthTxs = allReceived.filter((t) => t.date.startsWith(monthKey));
+    return activeAssociates.filter((a) => {
+      const paymentNames = getAssociatePaymentNames(a);
+      return !monthTxs.some((t) => matchesAssociateName(t.name, paymentNames));
+    }).map((a) => {
+      const paymentNames = getAssociatePaymentNames(a);
+      const lastPayment = allReceived.filter((t) => matchesAssociateName(t.name, paymentNames)).sort((x, y) => y.date.localeCompare(x.date))[0];
       return { id: a._id, name: a.name, unit: a.unit, status: a.status, lastPaymentDate: lastPayment?.date ?? null };
     }).sort((a, b) => (a.unit ?? "").localeCompare(b.unit ?? ""));
   },
