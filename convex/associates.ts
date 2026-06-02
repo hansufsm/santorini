@@ -195,6 +195,7 @@ export const updateAssociate = mutation({
     joinedAt: v.optional(v.string()),
     leftAt: v.optional(v.string()),
     notes: v.optional(v.string()),
+    payerNames: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { sessionToken, id, ...fields }) => {
     // Apenas diretoria ou sysadmin podem editar o cadastro completo

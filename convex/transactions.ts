@@ -58,7 +58,7 @@ function stripPaymentPrefix(value: string) {
 function normalizeAssociateName(value: string) {
   return stripPaymentPrefix(value)
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .trim()
     .replace(/\s+/g, " ");
@@ -146,12 +146,14 @@ function matchesAssociateName(transactionName: string, possibleNames: string[]) 
   });
 }
 
-function getAssociatePaymentNames(associate: Pick<AssociateRecord, "name">) {
+// Retorna todos os nomes de pagamento associados a um associado:
+// nome principal + aliases hardcoded + payerNames cadastrados no banco
+function getAssociatePaymentNames(associate: Pick<AssociateRecord, "name"> & { payerNames?: string[] }) {
   const associateName = normalizeAssociateName(associate.name);
   const aliases = MANUAL_ASSOCIATE_PAYMENT_ALIASES
     .filter((rule) => associateName.includes(normalizeAssociateName(rule.associateNameIncludes)))
     .flatMap((rule) => rule.paymentNames);
-  return [...new Set([associate.name, ...aliases])];
+  return [...new Set([associate.name, ...aliases, ...(associate.payerNames ?? [])])];
 }
 
 export const importTransactions = mutation({
@@ -409,6 +411,7 @@ export const getAssociateHistory = query({
     if (!associate || associate.status !== "ativo") return null;
 
     const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
+    // Combina nome principal + aliases hardcoded + payerNames do banco
     const userTxs = received
       .filter((t) => matchesAssociateName(t.name, getAssociatePaymentNames(associate)))
       .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
