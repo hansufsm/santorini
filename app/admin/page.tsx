@@ -84,6 +84,7 @@ type TopContributor = {
 
 type Reservation = { status: string; deletedAt?: number };
 type Maintenance = { status: string; deletedAt?: number };
+type Associate = { _id: string; name: string; payerNames?: string[] };
 
 const EXPENSE_COLORS = ["#f59e0b", "#ef4444", "#3b82f6", "#14b8a6", "#a855f7", "#84cc16"];
 const PAYMENT_LINK = "https://loja.infinitepay.io/amrts/mlr1645-mensalidade-amtrs";
@@ -276,6 +277,8 @@ export default function AdminPage() {
   const { data: txList, loading: txLoading } = useConvexQuery<Transaction[]>("transactions:getAllTransactions");
   const { data: monthlyFlow } = useConvexQuery<MonthlyFlow[]>("transactions:getMonthlyFlow", { months: 12 });
   const { data: topContributors } = useConvexQuery<TopContributor[]>("transactions:getTopContributors", { limit: 6 });
+  // Carrega associados com seus apelidos de pagamento para a busca expandida
+  const { data: associates } = useConvexQuery<Associate[]>("associates:getAllAssociates");
 
   const pendingReservations = reservas?.filter((r) => r.status === "pendente").length ?? 0;
   const openMaintenances = chamados?.filter((m) => m.status === "aberto").length ?? 0;
@@ -285,16 +288,33 @@ export default function AdminPage() {
     return Array.from(new Set(source.map((tx) => tx.date?.slice(0, 7)).filter(Boolean))).sort().reverse();
   }, [txList]);
 
+  // Expande a busca para incluir transações de apelidos do mesmo associado.
+  // Ex: buscar "Amilton" também retorna transações de "MACPELA EMP IMOBILIARIOS LTDA".
+  const expandedNames = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term || !associates?.length) return new Set<string>();
+    const names = new Set<string>();
+    for (const assoc of associates) {
+      const allNames = [assoc.name, ...(assoc.payerNames ?? [])];
+      if (allNames.some((n) => n.toLowerCase().includes(term))) {
+        for (const n of allNames) names.add(n.toLowerCase());
+      }
+    }
+    return names;
+  }, [associates, search]);
+
   const filteredTransactions = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (txList ?? [])
       .filter((tx) => selectedMonth === "all" || tx.date?.startsWith(selectedMonth))
       .filter((tx) => {
         if (!term) return true;
+        // Se o nome bate com algum apelido do associado, inclui todas as transações do grupo
+        if (expandedNames.size > 0 && expandedNames.has((tx.name ?? "").toLowerCase())) return true;
         return Object.values(tx).some((value) => String(value ?? "").toLowerCase().includes(term));
       })
       .sort((a, b) => b.date.localeCompare(a.date) || String(b.time ?? "").localeCompare(String(a.time ?? "")));
-  }, [txList, selectedMonth, search]);
+  }, [txList, selectedMonth, search, expandedNames]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
   const currentPage = Math.min(page, totalPages);
