@@ -61,7 +61,10 @@ function PaymentAction({ monthLabel, firstName }: { monthLabel: string; firstNam
           {firstName}, vamos deixar {monthLabel} em dia?
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-emerald-50/82 sm:text-base">
-          Este é o primeiro ponto do seu dashboard. Ainda não localizamos sua contribuição deste mês no extrato da AMRTS. Se você já pagou, desconsidere o aviso enquanto a diretoria atualiza o extrato.
+          Este é o primeiro ponto do seu dashboard. Ainda não localizamos sua contribuição deste mês no extrato da AMRTS.
+        </p>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-amber-100/75 sm:text-base">
+          Se você já pagou, o extrato pode levar até 24 horas para ser atualizado. Volte amanhã para confirmar a quitação.
         </p>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-[1.15fr_0.85fr]">
@@ -127,7 +130,7 @@ function PaymentProtectedNotice({
         {linkedToUnit && financialResponsibleName ? (
           <> — titular financeiro: <strong className="text-white">{financialResponsibleName}</strong>.</>
         ) : (
-          <>.</>
+          <></>
         )} {linkedToUnit
           ? "Seu cadastro está vinculado à unidade, mas os valores, extratos e histórico de pagamento permanecem restritos ao associado titular por privacidade."
           : "Esta conta não possui vínculo ativo de associado contribuinte. Por privacidade, não exibimos valores, históricos ou dados financeiros de terceiros."}
