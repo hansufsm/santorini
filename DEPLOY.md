@@ -55,23 +55,39 @@ O arquivo `.github/workflows/convex-deploy.yml` dispara `npx convex deploy` auto
 **Para forçar um re-deploy manual pelo GitHub UI:**
 GitHub → Actions → "Deploy Convex Backend" → Run workflow → Branch: main → Run
 
-### Opção C — Deploy manual (localmente)
+### Opção C — Deploy manual pelo terminal local
+
+Use esta opção quando uma mudança em `convex/` já foi enviada ao `main`, mas o backend publicado ainda está executando funções antigas. Esse foi o caso observado após a regra de aliases financeiros do associado Amilton: o código estava no repositório, mas a consulta ao backend publicado ainda separava `MACPELA EMP IMOBILIARIOS LTDA` de `Amilton`, indicando que o Convex não havia recebido o deploy mais recente.
+
+| Situação | Comando recomendado | Observação |
+|---|---|---|
+| Primeiro uso no computador | `npx convex login` | Abre o fluxo de autenticação no Convex. |
+| Projeto ainda não vinculado localmente | `npx convex dev` | Cria ou atualiza a configuração local do deployment. Depois de vincular, interrompa com `Ctrl+C`. |
+| Deploy manual autenticado | `npx convex deploy --typecheck disable` | Publica as funções e schema da pasta `convex/` no deployment configurado. |
+| Deploy não interativo | `CONVEX_DEPLOY_KEY=prod:... npx convex deploy --typecheck disable` | Útil para CI/CD; não grave a chave no repositório nem em arquivos temporários. |
+
+Fluxo completo recomendado:
 
 ```bash
-# Primeira vez: autenticar
+cd /caminho/para/santorini
+pnpm install
 npx convex login
-
-# Deploy em produção
+npx convex dev
+# aguarde o vínculo do projeto/deployment, depois pressione Ctrl+C
 npx convex deploy --typecheck disable
 ```
 
-Ou com deploy key (sem login interativo, útil em CI/CD):
+Antes de publicar, confirme se o ambiente local aponta para o mesmo backend usado em produção. No projeto Santorini, a URL pública atualmente documentada é `https://tough-kangaroo-90.convex.cloud`.
 
 ```bash
-CONVEX_DEPLOY_KEY=prod:... npx convex deploy --typecheck disable
+grep -E '^(CONVEX_DEPLOYMENT|NEXT_PUBLIC_CONVEX_URL)=' .env.local
 ```
 
-> `--typecheck disable` é necessário porque os tipos gerados (`_generated/`) não estão no repo — são criados pelo `npx convex dev` localmente.
+A saída esperada deve conter `CONVEX_DEPLOYMENT` preenchido e `NEXT_PUBLIC_CONVEX_URL` apontando para o backend de produção. Se `CONVEX_DEPLOYMENT` não existir, execute `npx convex dev` para vincular o projeto antes de tentar `npx convex deploy`.
+
+> `--typecheck disable` é necessário porque os tipos gerados (`_generated/`) não estão no repo — são criados pelo `npx convex dev` localmente. Isso não desabilita a publicação das funções; apenas evita que a checagem de tipos bloqueie o deploy em ambientes que ainda não têm os arquivos gerados.
+
+Após o deploy, valide uma função afetada pelo painel Convex ou pela aplicação publicada. Para mudanças financeiras, recarregue o site e confira se o comportamento esperado aparece no histórico e na inadimplência.
 
 ### Seed do primeiro Sysadmin
 
@@ -141,7 +157,7 @@ Qualquer `git push` para `main` aciona um novo deploy na Vercel automaticamente.
 | `/portal/comunicados` | Qualquer login | Comunicados do residencial |
 | `/portal/suporte` | Qualquer login | Abrir e acompanhar chamados |
 | `/admin` | Diretoria+ | Dashboard administrativo |
-| `/admin/transacoes` | Diretoria+ | Importar CSV e listar transações |
+| `/admin/transacoes` | **Sysadmin** | Importar CSV, listar transações e executar conciliações financeiras sensíveis |
 | `/admin/associados` | Diretoria+ | Gerenciar associados e status |
 | `/admin/reservas` | Diretoria+ | Confirmar e cancelar reservas |
 | `/admin/comunicados` | Diretoria+ | Publicar e inativar comunicados |
