@@ -222,6 +222,22 @@ export default function UsuariosPage() {
     };
   };
 
+  const associatesWithoutUsers = useMemo(() => {
+    const linkedIds = new Set(
+      (users ?? []).map((u) => u.associateId).filter(Boolean)
+    );
+    return (associates ?? [])
+      .filter((a) => a.status !== "inativo" && !linkedIds.has(a._id))
+      .sort((a, b) => {
+        const unitA = normalizeUnitValue(a.unit);
+        const unitB = normalizeUnitValue(b.unit);
+        if (unitA && unitB) return unitA.localeCompare(unitB, "pt-BR", { numeric: true });
+        if (unitA) return -1;
+        if (unitB) return 1;
+        return a.name.localeCompare(b.name, "pt-BR");
+      });
+  }, [associates, users]);
+
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (users ?? []).filter((user) => {
@@ -375,6 +391,20 @@ export default function UsuariosPage() {
     }
   }
 
+  function prefillFromAssociate(associate: Associate) {
+    setForm({
+      name: associate.name,
+      email: "",
+      password: "",
+      role: "associado",
+      unit: normalizeUnitValue(associate.unit),
+      residenceAssociateId: associate._id,
+      cpf: "",
+    });
+    setMsg(null);
+    document.getElementById("form-novo-usuario")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   async function deactivate(id: string) {
     if (!session || !confirm("Inativar este usuário?")) return;
     await convexMutation("users:deactivateUser", { sessionToken: session.token, id });
@@ -526,7 +556,7 @@ export default function UsuariosPage() {
       </div>
 
       {/* Formulário de criação */}
-      <form onSubmit={handleCreate} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+      <form id="form-novo-usuario" onSubmit={handleCreate} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-300">➕ Novo Usuário</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -750,6 +780,54 @@ export default function UsuariosPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Associados financeiros sem conta de acesso */}
+      {associatesWithoutUsers.length > 0 && (
+        <section className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-800">
+            <h3 className="text-sm font-medium text-gray-200">
+              Associados sem acesso ao portal
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              {associatesWithoutUsers.length} cadastro(s) financeiro(s) ainda não possuem conta de usuário. Clique em &quot;Criar acesso&quot; para pré-preencher o formulário acima.
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[600px]">
+              <thead className="bg-gray-800/50">
+                <tr className="text-gray-400 text-xs uppercase">
+                  {["Nome", "Unidade", "CPF (prefixo)", "Status", ""].map((h, i) => (
+                    <th key={i} className="text-left px-4 py-3">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {associatesWithoutUsers.map((a) => (
+                  <tr key={a._id} className="border-t border-gray-800/50 hover:bg-gray-800/20">
+                    <td className="px-4 py-3 text-white">{a.name}</td>
+                    <td className="px-4 py-3 text-gray-300 font-medium">{a.unit ?? "—"}</td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{a.cpfPrefix ? `${a.cpfPrefix}…` : "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs ${a.status === "ativo" ? "bg-emerald-900/50 text-emerald-300" : "bg-yellow-900/50 text-yellow-300"}`}>
+                        {a.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => prefillFromAssociate(a)}
+                        className="px-3 py-1 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded transition-colors"
+                      >
+                        Criar acesso
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
 
     </div>
