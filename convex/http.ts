@@ -23,6 +23,19 @@ http.route({
       const chatId = message.chat.id.toString();
       const text = (message.text || "").trim();
 
+      // Verificar se a integração com moradores está ativa
+      const flags = await ctx.runQuery(api.settings.getFlags, {});
+      const isTelegramUserEnabled = flags?.integration_telegram ?? false;
+
+      if (!isTelegramUserEnabled) {
+        await sendTelegramMessage(
+          token,
+          chatId,
+          "⚠️ A integração do Telegram com moradores está desativada no momento pela administração."
+        );
+        return new Response("OK", { status: 200 });
+      }
+
       // COMANDO: /start [codigo]
       if (text.startsWith("/start")) {
         const parts = text.split(" ");

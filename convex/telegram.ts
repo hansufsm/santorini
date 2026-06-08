@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "./_lib";
 
@@ -8,6 +8,15 @@ export const generateLinkingCode = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx.db, args.sessionToken, "morador");
+
+    const flag = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "integration_telegram"))
+      .first();
+    const isEnabled = flag ? flag.enabled : false;
+    if (!isEnabled) {
+      throw new Error("A integração do Telegram com moradores está desativada no momento.");
+    }
     
     // Gera código SAN-XXXXXX onde XXXXXX são 6 dígitos numéricos aleatórios
     const randomNumber = Math.floor(100000 + Math.random() * 900000);
@@ -44,6 +53,15 @@ export const verifyAndLink = mutation({
     code: v.string(),
   },
   handler: async (ctx, args) => {
+    const flag = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "integration_telegram"))
+      .first();
+    const isEnabled = flag ? flag.enabled : false;
+    if (!isEnabled) {
+      return { success: false, error: "A integração do Telegram com moradores está desativada no momento." };
+    }
+
     const upperCode = args.code.toUpperCase().trim();
     
     const user = await ctx.db
@@ -138,10 +156,52 @@ export const getTelegramStatus = query({
   },
   handler: async (ctx, args) => {
     const user = await requireRole(ctx.db, args.sessionToken, "morador");
+
+    const flag = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "integration_telegram"))
+      .first();
+    const isEnabled = flag ? flag.enabled : false;
+    if (!isEnabled) {
+      return { linked: false };
+    }
+
     return {
       linked: !!user.telegramChatId,
       verificationCode: user.telegramVerificationCode,
       chatId: user.telegramChatId,
     };
+  },
+});
+
+export const sendAlertAction = action({
+  args: {
+    text: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    
+    if (!token || !chatId) {
+      console.warn("TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID não configurados.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: args.text,
+          parse_mode: "Markdown",
+        }),
+      });
+      if (!res.ok) {
+        console.error(`Telegram API sendAlertAction error: ${res.statusText}`);
+      }
+    } catch (err) {
+      console.error("Erro ao enviar alerta para o Telegram:", err);
+    }
   },
 });

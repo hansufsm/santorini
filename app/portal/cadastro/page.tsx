@@ -6,10 +6,11 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { useConvexQuery, convexMutation } from "@/lib/convex";
+import { useConvexQuery, convexMutation, useFeatureFlags } from "@/lib/convex";
 
 export default function CadastroPage() {
   const { session } = useAuth();
+  const { isEnabled } = useFeatureFlags();
 
   // Estado do formulário com valores atuais da sessão
   const [email, setEmail] = useState(session?.email ?? "");
@@ -127,76 +128,78 @@ export default function CadastroPage() {
       </div>
 
       {/* Seção Telegram */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-        <div>
-          <h3 className="text-sm font-medium text-gray-300">🤖 Integração com Telegram</h3>
-          <p className="text-xs text-gray-500 mt-1">
-            Receba notificações e interaja com o residencial enviando feedbacks diretamente pelo chat.
-          </p>
-        </div>
-
-        {tgLoading ? (
-          <p className="text-xs text-gray-500 animate-pulse">Carregando status do Telegram...</p>
-        ) : tgStatus?.linked ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/20 border border-emerald-900/20 rounded-lg px-3 py-2">
-              <span>✅</span>
-              <span>Telegram vinculado com sucesso!</span>
-            </div>
-            <p className="text-xs text-gray-400">
-              Bot ativo: <strong className="text-gray-200">@santorini0bot</strong>
+      {isEnabled("integration_telegram") && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+          <div>
+            <h3 className="text-sm font-medium text-gray-300">🤖 Integração com Telegram</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Receba notificações e interaja com o residencial enviando feedbacks diretamente pelo chat.
             </p>
-            <button
-              onClick={handleUnlink}
-              disabled={unlinking}
-              className="text-xs bg-red-950/40 text-red-300 hover:bg-red-900 hover:text-white border border-red-900/30 px-3 py-1.5 rounded-lg font-medium transition"
-            >
-              {unlinking ? "Desvinculando..." : "Desvincular conta"}
-            </button>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {tgStatus?.verificationCode ? (
-              <div className="space-y-3">
-                <div className="p-3 bg-gray-950 border border-gray-800 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Seu código de vinculação</p>
-                  <p className="text-2xl font-mono font-bold text-emerald-400 mt-1 select-all">{tgStatus.verificationCode}</p>
-                </div>
-                <div className="text-xs text-gray-400 leading-relaxed space-y-1">
-                  <p>1. Clique no link para abrir o bot: <a href={`https://t.me/santorini0bot?start=${tgStatus.verificationCode}`} target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-semibold">@santorini0bot</a></p>
-                  <p>2. Clique em <strong>"Começar"</strong> (ou /start) na conversa.</p>
-                  <p>3. Pronto! O bot confirmará o vínculo automaticamente.</p>
-                </div>
-                <div className="flex gap-2">
-                  <a
-                    href={`https://t.me/santorini0bot?start=${tgStatus.verificationCode}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex justify-center items-center bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition"
-                  >
-                    Abrir no Telegram
-                  </a>
-                  <button
-                    onClick={handleGenerateCode}
-                    disabled={generatingCode}
-                    className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg transition"
-                  >
-                    Gerar novo código
-                  </button>
-                </div>
+
+          {tgLoading ? (
+            <p className="text-xs text-gray-500 animate-pulse">Carregando status do Telegram...</p>
+          ) : tgStatus?.linked ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-950/20 border border-emerald-900/20 rounded-lg px-3 py-2">
+                <span>✅</span>
+                <span>Telegram vinculado com sucesso!</span>
               </div>
-            ) : (
+              <p className="text-xs text-gray-400">
+                Bot ativo: <strong className="text-gray-200">@santorini0bot</strong>
+              </p>
               <button
-                onClick={handleGenerateCode}
-                disabled={generatingCode}
-                className="w-full bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white border border-emerald-500/20 font-medium py-2 rounded-lg text-xs transition"
+                onClick={handleUnlink}
+                disabled={unlinking}
+                className="text-xs bg-red-950/40 text-red-300 hover:bg-red-900 hover:text-white border border-red-900/30 px-3 py-1.5 rounded-lg font-medium transition"
               >
-                {generatingCode ? "Gerando código..." : "Gerar código de vinculação"}
+                {unlinking ? "Desvinculando..." : "Desvincular conta"}
               </button>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {tgStatus?.verificationCode ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-gray-950 border border-gray-800 rounded-lg text-center">
+                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Seu código de vinculação</p>
+                    <p className="text-2xl font-mono font-bold text-emerald-400 mt-1 select-all">{tgStatus.verificationCode}</p>
+                  </div>
+                  <div className="text-xs text-gray-400 leading-relaxed space-y-1">
+                    <p>1. Clique no link para abrir o bot: <a href={`https://t.me/santorini0bot?start=${tgStatus.verificationCode}`} target="_blank" rel="noopener noreferrer" className="text-emerald-400 underline font-semibold">@santorini0bot</a></p>
+                    <p>2. Clique em <strong>"Começar"</strong> (ou /start) na conversa.</p>
+                    <p>3. Pronto! O bot confirmará o vínculo automaticamente.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={`https://t.me/santorini0bot?start=${tgStatus.verificationCode}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex justify-center items-center bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition"
+                    >
+                      Abrir no Telegram
+                    </a>
+                    <button
+                      onClick={handleGenerateCode}
+                      disabled={generatingCode}
+                      className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2 rounded-lg transition"
+                    >
+                      Gerar novo código
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGenerateCode}
+                  disabled={generatingCode}
+                  className="w-full bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white border border-emerald-500/20 font-medium py-2 rounded-lg text-xs transition"
+                >
+                  {generatingCode ? "Gerando código..." : "Gerar código de vinculação"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Formulário de edição ou aviso */}
       {canEdit ? (

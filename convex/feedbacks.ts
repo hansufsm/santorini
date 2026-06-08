@@ -12,6 +12,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "./_lib";
+import { api } from "./_generated/api";
 
 const DEFAULT_ASSOCIATION_ID = "amrts";
 const MAX_MESSAGE_LENGTH = 2000;
@@ -74,11 +75,15 @@ export const createFeedback = mutation({
 
     let userId = undefined;
     let userRole = undefined;
+    let userName = "Visitante / Anônimo";
+    let userUnitStr = "";
 
     if (sessionToken) {
       const user = await requireRole(ctx.db, sessionToken, "morador");
       userId = user._id;
       userRole = user.role;
+      userName = user.name;
+      userUnitStr = user.unit || "";
     }
 
     const now = Date.now();
@@ -94,6 +99,15 @@ export const createFeedback = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    const userUnit = userUnitStr ? ` (Unidade ${userUnitStr})` : "";
+    const alertText = `🔔 *Novo Feedback Comunitário*
+*Categoria:* ${args.category.toUpperCase()}
+*Autor:* ${userName}${userUnit}
+*Mensagem:* ${message}
+*Origem/Página:* ${route}`;
+
+    await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
 
     return { success: true, id };
   },

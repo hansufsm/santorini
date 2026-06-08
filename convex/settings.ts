@@ -65,6 +65,13 @@ const DEFAULT_FLAGS = [
     description: "Importação e processamento automático de extratos bancários salvos no pCloud.",
     enabled: true,
     category: "integracao" as const,
+  },
+  {
+    key: "integration_telegram",
+    label: "Integração Telegram (Moradores)",
+    description: "Permite que moradores/usuários vinculem suas contas e interajam pelo Telegram.",
+    enabled: false,
+    category: "integracao" as const,
   }
 ];
 

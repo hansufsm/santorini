@@ -9,6 +9,13 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "./_lib";
+import { api } from "./_generated/api";
+
+function formatDateString(isoDate: string) {
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
 
 // Retorna todas as reservas não inativadas (painel admin)
 export const getAllReservations = query({
@@ -56,11 +63,23 @@ export const createReservation = mutation({
     if (!args.unit || !args.residentName || !args.date)
       throw new Error("Unidade, morador e data são obrigatórios");
     const now = Date.now();
-    return await ctx.db.insert("reservations", {
+    const id = await ctx.db.insert("reservations", {
       ...args,
       createdAt: now,
       updatedAt: now,
     });
+
+    const alertText = `🔔 *Nova Solicitação de Reserva*
+*Área comum:* ${args.area}
+*Unidade:* ${args.unit}
+*Morador:* ${args.residentName}
+*Data:* ${formatDateString(args.date)}
+*Horário:* ${args.startTime} às ${args.endTime}
+*Status:* ${args.status.toUpperCase()}`;
+
+    await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
+
+    return id;
   },
 });
 

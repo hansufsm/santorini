@@ -40,6 +40,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   module_extrato: LineChart,
   module_mensalidade: FileCheck,
   integration_pcloud: Cloud,
+  integration_telegram: MessageSquare,
 };
 
 export default function SettingsPage() {

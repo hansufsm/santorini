@@ -9,6 +9,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "./_lib";
+import { api } from "./_generated/api";
 
 // Retorna todos os chamados não inativados
 export const getAllMaintenances = query({
@@ -42,15 +43,27 @@ export const createMaintenance = mutation({
   },
   handler: async (ctx, { sessionToken, ...args }) => {
     // Qualquer usuário logado pode abrir um chamado de suporte
-    await requireRole(ctx.db, sessionToken, "morador");
+    const user = await requireRole(ctx.db, sessionToken, "morador");
 
     if (!args.title) throw new Error("Título é obrigatório");
     const now = Date.now();
-    return await ctx.db.insert("maintenances", {
+    const id = await ctx.db.insert("maintenances", {
       ...args,
       createdAt: now,
       updatedAt: now,
     });
+
+    const userUnit = user.unit ? ` (Unidade ${user.unit})` : "";
+    const alertText = `🔔 *Novo Chamado de Manutenção*
+*Título:* ${args.title}
+*Área afetada:* ${args.area || "Não especificada"}
+*Prioridade:* ${args.priority.toUpperCase()}
+*Autor:* ${user.name}${userUnit}
+*Descrição:* ${args.description || "Nenhuma descrição fornecida"}`;
+
+    await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
+
+    return id;
   },
 });
 
