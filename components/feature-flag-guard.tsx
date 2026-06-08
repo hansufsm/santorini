@@ -10,6 +10,10 @@ interface FeatureFlagGuardProps {
 export function FeatureFlagGuard({ flagKey, children }: FeatureFlagGuardProps) {
   const { isEnabled, loading } = useFeatureFlags();
 
+  if (!flagKey) {
+    return <>{children}</>;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
