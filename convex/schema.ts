@@ -403,13 +403,18 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     deletedAt: v.optional(v.number()),          // soft delete — nunca excluir de verdade
+    telegramChatId: v.optional(v.string()),
+    telegramVerificationCode: v.optional(v.string()),
+    telegramLinkedAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"])
     .index("by_status", ["status"])
     .index("by_associate", ["associateId"])
     .index("by_parent_associate", ["parentAssociateId"])
-    .index("by_unit", ["unit"]),
+    .index("by_unit", ["unit"])
+    .index("by_telegram_chat", ["telegramChatId"])
+    .index("by_telegram_code", ["telegramVerificationCode"]),
 
   // ─── Sessões autenticadas ─────────────────────────────────────────────────
   //
