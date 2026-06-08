@@ -25,6 +25,8 @@ type Associate = {
   unit?: string;
   cpfPrefix?: string;
   status: "ativo" | "inativo" | "inadimplente";
+  email?: string;
+  phone?: string;
 };
 
 type UserFormState = {
@@ -184,6 +186,17 @@ export default function UsuariosPage() {
     [associates]
   );
 
+  const associatesWithoutAccount = useMemo(() => {
+    if (!associates || !users) return [];
+    const linkedAssociateIds = new Set<string>();
+    users.forEach((u) => {
+      if (u.associateId) linkedAssociateIds.add(u.associateId);
+    });
+    return (associates ?? []).filter(
+      (assoc) => assoc.status === "ativo" && !linkedAssociateIds.has(assoc._id)
+    );
+  }, [associates, users]);
+
   const findSuggestedAssociate = (state: UserFormState) => {
     if (!usesFinancialLink(state.role)) return undefined;
 
@@ -321,6 +334,23 @@ export default function UsuariosPage() {
     setEditingId(null);
     setEditForm(emptyForm("associado"));
     setSavingEdit(false);
+  }
+
+  function fillFormFromAssociate(associate: Associate) {
+    setForm({
+      name: associate.name,
+      email: associate.email ?? "",
+      password: "",
+      role: "associado",
+      unit: associate.unit ?? "",
+      residenceAssociateId: associate._id,
+      cpf: "",
+    });
+    setMsg(null);
+    const formElement = document.getElementById("new-user-form");
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: "smooth" });
+    }
   }
 
   async function handleUpdate(e: React.FormEvent) {
@@ -525,8 +555,53 @@ export default function UsuariosPage() {
         </p>
       </div>
 
+      {/* Associados sem conta de acesso */}
+      <section className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <span>👥 Associados Financeiros sem Conta de Acesso</span>
+            {associatesWithoutAccount.length > 0 && (
+              <span className="bg-emerald-900/50 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold">
+                {associatesWithoutAccount.length} pendente(s)
+              </span>
+            )}
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">
+            Lista de proprietários/titulares com cota ativa que ainda não têm um usuário associado no sistema.
+          </p>
+        </div>
+
+        {associatesWithoutAccount.length === 0 ? (
+          <div className="text-xs text-emerald-400 bg-emerald-950/20 border border-emerald-900/30 rounded-lg px-4 py-3">
+            🎉 Todos os associados financeiros ativos já possuem conta de acesso no sistema!
+          </div>
+        ) : (
+          <div className="max-h-60 overflow-y-auto border border-gray-800 rounded-lg divide-y divide-gray-800">
+            {associatesWithoutAccount.map((assoc) => (
+              <div key={assoc._id} className="flex items-center justify-between p-3 text-xs hover:bg-gray-800/10 transition">
+                <div className="min-w-0">
+                  <p className="font-semibold text-gray-200 truncate">{assoc.name}</p>
+                  <p className="text-gray-500 mt-0.5">
+                    {assoc.unit ? `Unidade ${assoc.unit}` : "Sem unidade"}
+                    {assoc.cpfPrefix ? ` · CPF ${assoc.cpfPrefix}…` : ""}
+                    {assoc.email ? ` · ${assoc.email}` : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fillFormFromAssociate(assoc)}
+                  className="ml-4 flex-shrink-0 bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-lg font-medium border border-emerald-500/20 transition-all text-xs"
+                >
+                  Criar acesso
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Formulário de criação */}
-      <form onSubmit={handleCreate} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+      <form id="new-user-form" onSubmit={handleCreate} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-300">➕ Novo Usuário</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
