@@ -17,6 +17,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getEffectiveUserStatus, isUserActive, type Role } from "./_lib";
+import { api } from "./_generated/api";
 
 // Tempo de vida da sessão: 8 horas em milissegundos
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
@@ -108,6 +109,13 @@ export const loginWithCpf = mutation({
       expiresAt: now + SESSION_TTL_MS,
     });
 
+    const userUnit = associate.unit ? ` (Unidade ${associate.unit})` : "";
+    const alertText = `🔑 *Login Efetuado (CPF)*
+*Usuário:* ${associate.name}${userUnit}
+*Papel:* ${role.toUpperCase()}`;
+
+    await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
+
     // Retornar token + dados básicos (nunca retornar CPF completo ou passwordHash)
     return {
       success: true as const,
@@ -181,6 +189,13 @@ export const loginWithPassword = mutation({
       createdAt: now,
       expiresAt: now + SESSION_TTL_MS,
     });
+
+    const userUnit = user.unit ? ` (Unidade ${user.unit})` : "";
+    const alertText = `🔑 *Login Efetuado (Senha)*
+*Usuário:* ${user.name}${userUnit}
+*Papel:* ${user.role.toUpperCase()}`;
+
+    await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
 
     return {
       success: true as const,
