@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { TRILHA_VIVA_GUIDES, type UserRole } from "@/lib/trilha-viva-content";
+import { useFeatureFlags } from "@/lib/convex";
 
 type HelpCenterVariant = "portal" | "admin";
 
@@ -11,6 +12,7 @@ type FaqItem = {
   question: string;
   answer: string;
   roles: UserRole[];
+  flag?: string;
 };
 
 const FAQ_ITEMS: FaqItem[] = [
@@ -31,12 +33,14 @@ const FAQ_ITEMS: FaqItem[] = [
     answer:
       "Informe local, data aproximada, impacto, recorrência e evidências úteis. Um chamado bem descrito reduz retrabalho e facilita a priorização pela administração.",
     roles: ["morador", "associado", "diretoria", "sysadmin"],
+    flag: "module_maintenance",
   },
   {
     question: "Por que moradores não veem todas as informações financeiras?",
     answer:
       "Dados financeiros do titular são protegidos. Quando a role não possui permissão para determinado conteúdo, a interface evita expor informações sensíveis e direciona o usuário para canais adequados.",
     roles: ["morador", "associado", "diretoria", "sysadmin"],
+    flag: "module_extrato",
   },
   {
     question: "Como a diretoria deve acompanhar dúvidas recorrentes?",
@@ -48,7 +52,7 @@ const FAQ_ITEMS: FaqItem[] = [
 
 const linkClass = "font-semibold text-emerald-300 underline decoration-emerald-500/40 underline-offset-4 hover:text-emerald-200";
 
-const ADMIN_MANUALS: { title: string; badge: string; body: ReactNode }[] = [
+const ADMIN_MANUALS: { title: string; badge: string; body: ReactNode; flag?: string }[] = [
   {
     title: "Operação diária da diretoria",
     badge: "Administração",
@@ -72,6 +76,7 @@ const ADMIN_MANUALS: { title: string; badge: string; body: ReactNode }[] = [
         Acompanhe o <Link href="/admin/trilha-viva" className={linkClass}>painel de Trilha Viva</Link> para localizar rotas com maior necessidade de reforço. Guias com baixa conclusão devem gerar ajustes de texto, microcopy ou fluxo.
       </>
     ),
+    flag: "module_trilha_viva",
   },
   {
     title: "Gestão de acessos",
@@ -90,6 +95,7 @@ const ADMIN_MANUALS: { title: string; badge: string; body: ReactNode }[] = [
         Em <Link href="/admin/transacoes" className={linkClass}>Transações</Link>, use a seção <strong>Sincronizar CSVs do pCloud</strong> para verificar arquivos pela API autenticada ou, se necessário, pelo link público de fallback. O sistema sanitiza prefixos como Pix, aplica a deduplicação do Convex e registra o arquivo processado para evitar carga repetida; use <strong>Reprocessar</strong> somente quando precisar reaplicar um CSV corrigido.
       </>
     ),
+    flag: "integration_pcloud",
   },
 ];
 
@@ -103,12 +109,53 @@ function roleLabel(role?: string) {
   return role ? labels[role] ?? role : "Usuário";
 }
 
+const ROUTE_FLAGS: Record<string, string> = {
+  "/portal/mensalidade": "module_mensalidade",
+  "/portal/extrato": "module_extrato",
+  "/portal/reservas": "module_reservations",
+  "/portal/comunicados": "module_announcements",
+  "/portal/suporte": "module_maintenance",
+  "/admin/reservas": "module_reservations",
+  "/admin/comunicados": "module_announcements",
+  "/admin/manutencao": "module_maintenance",
+  "/admin/feedbacks": "module_feedback",
+  "/admin/trilha-viva": "module_trilha_viva",
+};
+
 export function HelpCenter({ variant = "portal" }: { variant?: HelpCenterVariant }) {
   const { session } = useAuth();
+  const { isEnabled, loading } = useFeatureFlags();
   const role = session?.role as UserRole | undefined;
-  const guides = TRILHA_VIVA_GUIDES.filter((guide) => role && guide.allowedRoles.includes(role));
-  const faqs = FAQ_ITEMS.filter((item) => role && item.roles.includes(role));
+
+  const guides = TRILHA_VIVA_GUIDES.filter((guide) => {
+    const roleAllowed = role && guide.allowedRoles.includes(role);
+    if (!roleAllowed) return false;
+    const flag = ROUTE_FLAGS[guide.route];
+    if (flag && !isEnabled(flag)) return false;
+    return true;
+  });
+
+  const faqs = FAQ_ITEMS.filter((item) => {
+    const roleAllowed = role && item.roles.includes(role);
+    if (!roleAllowed) return false;
+    if (item.flag && !isEnabled(item.flag)) return false;
+    return true;
+  });
+
   const showAdmin = variant === "admin" && (role === "diretoria" || role === "sysadmin");
+
+  const filteredAdminManuals = ADMIN_MANUALS.filter((manual) => {
+    if (manual.flag && !isEnabled(manual.flag)) return false;
+    return true;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <p className="text-emerald-200/50 animate-pulse text-sm">Carregando central de orientação...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -192,7 +239,7 @@ export function HelpCenter({ variant = "portal" }: { variant?: HelpCenterVariant
         <section className="space-y-3">
           <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Manuais adicionais da administração</h2>
           <div className="grid gap-4 lg:grid-cols-3">
-            {ADMIN_MANUALS.map((manual) => (
+            {filteredAdminManuals.map((manual) => (
               <article key={manual.title} className="rounded-2xl border p-4" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-main)" }}>
                 <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: "var(--text-accent)" }}>{manual.badge}</p>
                 <h3 className="mt-2 font-bold" style={{ color: "var(--text-primary)" }}>{manual.title}</h3>
