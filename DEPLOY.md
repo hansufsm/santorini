@@ -36,10 +36,10 @@ O build command da Vercel pode executar `npx convex deploy` antes de `next build
    ```
    npm run build:full
    ```
-   *(equivale a `npx convex deploy --typecheck disable && next build`)*
+   *(equivale a rodar `npx convex deploy --typecheck disable` apenas em produção — detectado por `VERCEL_ENV=production` — e `npx convex codegen` em ambientes de preview/desenvolvimento, evitando erros de segurança no deploy e garantindo que o frontend compile com os tipos gerados).*
 5. Salve e faça um novo deploy
 
-A partir daí, cada push em `main` deploya o Convex e o Next.js juntos na mesma pipeline.
+A partir daí, cada push em `main` (produção) deploya o Convex e o Next.js juntos na mesma pipeline. Pushes em branches de preview apenas geram os tipos locais (`codegen`) sem alterar o backend de produção.
 
 ### Opção B — Deploy automático via GitHub Actions
 

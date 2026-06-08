@@ -11,6 +11,8 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
+import { useFeatureFlags } from "@/lib/convex";
+import { FeatureFlagGuard } from "@/components/feature-flag-guard";
 
 type NavItem = {
   href: string;
@@ -32,7 +34,16 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/trilha-viva", label: "Trilha Viva" },
   { href: "/admin/ajuda", label: "Ajuda" },
   { href: "/admin/usuarios", label: "Usuários", sysadminOnly: true },
+  { href: "/admin/configuracoes", label: "Configurações", sysadminOnly: true },
 ];
+
+const ROUTE_FLAGS: Record<string, string> = {
+  "/admin/reservas": "module_reservations",
+  "/admin/comunicados": "module_announcements",
+  "/admin/manutencao": "module_maintenance",
+  "/admin/feedbacks": "module_feedback",
+  "/admin/trilha-viva": "module_trilha_viva",
+};
 
 export default function AdminLayout({
   children,
@@ -71,7 +82,13 @@ export default function AdminLayout({
     return null;
   }
 
-  const visibleNavItems = NAV_ITEMS.filter((item) => !item.sysadminOnly || session.role === "sysadmin");
+  const { isEnabled } = useFeatureFlags();
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    const flag = ROUTE_FLAGS[item.href];
+    if (flag && !isEnabled(flag)) return false;
+    return !item.sysadminOnly || session.role === "sysadmin";
+  });
 
   function NavLink({ href, label, exact, onClick }: NavItem & { onClick?: () => void }) {
     const active = exact ? pathname === href : pathname.startsWith(href);
@@ -176,7 +193,13 @@ export default function AdminLayout({
         </header>
 
         <main className="flex-1 w-full max-w-7xl p-4 sm:p-6 xl:p-8">
-          {children}
+          <FeatureFlagGuard flagKey={
+            Object.keys(ROUTE_FLAGS).find(route => pathname === route || pathname.startsWith(route + "/"))
+              ? ROUTE_FLAGS[Object.keys(ROUTE_FLAGS).find(route => pathname === route || pathname.startsWith(route + "/"))!]
+              : ""
+          }>
+            {children}
+          </FeatureFlagGuard>
           <AppFooter />
         </main>
       </div>

@@ -9,7 +9,7 @@
     "start": "next start",
     "convex:dev": "npx convex dev --configure=existing --team hans-rogerio-zimmermann --project santorini",
     "convex:deploy": "npx convex deploy --typecheck disable",
-    "build:full": "npx convex deploy --typecheck disable && next build"
+    "build:full": "node -e \"const cp = require('child_process'); if (process.env.VERCEL_ENV === 'production') { cp.execSync('npx convex deploy --typecheck disable', { stdio: 'inherit' }); } else { cp.execSync('npx convex codegen', { stdio: 'inherit' }); }\" && next build"
   },
   "repository": {
     "type": "git",

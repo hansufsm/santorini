@@ -80,3 +80,19 @@ export function useConvexQuery<T = unknown>(
 
   return { data, loading, error, reload };
 }
+
+// Hook para consumir as Feature Flags globais do sistema
+export function useFeatureFlags() {
+  const { data: flags, loading } = useConvexQuery<Record<string, boolean>>(
+    "settings:getFlags",
+    {}
+  );
+
+  function isEnabled(key: string): boolean {
+    if (loading || !flags) return true; // Fallback seguro (ativo por padrão enquanto carrega)
+    return !!flags[key];
+  }
+
+  return { isEnabled, loading, flags };
+}
+

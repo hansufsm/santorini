@@ -12,6 +12,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
 import { TrilhaVivaGuideCard } from "@/components/trilha-viva-guide";
+import { useFeatureFlags } from "@/lib/convex";
+import { FeatureFlagGuard } from "@/components/feature-flag-guard";
 
 type PortalNavItem = {
   href: string;
@@ -29,6 +31,14 @@ const NAV_ITEMS: PortalNavItem[] = [
   { href: "/portal/suporte", label: "Suporte" },
   { href: "/portal/ajuda", label: "Ajuda e manuais" },
 ];
+
+const ROUTE_FLAGS: Record<string, string> = {
+  "/portal/mensalidade": "module_mensalidade",
+  "/portal/extrato": "module_extrato",
+  "/portal/reservas": "module_reservations",
+  "/portal/comunicados": "module_announcements",
+  "/portal/suporte": "module_maintenance",
+};
 
 function RoleBadge({ role }: { role: string }) {
   const labels: Record<string, string> = {
@@ -80,10 +90,16 @@ export default function PortalLayout({
     setDrawerOpen(false);
   }, [pathname]);
 
+  const { isEnabled, flags } = useFeatureFlags();
+
   const visibleNavItems = useMemo(() => {
     if (!session) return [];
-    return NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(session.role));
-  }, [session]);
+    return NAV_ITEMS.filter((item) => {
+      const flag = ROUTE_FLAGS[item.href];
+      if (flag && !isEnabled(flag)) return false;
+      return !item.roles || item.roles.includes(session.role);
+    });
+  }, [session, flags]);
 
   if (loading || !session) {
     return (
@@ -188,7 +204,13 @@ export default function PortalLayout({
 
         <main className="flex-1 p-4 sm:p-6 max-w-5xl mx-auto w-full">
           {pathname !== "/portal/inicio" && <TrilhaVivaGuideCard pathname={pathname} role={session.role} />}
-          {children}
+          <FeatureFlagGuard flagKey={
+            Object.keys(ROUTE_FLAGS).find(route => pathname === route || pathname.startsWith(route + "/"))
+              ? ROUTE_FLAGS[Object.keys(ROUTE_FLAGS).find(route => pathname === route || pathname.startsWith(route + "/"))!]
+              : ""
+          }>
+            {children}
+          </FeatureFlagGuard>
           <AppFooter />
         </main>
       </div>

@@ -93,7 +93,7 @@ export default defineSchema({
   boardActionLogs: defineTable({
     actorUserId: v.id("users"),
     actorName: v.string(),
-    actorRole: v.literal("diretoria"),
+    actorRole: v.union(v.literal("diretoria"), v.literal("sysadmin")),
     action: v.string(),
     entity: v.string(),
     entityId: v.string(),
@@ -425,4 +425,17 @@ export default defineSchema({
   })
     .index("by_token", ["token"])
     .index("by_user", ["userId"]),
+
+  // ─── Configurações globais e Feature Flags ─────────────────────────────────
+  systemSettings: defineTable({
+    key: v.string(),
+    label: v.string(),
+    description: v.string(),
+    enabled: v.boolean(),
+    category: v.union(v.literal("modulo"), v.literal("sistema"), v.literal("integracao")),
+    updatedAt: v.number(),
+    updatedBy: v.id("users"),
+  })
+    .index("by_key", ["key"])
+    .index("by_category", ["category"]),
 });
