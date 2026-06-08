@@ -28,11 +28,6 @@ http.route({
       const isTelegramUserEnabled = flags?.integration_telegram ?? false;
 
       if (!isTelegramUserEnabled) {
-        await sendTelegramMessage(
-          token,
-          chatId,
-          "⚠️ A integração do Telegram com moradores está desativada no momento pela administração."
-        );
         return new Response("OK", { status: 200 });
       }
 
