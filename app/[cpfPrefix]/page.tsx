@@ -70,12 +70,23 @@ export default function PublicExtratoPage({ params }: PageProps) {
       const viewerUserId = session?._id || "";
       const viewerName = session?.name || "";
 
+      // Detectar robô/crawler
+      let isBot = false;
+      let userAgent = "";
+      if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+        userAgent = navigator.userAgent || "";
+        const botPattern = /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex|crawler|spider|robot|crawling|lighthouse/i;
+        isBot = botPattern.test(userAgent) || !!navigator.webdriver;
+      }
+
       convexMutation("telegram:logPublicAccess", {
         associateName: name,
         unit: unit,
         cpfPrefix4: cpfPrefix,
         viewerUserId: viewerUserId || undefined,
         viewerName: viewerName || undefined,
+        isBot,
+        userAgent: userAgent || undefined,
       }).catch((err) => console.error("Falha ao registrar acesso público:", err));
     }
   }, [data, error, cpfPrefix, session]);

@@ -214,18 +214,29 @@ export const logPublicAccess = mutation({
     cpfPrefix4: v.string(),
     viewerUserId: v.optional(v.string()),
     viewerName: v.optional(v.string()),
+    isBot: v.optional(v.boolean()),
+    userAgent: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const unitStr = args.unit ? ` (Unidade ${args.unit})` : "";
-    let viewerStr = "Visitante Anônimo";
+    
+    let viewerStr = "👋 Visitante Humano (Não-Logado)";
     if (args.viewerUserId) {
-      viewerStr = `${args.viewerName || "Usuário"} (ID: ${args.viewerUserId})`;
+      viewerStr = `👤 *Usuário Logado:* ${args.viewerName || "Usuário"} (ID: ${args.viewerUserId})`;
+    } else if (args.isBot) {
+      viewerStr = `🤖 *Robô / Crawler / Script*`;
+    }
+
+    let deviceDetail = "";
+    if (args.userAgent) {
+      // Pega os primeiros 80 caracteres do User-Agent para não estourar limite da mensagem
+      deviceDetail = `\n*Navegador/User-Agent:* ${args.userAgent.slice(0, 80)}...`;
     }
 
     const alertText = `👁️ *Acesso ao Extrato Público*
 *Associado:* ${args.associateName}${unitStr}
 *CPF Consultado:* ${args.cpfPrefix4}...
-*Visualizado por:* ${viewerStr}`;
+*Origem do Acesso:* ${viewerStr}${deviceDetail}`;
 
     await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
     return { success: true };
