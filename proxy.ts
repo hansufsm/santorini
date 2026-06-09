@@ -18,7 +18,7 @@ export function proxy(request: NextRequest) {
   const isPublic =
     pathname === "/" ||
     pathname === "/login" ||
-    pathname.startsWith("/extrato-publico/") ||
+    /^\/\d{4}$/.test(pathname) || // Libera a rota de 4 dígitos do CPF na raiz (ex: /1234)
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/") ||
     pathname === "/favicon.ico" ||

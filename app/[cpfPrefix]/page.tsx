@@ -3,6 +3,7 @@
 import { useConvexQuery, convexMutation } from "@/lib/convex";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { use, useEffect, useRef } from "react";
+import { notFound } from "next/navigation";
 
 type Transaction = {
   date: string;
@@ -33,6 +34,11 @@ interface PageProps {
 export default function PublicExtratoPage({ params }: PageProps) {
   const { cpfPrefix } = use(params);
   const alertSent = useRef(false);
+
+  // Valida se o parâmetro possui exatamente 4 dígitos numéricos, caso contrário exibe 404
+  if (!/^\d{4}$/.test(cpfPrefix)) {
+    notFound();
+  }
 
   const { data, loading, error } = useConvexQuery<PublicHistoryData>(
     "transactions:getPublicAssociateHistory",
@@ -119,7 +125,7 @@ export default function PublicExtratoPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Resumo Anual (Extrato Anual) */}
+        {/* Resumo Anual */}
         <div className="space-y-3">
           <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider pl-1">Acumulado por Ano</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

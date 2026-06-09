@@ -3,8 +3,8 @@
 ## [Sessão 2026-06-08] — Telegram, Alertas e Extrato Público
 
 ### Extrato Financeiro Público
-- **Nova Rota Pública (Extrato Anual)**: Criada a rota `/extrato-publico/[cpfPrefix]` (em [app/extrato-publico/[cpfPrefix]/page.tsx](file:///home/hans/devworkspace/santorini/app/extrato-publico/[cpfPrefix]/page.tsx)) que permite a consulta do extrato de um associado sem necessidade de login, agrupando as transações por ano e mostrando um painel de acumulados por exercício fiscal.
-- **Middleware Whitelist**: Atualizado [proxy.ts](file:///home/hans/devworkspace/santorini/proxy.ts) para liberar o acesso a `/extrato-publico/*` sem validação de sessão.
+- **Nova Rota Pública (Extrato Anual)**: Criada a rota `/[cpfPrefix]` (em [app/[cpfPrefix]/page.tsx](file:///home/hans/devworkspace/santorini/app/[cpfPrefix]/page.tsx)) que permite a consulta do extrato de um associado na raiz do site sem necessidade de login, agrupando as transações por ano e mostrando um painel de acumulados por exercício fiscal.
+- **Middleware Whitelist**: Atualizado [proxy.ts](file:///home/hans/devworkspace/santorini/proxy.ts) para liberar o acesso a qualquer rota numérica de 4 dígitos na raiz (ex: `/1234`) sem validação de sessão.
 - **Nova Query Convex**: Adicionado [getPublicAssociateHistory](file:///home/hans/devworkspace/santorini/convex/transactions.ts#L446) em [convex/transactions.ts](file:///home/hans/devworkspace/santorini/convex/transactions.ts) para buscar e agrupar as contribuições de um associado usando apenas os 4 primeiros dígitos do CPF, calculando os totais anuais e omitindo dados sensíveis de pagadores.
 - **Alerta de Acesso**: Adicionado o mutation [logPublicAccess](file:///home/hans/devworkspace/santorini/convex/telegram.ts#L208) em [convex/telegram.ts](file:///home/hans/devworkspace/santorini/convex/telegram.ts) que é disparado via `useEffect` no carregamento da rota pública, notificando a diretoria pelo Telegram sobre qual associado teve o extrato visualizado e qual prefixo de CPF foi consultado.
 
