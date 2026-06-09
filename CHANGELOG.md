@@ -1,5 +1,11 @@
 # Changelog — Sistema Santorini
 
+## [Sessão 2026-06-09 00:32] — Correção Crítica na API do Telegram e Log de Bloqueios
+
+### Correções de Segurança e Conectividade
+- **Tratamento de Caracteres Especiais no Telegram**: Adicionada a função utilitária `escapeMarkdown` em [convex/_lib.ts](file:///home/hans/devworkspace/santorini/convex/_lib.ts) para escapar caracteres especiais de Markdown (`_`, `*`, `` ` ``, `[`). Isso resolve o erro `400 Bad Request` que impedia a entrega de mensagens no Telegram quando dados como User-Agent continham caracteres especiais (ex: `Intel Mac OS X 10_15_7`).
+- **Escapamento nos Alertas de Acesso e Segurança**: Aplicado o escape em todas as variáveis dinâmicas enviadas em `telegram:logPublicAccess` (em [telegram.ts](file:///home/hans/devworkspace/santorini/convex/telegram.ts)) e nos alertas de bloqueio do disjuntor em [security.ts](file:///home/hans/devworkspace/santorini/convex/security.ts), restabelecendo a entrega normal de mensagens.
+
 ## [Sessão 2026-06-08] — Telegram, Alertas e Extrato Público
 
 ### Extrato Financeiro Público
