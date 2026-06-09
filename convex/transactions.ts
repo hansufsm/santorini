@@ -449,6 +449,16 @@ export const getPublicAssociateHistory = query({
     cpfPrefix4: v.string(),
   },
   handler: async (ctx, { cpfPrefix4 }) => {
+    // Verificar se o recurso de extrato público está ativo
+    const setting = await ctx.db
+      .query("systemSettings")
+      .withIndex("by_key", (q) => q.eq("key", "public_extratos_ativo"))
+      .first();
+    const isPublicEnabled = setting ? setting.enabled : true;
+    if (!isPublicEnabled) {
+      return { success: false, error: "A consulta pública de extrato está temporariamente desativada por motivos de segurança." };
+    }
+
     const prefix = cpfPrefix4.replace(/\D/g, "");
     if (prefix.length < 4) {
       return { success: false, error: "O prefixo do CPF deve ter pelo menos 4 dígitos." };

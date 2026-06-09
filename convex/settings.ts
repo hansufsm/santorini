@@ -72,6 +72,13 @@ const DEFAULT_FLAGS = [
     description: "Permite que moradores/usuários vinculem suas contas e interajam pelo Telegram.",
     enabled: false,
     category: "integracao" as const,
+  },
+  {
+    key: "public_extratos_ativo",
+    label: "Extrato Público Ativo",
+    description: "Permite a consulta pública ao extrato financeiro anual simplificado usando o CPF na raiz (/CPF).",
+    enabled: true,
+    category: "sistema" as const,
   }
 ];
 

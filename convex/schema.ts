@@ -439,8 +439,16 @@ export default defineSchema({
     enabled: v.boolean(),
     category: v.union(v.literal("modulo"), v.literal("sistema"), v.literal("integracao")),
     updatedAt: v.number(),
-    updatedBy: v.id("users"),
+    updatedBy: v.optional(v.id("users")),
   })
     .index("by_key", ["key"])
     .index("by_category", ["category"]),
+
+  // ─── Logs de segurança e bloqueios ─────────────────────────────────────────
+  securityLogs: defineTable({
+    ip: v.string(),
+    timestamp: v.number(),
+    details: v.string(),
+  })
+    .index("by_timestamp", ["timestamp"]),
 });
