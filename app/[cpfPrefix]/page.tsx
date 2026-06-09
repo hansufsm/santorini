@@ -4,6 +4,7 @@ import { useConvexQuery, convexMutation } from "@/lib/convex";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { use, useEffect, useRef } from "react";
 import { notFound } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 
 type Transaction = {
   date: string;
@@ -33,6 +34,7 @@ interface PageProps {
 
 export default function PublicExtratoPage({ params }: PageProps) {
   const { cpfPrefix } = use(params);
+  const { session } = useAuth();
   const alertSent = useRef(false);
 
   // Valida se o parâmetro possui exatamente 4 dígitos numéricos, caso contrário exibe 404
@@ -65,13 +67,18 @@ export default function PublicExtratoPage({ params }: PageProps) {
         name = `Erro de conexão: ${error}`;
       }
       
+      const viewerUserId = session?._id || "";
+      const viewerName = session?.name || "";
+
       convexMutation("telegram:logPublicAccess", {
         associateName: name,
         unit: unit,
         cpfPrefix4: cpfPrefix,
+        viewerUserId: viewerUserId || undefined,
+        viewerName: viewerName || undefined,
       }).catch((err) => console.error("Falha ao registrar acesso público:", err));
     }
-  }, [data, error, cpfPrefix]);
+  }, [data, error, cpfPrefix, session]);
 
   if (loading) {
     return (

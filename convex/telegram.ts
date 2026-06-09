@@ -212,12 +212,20 @@ export const logPublicAccess = mutation({
     associateName: v.string(),
     unit: v.string(),
     cpfPrefix4: v.string(),
+    viewerUserId: v.optional(v.string()),
+    viewerName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const unitStr = args.unit ? ` (Unidade ${args.unit})` : "";
+    let viewerStr = "Visitante Anônimo";
+    if (args.viewerUserId) {
+      viewerStr = `${args.viewerName || "Usuário"} (ID: ${args.viewerUserId})`;
+    }
+
     const alertText = `👁️ *Acesso ao Extrato Público*
 *Associado:* ${args.associateName}${unitStr}
-*CPF Consultado:* ${args.cpfPrefix4}...`;
+*CPF Consultado:* ${args.cpfPrefix4}...
+*Visualizado por:* ${viewerStr}`;
 
     await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
     return { success: true };
