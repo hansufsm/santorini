@@ -11,14 +11,124 @@ const COOKIE_NAME = "santorini_session";
 const ADMIN_ROLES = ["diretoria", "sysadmin"];
 const PUBLIC_FILE = /\.(?:avif|gif|ico|jpg|jpeg|png|svg|webp|css|js|map|txt|xml|json)$/i;
 
+// Mapa para controle de rate limiting (IP -> { cpfs: Set, resetTime: number })
+const rateLimitMap = new Map<string, { cpfs: Set<string>; resetTime: number }>();
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const isCpfRoute = /^\/\d{4}$/.test(pathname);
+
+  // Aplica rate limiting se for a rota pública do CPF de 4 dígitos
+  if (isCpfRoute) {
+    const ip = request.ip || request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+    const cpfPrefix = pathname.substring(1);
+    const now = Date.now();
+
+    // Limpeza periódica simples para evitar vazamento de memória
+    if (rateLimitMap.size > 1000) {
+      for (const [key, val] of rateLimitMap.entries()) {
+        if (now > val.resetTime) {
+          rateLimitMap.delete(key);
+        }
+      }
+    }
+
+    let record = rateLimitMap.get(ip);
+    if (!record) {
+      record = {
+        cpfs: new Set([cpfPrefix]),
+        resetTime: now + 60000,
+      };
+      rateLimitMap.set(ip, record);
+    } else {
+      if (now > record.resetTime) {
+        record.cpfs.clear();
+        record.cpfs.add(cpfPrefix);
+        record.resetTime = now + 60000;
+      } else {
+        record.cpfs.add(cpfPrefix);
+        if (record.cpfs.size > 5) {
+          return new NextResponse(
+            `<!DOCTYPE html>
+            <html lang="pt-BR">
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Muitas Requisições - Santorini</title>
+                <style>
+                  body {
+                    background-color: #020617;
+                    color: #cbd5e1;
+                    font-family: system-ui, -apple-system, sans-serif;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 100vh;
+                    margin: 0;
+                    padding: 24px;
+                  }
+                  .card {
+                    max-width: 400px;
+                    width: 100%;
+                    background-color: #0f172a;
+                    border: 1px solid rgba(239, 68, 68, 0.2);
+                    border-radius: 16px;
+                    padding: 32px;
+                    text-align: center;
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+                  }
+                  h1 {
+                    color: #f87171;
+                    font-size: 24px;
+                    margin-top: 0;
+                    margin-bottom: 12px;
+                  }
+                  p {
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #94a3b8;
+                    margin-bottom: 24px;
+                  }
+                  .badge {
+                    display: inline-block;
+                    background-color: rgba(239, 68, 68, 0.1);
+                    color: #f87171;
+                    font-size: 12px;
+                    font-weight: 600;
+                    padding: 6px 12px;
+                    border-radius: 20px;
+                    margin-bottom: 16px;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="card">
+                  <span style="font-size: 48px; display: block; margin-bottom: 16px;">🛡️</span>
+                  <div class="badge">Limite de Segurança Excedido</div>
+                  <h1>Muitas Requisições</h1>
+                  <p>Por motivos de segurança, limitamos o número de consultas de extratos diferentes por minuto. Por favor, aguarde um momento antes de tentar novamente.</p>
+                </div>
+              </body>
+            </html>`,
+            {
+              status: 429,
+              headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Retry-After": "60",
+              },
+            }
+          );
+        }
+      }
+    }
+  }
 
   // Rotas e assets públicos que nunca precisam de autenticação.
   const isPublic =
     pathname === "/" ||
     pathname === "/login" ||
-    /^\/\d{4}$/.test(pathname) || // Libera a rota de 4 dígitos do CPF na raiz (ex: /1234)
+    isCpfRoute || // Libera a rota de 4 dígitos do CPF na raiz (ex: /1234)
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/") ||
     pathname === "/favicon.ico" ||
