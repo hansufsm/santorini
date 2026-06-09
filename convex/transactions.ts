@@ -514,3 +514,29 @@ export const getPublicAssociateHistory = query({
     };
   },
 });
+
+export const updateTransaction = mutation({
+  args: {
+    sessionToken: v.string(),
+    id: v.id("transactions"),
+    name: v.string(),
+    value: v.number(),
+  },
+  handler: async (ctx, { sessionToken, id, name, value }) => {
+    await requireRole(ctx.db, sessionToken, "sysadmin");
+
+    const existing = await ctx.db.get(id);
+    if (!existing) {
+      throw new Error("Transação não encontrada.");
+    }
+
+    const formattedOriginalValue = `${value >= 0 ? "+" : "-"}R$ ${Math.abs(value).toFixed(2).replace(".", ",")}`;
+    await ctx.db.patch(id, {
+      name: stripPaymentPrefix(name),
+      value,
+      originalValue: formattedOriginalValue,
+    });
+
+    return { success: true };
+  },
+});

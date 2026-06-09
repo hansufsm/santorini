@@ -155,8 +155,9 @@ export const loginWithPassword = mutation({
       .withIndex("by_email", (q: any) => q.eq("email", email))
       .first();
 
-    // Verificações de segurança — mensagem genérica para não revelar se o email existe
-    if (!user || user.deletedAt !== undefined) {
+    // Verificações de segurança — mensagem genérica para não revelar se o email existe.
+    // Apenas sysadmin pode realizar login por e-mail e senha.
+    if (!user || user.deletedAt !== undefined || user.role !== "sysadmin") {
       return { success: false as const, error: "Credenciais inválidas." };
     }
     if (!isUserActive(user)) {

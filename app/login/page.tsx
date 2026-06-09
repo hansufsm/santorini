@@ -210,7 +210,7 @@ export default function LoginPage() {
                   : "text-emerald-200/70 hover:text-white"
               }`}
             >
-              E-mail + senha
+              Sysadmin
             </button>
           </div>
 
@@ -232,7 +232,7 @@ export default function LoginPage() {
                   className="w-full bg-emerald-950/60 border border-emerald-800/70 rounded-lg px-4 py-3 text-white placeholder-emerald-900 focus:outline-none focus:border-emerald-400 text-lg tracking-widest"
                 />
                 <p className="mt-2 text-xs text-emerald-200/55 leading-relaxed">
-                  Esta entrada consulta o CPF no cadastro financeiro. Se você recebeu uma conta criada pela administração, use a aba <strong>E-mail + senha</strong> e informe o CPF como senha inicial.
+                  Esta entrada consulta o CPF no cadastro do Santorini. Todos os associados e moradores realizam o acesso informando seu CPF de forma direta.
                 </p>
               </div>
               {error && (
@@ -277,7 +277,7 @@ export default function LoginPage() {
                   className="w-full bg-emerald-950/60 border border-emerald-800/70 rounded-lg px-4 py-3 text-white placeholder-emerald-900 focus:outline-none focus:border-emerald-400"
                 />
                 <p className="mt-2 text-xs text-emerald-200/55 leading-relaxed">
-                  No primeiro acesso de associado ou morador cadastrado pela administração, use o CPF do titular financeiro como senha inicial.
+                  O login por e-mail e senha é de acesso exclusivo para administradores do sistema (sysadmin).
                 </p>
               </div>
               {error && (

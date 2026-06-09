@@ -330,6 +330,47 @@ export default function TransacoesPage() {
     if (transactionsPage > totalTransactionPages) setTransactionsPage(totalTransactionPages);
   }, [transactionsPage, totalTransactionPages]);
 
+  // Estado para edição inline de transações
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editValue, setEditValue] = useState("");
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  async function handleSaveEdit(txId: string) {
+    if (!session) return;
+    const cleanValue = editValue.replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+    const numValue = parseFloat(cleanValue);
+    if (isNaN(numValue)) {
+      alert("Por favor, insira um valor numérico válido.");
+      return;
+    }
+
+    setSavingId(txId);
+    try {
+      await convexMutation(
+        "transactions:updateTransaction",
+        {
+          sessionToken: session.token,
+          id: txId as any,
+          name: editName,
+          value: numValue,
+        }
+      );
+      setEditingId(null);
+      reloadTransactions();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Erro ao salvar transação");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  function startEdit(tx: any) {
+    setEditingId(tx._id);
+    setEditName(tx.name);
+    setEditValue(tx.value.toString().replace(".", ",")); // format formatado para exibição/input
+  }
+
   if (!session) return null;
 
   if (!isSysadmin) {
@@ -1074,19 +1115,75 @@ export default function TransacoesPage() {
                     <th className="text-left px-4 py-3">Nome</th>
                     <th className="text-left px-4 py-3">Tipo</th>
                     <th className="text-right px-4 py-3">Valor</th>
+                    <th className="text-center px-4 py-3 w-36">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedTransactions.map((tx, i) => (
-                    <tr key={tx._id ?? `${tx.date}-${tx.time}-${i}`} className="border-t border-gray-800/50 hover:bg-gray-800/20">
-                      <td className="px-4 py-2 text-gray-300">{formatDate(tx.date)}</td>
-                      <td className="px-4 py-2 text-gray-300 max-w-48 truncate">{tx.name}</td>
-                      <td className="px-4 py-2 text-gray-400">{tx.detail}</td>
-                      <td className={`px-4 py-2 text-right font-medium ${tx.value >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                        {formatCurrency(tx.value)}
-                      </td>
-                    </tr>
-                  ))}
+                  {paginatedTransactions.map((tx, i) => {
+                    const isEditing = !!tx._id && editingId === tx._id;
+                    return (
+                      <tr key={tx._id ?? `${tx.date}-${tx.time}-${i}`} className={`border-t border-gray-800/50 ${isEditing ? "bg-gray-800/30" : "hover:bg-gray-800/20"}`}>
+                        <td className="px-4 py-2 text-gray-300">{formatDate(tx.date)}</td>
+                        <td className="px-4 py-2 text-gray-300">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="w-full bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                            />
+                          ) : (
+                            <span className="max-w-48 truncate block" title={tx.name}>{tx.name}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-gray-400">{tx.detail}</td>
+                        <td className="px-4 py-2 text-right">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="w-28 text-right bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                            />
+                          ) : (
+                            <span className={`font-medium ${tx.value >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                              {formatCurrency(tx.value)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 text-center whitespace-nowrap">
+                          {isEditing ? (
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => tx._id && handleSaveEdit(tx._id)}
+                                disabled={savingId === tx._id}
+                                className="text-xs text-emerald-400 hover:text-emerald-300 font-medium px-2 py-1 bg-emerald-950/40 hover:bg-emerald-950/80 rounded transition-colors disabled:opacity-50"
+                              >
+                                {savingId === tx._id ? "Salvando..." : "Salvar"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingId(null)}
+                                disabled={savingId === tx._id}
+                                className="text-xs text-gray-400 hover:text-gray-300 font-medium px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => startEdit(tx)}
+                              className="text-xs text-indigo-400 hover:text-indigo-300 font-medium px-2 py-1 bg-indigo-950/40 hover:bg-indigo-950/80 rounded transition-colors"
+                            >
+                              Editar
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

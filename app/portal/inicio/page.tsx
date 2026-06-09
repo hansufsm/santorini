@@ -67,28 +67,28 @@ function PaymentAction({ monthLabel, firstName }: { monthLabel: string; firstNam
           Se você já pagou, o extrato pode levar até 24 horas para ser atualizado. Volte amanhã para confirmar a quitação.
         </p>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-[1.15fr_0.85fr]">
-          <a
-            href={PAYMENT_LINK}
-            target="_blank"
-            rel="noreferrer"
-            className="group flex min-h-24 flex-col justify-between rounded-2xl bg-white px-4 py-4 text-emerald-950 shadow-xl shadow-emerald-950/20 transition hover:-translate-y-0.5 hover:shadow-2xl"
-          >
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Pagar agora</span>
-            <span className="mt-2 text-lg font-black leading-tight">Abrir link seguro da mensalidade</span>
-            <span className="mt-3 text-sm font-semibold text-emerald-700 transition group-hover:translate-x-1">Ir para o pagamento →</span>
-          </a>
-
-          <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-100/75">Pix direto</p>
-            <p className="mt-2 break-all font-mono text-lg font-bold text-white">{PIX_KEY}</p>
-            <button
-              type="button"
-              onClick={copyPixKey}
-              className="mt-4 w-full rounded-xl bg-emerald-300 px-4 py-2.5 text-sm font-black text-emerald-950 transition hover:bg-emerald-200"
-            >
-              {copied ? "Chave Pix copiada" : "Copiar chave Pix"}
-            </button>
+        <div className="mt-5 max-w-xl">
+          <div className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur shadow-xl shadow-emerald-950/20">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="flex-shrink-0 bg-white p-3 rounded-xl shadow-inner">
+                <img
+                  src="/pix-qrcode.png"
+                  alt="QR Code Pix"
+                  className="w-32 h-32 object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0 text-center sm:text-left w-full">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-100/75">Pix direto</p>
+                <p className="mt-3 break-all font-mono text-lg font-bold text-white">{PIX_KEY}</p>
+                <button
+                  type="button"
+                  onClick={copyPixKey}
+                  className="mt-5 w-full rounded-xl bg-emerald-300 px-4 py-2.5 text-sm font-black text-emerald-950 transition hover:bg-emerald-200 shadow-md"
+                >
+                  {copied ? "Chave Pix copiada" : "Copiar chave Pix"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -142,15 +142,22 @@ function PaymentProtectedNotice({
         <p className="mt-1 text-xs leading-relaxed text-emerald-100/65">
           {linkedToUnit
             ? "Fale com a diretoria ou com o associado titular para atualizar contatos, vínculo familiar ou responsabilidade financeira."
-            : "Fale com a diretoria para confirmar seu CPF como associado contribuinte. Se deseja contribuir agora, use o link seguro ou o Pix direto abaixo."}
+            : "Fale com a diretoria para confirmar seu CPF como associado contribuinte. Se deseja contribuir agora, use o Pix direto abaixo."}
         </p>
         {!linkedToUnit && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <a href={PAYMENT_LINK} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-300 px-4 py-3 text-center text-sm font-black text-emerald-950 transition hover:bg-emerald-200">
-              Contribuir agora
-            </a>
-            <div className="rounded-xl border border-emerald-300/20 bg-emerald-900/40 px-4 py-3 text-center text-sm font-mono font-bold text-emerald-50">
-              {PIX_KEY}
+          <div className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-950/40 p-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex-shrink-0 bg-white p-2 rounded-lg">
+                <img
+                  src="/pix-qrcode.png"
+                  alt="QR Code Pix"
+                  className="w-24 h-24 object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0 text-center sm:text-left">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300/80">Pix direto</p>
+                <p className="mt-2 break-all font-mono text-sm font-bold text-white">{PIX_KEY}</p>
+              </div>
             </div>
           </div>
         )}

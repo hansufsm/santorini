@@ -5,6 +5,7 @@ extratos-infinite/
 public/*.png
 !public/logo-amtrs-*.png
 !public/logo-amtrs-icon.png
+!public/pix-qrcode.png
 .DS_Store
 Thumbs.db
 .vscode/

@@ -249,12 +249,21 @@ function PaymentVerificationCard({ session }: { session: { associateId?: string;
           </p>
         </div>
         {!paidThisMonth && (
-          <div className="grid gap-2 sm:grid-cols-2 lg:w-[28rem]">
-            <a href={PAYMENT_LINK} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-300 px-4 py-3 text-center text-sm font-black text-emerald-950 transition hover:bg-emerald-200">
-              Abrir pagamento
-            </a>
-            <div className="rounded-xl border border-emerald-300/20 bg-emerald-950/55 px-4 py-3 text-center text-xs font-mono font-bold text-emerald-50">
-              {PIX_KEY}
+          <div className="w-full lg:max-w-md">
+            <div className="rounded-2xl border border-emerald-300/20 bg-emerald-950/55 p-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex-shrink-0 bg-white p-2 rounded-lg">
+                  <img
+                    src="/pix-qrcode.png"
+                    alt="QR Code Pix"
+                    className="w-24 h-24 object-contain"
+                  />
+                </div>
+                <div className="flex-1 min-w-0 text-center sm:text-left">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-300/80">Pix direto</p>
+                  <p className="mt-2 break-all font-mono text-xs font-bold text-white">{PIX_KEY}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
