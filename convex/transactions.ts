@@ -461,7 +461,7 @@ export const getPublicAssociateHistory = query({
 
     const prefix = cpfPrefix4.replace(/\D/g, "");
     if (prefix.length < 4) {
-      return { success: false, error: "O prefixo do CPF deve ter pelo menos 4 dígitos." };
+      return { success: false, error: "O prefixo/código deve ter pelo menos 4 dígitos." };
     }
 
     // Buscar todos os associados não deletados
@@ -476,7 +476,7 @@ export const getPublicAssociateHistory = query({
     });
 
     if (!matched) {
-      return { success: false, error: "Nenhum associado ativo encontrado com esse prefixo de CPF." };
+      return { success: false, error: "Nenhum associado ativo encontrado com esse prefixo." };
     }
 
     const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();

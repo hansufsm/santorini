@@ -61,7 +61,7 @@ export default function PublicExtratoPage({ params }: PageProps) {
           name = data.associate.name;
           unit = data.associate.unit || "Sem unidade";
         } else {
-          name = data.error || "CPF não cadastrado";
+          name = data.error || "Código não cadastrado";
         }
       } else if (error) {
         name = `Erro de conexão: ${error}`;
@@ -177,7 +177,7 @@ export default function PublicExtratoPage({ params }: PageProps) {
           
           {years.length === 0 ? (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-400 shadow-lg">
-              Nenhum registro de contribuição encontrado para este CPF.
+              Nenhum registro de contribuição encontrado para este código.
             </div>
           ) : (
             years.map((year) => {
