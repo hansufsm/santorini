@@ -477,6 +477,12 @@ export const getPublicAssociateHistory = query({
     const total = userTxs.reduce((acc, t) => acc + t.value, 0);
     const months = new Set(userTxs.map((t) => t.date.slice(0, 7))).size;
 
+    const yearlyTotals: Record<string, number> = {};
+    for (const t of userTxs) {
+      const year = t.date.slice(0, 4);
+      yearlyTotals[year] = (yearlyTotals[year] || 0) + t.value;
+    }
+
     return {
       success: true,
       associate: {
@@ -486,6 +492,7 @@ export const getPublicAssociateHistory = query({
         monthsActive: months,
         lastDate: userTxs[0]?.date ?? null,
         paidThisMonth: userTxs.some((t) => t.date.startsWith(new Date().toISOString().slice(0, 7))),
+        yearlyTotals,
         transactions: userTxs.map((t) => ({
           _id: t._id,
           date: t.date,

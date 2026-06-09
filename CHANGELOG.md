@@ -3,9 +3,10 @@
 ## [Sessão 2026-06-08] — Telegram, Alertas e Extrato Público
 
 ### Extrato Financeiro Público
-- **Nova Rota Pública**: Criada a rota `/extrato-publico/[cpfPrefix]` (em [app/extrato-publico/[cpfPrefix]/page.tsx](file:///home/hans/devworkspace/santorini/app/extrato-publico/[cpfPrefix]/page.tsx)) que permite a consulta do extrato de um associado sem necessidade de login.
+- **Nova Rota Pública (Extrato Anual)**: Criada a rota `/extrato-publico/[cpfPrefix]` (em [app/extrato-publico/[cpfPrefix]/page.tsx](file:///home/hans/devworkspace/santorini/app/extrato-publico/[cpfPrefix]/page.tsx)) que permite a consulta do extrato de um associado sem necessidade de login, agrupando as transações por ano e mostrando um painel de acumulados por exercício fiscal.
 - **Middleware Whitelist**: Atualizado [proxy.ts](file:///home/hans/devworkspace/santorini/proxy.ts) para liberar o acesso a `/extrato-publico/*` sem validação de sessão.
-- **Nova Query Convex**: Adicionado [getPublicAssociateHistory](file:///home/hans/devworkspace/santorini/convex/transactions.ts#L446) em [convex/transactions.ts](file:///home/hans/devworkspace/santorini/convex/transactions.ts) para buscar e agrupar as contribuições de um associado usando apenas os 4 primeiros dígitos do CPF, aplicando anonimização de dados pessoais (omitindo dados de pagadores e outros campos internos).
+- **Nova Query Convex**: Adicionado [getPublicAssociateHistory](file:///home/hans/devworkspace/santorini/convex/transactions.ts#L446) em [convex/transactions.ts](file:///home/hans/devworkspace/santorini/convex/transactions.ts) para buscar e agrupar as contribuições de um associado usando apenas os 4 primeiros dígitos do CPF, calculando os totais anuais e omitindo dados sensíveis de pagadores.
+- **Alerta de Acesso**: Adicionado o mutation [logPublicAccess](file:///home/hans/devworkspace/santorini/convex/telegram.ts#L208) em [convex/telegram.ts](file:///home/hans/devworkspace/santorini/convex/telegram.ts) que é disparado via `useEffect` no carregamento da rota pública, notificando a diretoria pelo Telegram sobre qual associado teve o extrato visualizado e qual prefixo de CPF foi consultado.
 
 ### Integração Telegram & Notificações Outbound
 - **Alertas de Atividades no Site (Outbound)**: Implementação de envio proativo de alertas em Markdown para o canal/grupo da diretoria (`TELEGRAM_CHAT_ID`) utilizando a action [sendAlertAction](file:///home/hans/devworkspace/santorini/convex/telegram.ts#L149).

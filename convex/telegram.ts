@@ -1,6 +1,7 @@
 import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
 import { requireRole } from "./_lib";
+import { api } from "./_generated/api";
 
 export const generateLinkingCode = mutation({
   args: {
@@ -203,5 +204,22 @@ export const sendAlertAction = action({
     } catch (err) {
       console.error("Erro ao enviar alerta para o Telegram:", err);
     }
+  },
+});
+
+export const logPublicAccess = mutation({
+  args: {
+    associateName: v.string(),
+    unit: v.string(),
+    cpfPrefix4: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const unitStr = args.unit ? ` (Unidade ${args.unit})` : "";
+    const alertText = `👁️ *Acesso ao Extrato Público*
+*Associado:* ${args.associateName}${unitStr}
+*CPF Consultado:* ${args.cpfPrefix4}***`;
+
+    await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
+    return { success: true };
   },
 });
