@@ -1,6 +1,11 @@
 # Changelog — Sistema Santorini
 
-## [Sessão 2026-06-08] — Integração com Telegram e Alertas
+## [Sessão 2026-06-08] — Telegram, Alertas e Extrato Público
+
+### Extrato Financeiro Público
+- **Nova Rota Pública**: Criada a rota `/extrato-publico/[cpfPrefix]` (em [app/extrato-publico/[cpfPrefix]/page.tsx](file:///home/hans/devworkspace/santorini/app/extrato-publico/[cpfPrefix]/page.tsx)) que permite a consulta do extrato de um associado sem necessidade de login.
+- **Middleware Whitelist**: Atualizado [proxy.ts](file:///home/hans/devworkspace/santorini/proxy.ts) para liberar o acesso a `/extrato-publico/*` sem validação de sessão.
+- **Nova Query Convex**: Adicionado [getPublicAssociateHistory](file:///home/hans/devworkspace/santorini/convex/transactions.ts#L446) em [convex/transactions.ts](file:///home/hans/devworkspace/santorini/convex/transactions.ts) para buscar e agrupar as contribuições de um associado usando apenas os 4 primeiros dígitos do CPF, aplicando anonimização de dados pessoais (omitindo dados de pagadores e outros campos internos).
 
 ### Integração Telegram & Notificações Outbound
 - **Alertas de Atividades no Site (Outbound)**: Implementação de envio proativo de alertas em Markdown para o canal/grupo da diretoria (`TELEGRAM_CHAT_ID`) utilizando a action [sendAlertAction](file:///home/hans/devworkspace/santorini/convex/telegram.ts#L149).

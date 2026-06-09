@@ -443,3 +443,57 @@ export const getDefaulters = query({
     }).sort((a, b) => (a.unit ?? "").localeCompare(b.unit ?? ""));
   },
 });
+
+export const getPublicAssociateHistory = query({
+  args: {
+    cpfPrefix4: v.string(),
+  },
+  handler: async (ctx, { cpfPrefix4 }) => {
+    const prefix = cpfPrefix4.replace(/\D/g, "");
+    if (prefix.length < 4) {
+      return { success: false, error: "O prefixo do CPF deve ter pelo menos 4 dígitos." };
+    }
+
+    // Buscar todos os associados não deletados
+    const associates = await ctx.db.query("associates").collect();
+    const activeAssociates = associates.filter((a) => a.deletedAt === undefined && a.status === "ativo");
+
+    // Encontrar o associado que corresponde aos 4 primeiros dígitos do CPF
+    const matched = activeAssociates.find((a) => {
+      const cleanedCpf = a.cpf ? a.cpf.replace(/\D/g, "") : "";
+      const cleanedPrefix = a.cpfPrefix ? a.cpfPrefix.replace(/\D/g, "") : "";
+      return cleanedCpf.startsWith(prefix) || cleanedPrefix.startsWith(prefix);
+    });
+
+    if (!matched) {
+      return { success: false, error: "Nenhum associado ativo encontrado com esse prefixo de CPF." };
+    }
+
+    const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
+    const userTxs = received
+      .filter((t) => matchesAssociateName(t.name, getAssociatePaymentNames(matched)))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+
+    const total = userTxs.reduce((acc, t) => acc + t.value, 0);
+    const months = new Set(userTxs.map((t) => t.date.slice(0, 7))).size;
+
+    return {
+      success: true,
+      associate: {
+        name: matched.name,
+        unit: matched.unit ?? null,
+        total,
+        monthsActive: months,
+        lastDate: userTxs[0]?.date ?? null,
+        paidThisMonth: userTxs.some((t) => t.date.startsWith(new Date().toISOString().slice(0, 7))),
+        transactions: userTxs.map((t) => ({
+          _id: t._id,
+          date: t.date,
+          time: t.time,
+          value: t.value,
+          detail: t.detail,
+        })),
+      }
+    };
+  },
+});

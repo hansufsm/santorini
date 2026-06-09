@@ -18,6 +18,7 @@ export function proxy(request: NextRequest) {
   const isPublic =
     pathname === "/" ||
     pathname === "/login" ||
+    pathname.startsWith("/extrato-publico/") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/api/") ||
     pathname === "/favicon.ico" ||
