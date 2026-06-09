@@ -359,7 +359,10 @@ export const getSummary = query({
 export const getTopContributors = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, { limit = 5 }) => {
-    const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
+    const received = [
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect()),
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Depósito InfinitePay")).collect())
+    ];
     const totals: Record<string, { name: string; total: number }> = {};
     for (const t of received) {
       const normalizedName = normalizeAssociateName(t.name);
@@ -407,7 +410,10 @@ export const getAssociateHistory = query({
     const associate = await ctx.db.get(associateId);
     if (!associate || associate.status !== "ativo") return null;
 
-    const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
+    const received = [
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect()),
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Depósito InfinitePay")).collect())
+    ];
     // Combina nome principal + aliases hardcoded + payerNames do banco
     const userTxs = received
       .filter((t) => matchesAssociateName(t.name, getAssociatePaymentNames(associate)))
@@ -431,7 +437,10 @@ export const getDefaulters = query({
   args: { monthKey: v.string() },
   handler: async (ctx, { monthKey }) => {
     const activeAssociates = await ctx.db.query("associates").withIndex("by_status", (q) => q.eq("status", "ativo")).collect();
-    const allReceived = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
+    const allReceived = [
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect()),
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Depósito InfinitePay")).collect())
+    ];
     const monthTxs = allReceived.filter((t) => t.date.startsWith(monthKey));
     return activeAssociates.filter((a) => {
       const paymentNames = getAssociatePaymentNames(a);
@@ -479,7 +488,10 @@ export const getPublicAssociateHistory = query({
       return { success: false, error: "Nenhum associado ativo encontrado com esse prefixo." };
     }
 
-    const received = await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect();
+    const received = [
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect()),
+      ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Depósito InfinitePay")).collect())
+    ];
     const userTxs = received
       .filter((t) => matchesAssociateName(t.name, getAssociatePaymentNames(matched)))
       .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
