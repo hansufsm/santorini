@@ -1,5 +1,17 @@
 # Changelog — Sistema Santorini
 
+## [Sessão 2026-06-08] — Integração com Telegram e Alertas
+
+### Integração Telegram & Notificações Outbound
+- **Alertas de Atividades no Site (Outbound)**: Implementação de envio proativo de alertas em Markdown para o canal/grupo da diretoria (`TELEGRAM_CHAT_ID`) utilizando a action [sendAlertAction](file:///home/hans/devworkspace/santorini/convex/telegram.ts#L149).
+  - Gatilho de novos feedbacks (`createFeedback` em [feedbacks.ts](file:///home/hans/devworkspace/santorini/convex/feedbacks.ts)).
+  - Gatilho de novos chamados de manutenção (`createMaintenance` em [maintenances.ts](file:///home/hans/devworkspace/santorini/convex/maintenances.ts)).
+  - Gatilho de novas solicitações de reserva (`createReservation` em [reservations.ts](file:///home/hans/devworkspace/santorini/convex/reservations.ts)).
+  - Gatilho de logins bem-sucedidos por CPF ou Email/Senha (`loginWithCpf` e `loginWithPassword` em [auth.ts](file:///home/hans/devworkspace/santorini/convex/auth.ts)).
+- **Toggle de Desativação Sysadmin**: Criada a feature flag `integration_telegram` (inativa por padrão) na tabela `systemSettings` em [settings.ts](file:///home/hans/devworkspace/santorini/convex/settings.ts).
+- **Ocultamento no Portal do Morador**: A tela [cadastro/page.tsx](file:///home/hans/devworkspace/santorini/app/portal/cadastro/page.tsx) oculta completamente o card de vinculação do Telegram quando a flag estiver inativa.
+- **Proteção do Webhook & Mutações**: O webhook de recebimento de comandos do Telegram ([http.ts](file:///home/hans/devworkspace/santorini/convex/http.ts)) e as mutations de vinculação ([telegram.ts](file:///home/hans/devworkspace/santorini/convex/telegram.ts)) foram blindados para retornar silêncio ou erros se a flag estiver inativa, impedindo interações não autorizadas.
+
 ## [Sessão 2026-05-23] — Diagnóstico, correções de infraestrutura e UX
 
 ### Bug crítico — `auth:loginWithCpf` / `auth:loginWithPassword` não encontrados
