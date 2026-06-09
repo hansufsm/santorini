@@ -1,6 +1,6 @@
 import { mutation, query, action } from "./_generated/server";
 import { v } from "convex/values";
-import { requireRole } from "./_lib";
+import { requireRole, escapeMarkdown } from "./_lib";
 import { api } from "./_generated/api";
 
 export const generateLinkingCode = mutation({
@@ -218,11 +218,13 @@ export const logPublicAccess = mutation({
     userAgent: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const unitStr = args.unit ? ` (Unidade ${args.unit})` : "";
+    const escapedName = escapeMarkdown(args.associateName);
+    const escapedUnit = args.unit ? escapeMarkdown(args.unit) : "";
+    const unitStr = escapedUnit ? ` (Unidade ${escapedUnit})` : "";
     
     let viewerStr = "👋 Visitante Humano (Não-Logado)";
     if (args.viewerUserId) {
-      viewerStr = `👤 *Usuário Logado:* ${args.viewerName || "Usuário"} (ID: ${args.viewerUserId})`;
+      viewerStr = `👤 *Usuário Logado:* ${escapeMarkdown(args.viewerName || "Usuário")} (ID: ${escapeMarkdown(args.viewerUserId)})`;
     } else if (args.isBot) {
       viewerStr = `🤖 *Robô / Crawler / Script*`;
     }
@@ -230,12 +232,13 @@ export const logPublicAccess = mutation({
     let deviceDetail = "";
     if (args.userAgent) {
       // Pega os primeiros 80 caracteres do User-Agent para não estourar limite da mensagem
-      deviceDetail = `\n*Navegador/User-Agent:* ${args.userAgent.slice(0, 80)}...`;
+      const shortUA = args.userAgent.slice(0, 80);
+      deviceDetail = `\n*Navegador/User-Agent:* ${escapeMarkdown(shortUA)}...`;
     }
 
     const alertText = `👁️ *Acesso ao Extrato Público*
-*Associado:* ${args.associateName}${unitStr}
-*CPF Consultado:* ${args.cpfPrefix4}...
+*Associado:* ${escapedName}${unitStr}
+*CPF Consultado:* ${escapeMarkdown(args.cpfPrefix4)}...
 *Origem do Acesso:* ${viewerStr}${deviceDetail}`;
 
     await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });

@@ -66,3 +66,16 @@ export async function requireRole(
   // Retorna o usuário para que o chamador possa usar seus dados (ex: _id, role)
   return user;
 }
+
+/**
+ * Escapa caracteres especiais do MarkdownV1 do Telegram para evitar erros 400 Bad Request.
+ */
+export function escapeMarkdown(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/\\/g, "\\\\")
+    .replace(/_/g, "\\_")
+    .replace(/\*/g, "\\*")
+    .replace(/`/g, "\\`")
+    .replace(/\[/g, "\\[");
+}

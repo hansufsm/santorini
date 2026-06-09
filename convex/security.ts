@@ -1,6 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import { escapeMarkdown } from "./_lib";
 
 export const registerBlock = mutation({
   args: {
@@ -61,7 +62,7 @@ export const registerBlock = mutation({
 O acesso público aos extratos foi *DESATIVADO AUTOMATICAMENTE* (Circuit Breaker).
 *Motivo:* Tentativa de força bruta/varredura detectada.
 *IPs Diferentes Bloqueados (últimos 5 min):* ${uniqueIps.size}
-*Detalhes:* ${args.details}`;
+*Detalhes:* ${escapeMarkdown(args.details)}`;
 
         await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
       }
