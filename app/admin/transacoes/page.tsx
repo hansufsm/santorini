@@ -222,6 +222,31 @@ function stripPaymentPrefix(value: string) {
   return value.replace(/^(pix|ted|doc|transferencia|transferência|transf|pagamento|pagto)\s+/i, "").trim();
 }
 
+function getSuggestedAssociates(txName: string, associatesList: AssociateOption[]) {
+  if (!txName || !associatesList) return [];
+  const normalizedTx = txName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const txWords = normalizedTx.split(/\s+/).filter(w => w.length > 2);
+  
+  if (txWords.length === 0) return [];
+
+  return associatesList
+    .filter((a) => a.status === "ativo")
+    .map((a) => {
+      const normalizedAssoc = a.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      const assocWords = normalizedAssoc.split(/\s+/).filter(w => w.length > 2);
+      
+      const intersection = txWords.filter(w => assocWords.includes(w));
+      const score = intersection.length / Math.max(txWords.length, assocWords.length);
+      
+      const isSubset = normalizedTx.includes(normalizedAssoc) || normalizedAssoc.includes(normalizedTx);
+      
+      return { associate: a, score: score + (isSubset ? 0.5 : 0) };
+    })
+    .filter((item) => item.score > 0.3)
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.associate);
+}
+
 // Mapeia uma linha CSV para o formato de transação esperado pelo Convex
 // Ajuste os índices conforme o cabeçalho do seu CSV do InfinitePay
 function mapRow(headers: string[], row: string[]): Transaction | null {
@@ -1121,17 +1146,40 @@ export default function TransacoesPage() {
                 <tbody>
                   {paginatedTransactions.map((tx, i) => {
                     const isEditing = !!tx._id && editingId === tx._id;
+                    const suggestions = isEditing ? getSuggestedAssociates(editName, associates ?? []) : [];
                     return (
                       <tr key={tx._id ?? `${tx.date}-${tx.time}-${i}`} className={`border-t border-gray-800/50 ${isEditing ? "bg-gray-800/30" : "hover:bg-gray-800/20"}`}>
                         <td className="px-4 py-2 text-gray-300">{formatDate(tx.date)}</td>
                         <td className="px-4 py-2 text-gray-300">
                           {isEditing ? (
-                            <input
-                              type="text"
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              className="w-full bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            />
+                            <div className="space-y-1.5 w-full">
+                              <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="w-full bg-gray-900 border border-gray-700 text-white rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                              />
+                              <div className="flex flex-wrap gap-1.5 items-center">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Sugerir vínculo:</span>
+                                {associatesLoading ? (
+                                  <span className="text-[10px] text-gray-500 animate-pulse">Buscando...</span>
+                                ) : suggestions.length === 0 ? (
+                                  <span className="text-[10px] text-gray-650">Nenhuma sugestão</span>
+                                ) : (
+                                  suggestions.slice(0, 3).map((a) => (
+                                    <button
+                                      key={a._id}
+                                      type="button"
+                                      onClick={() => setEditName(a.name)}
+                                      className="text-[10px] bg-emerald-950/45 hover:bg-emerald-950/80 text-emerald-400 font-bold px-2 py-0.5 rounded transition border border-emerald-900/30 cursor-pointer"
+                                      title={`Vincular a ${a.name}`}
+                                    >
+                                      {a.name} {a.unit ? `(Un. ${a.unit})` : ""}
+                                    </button>
+                                  ))
+                                )}
+                              </div>
+                            </div>
                           ) : (
                             <span className="max-w-48 truncate block" title={tx.name}>{tx.name}</span>
                           )}

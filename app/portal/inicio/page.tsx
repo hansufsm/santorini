@@ -9,7 +9,6 @@ import { useAuth } from "@/lib/auth";
 import { useConvexQuery } from "@/lib/convex";
 import { formatCurrency, formatDate, addDays, currentMonthKey } from "@/lib/utils";
 
-const PAYMENT_LINK = "https://loja.infinitepay.io/amrts/mlr1645-mensalidade-amtrs";
 const PIX_KEY = "pix@santorini.org.br";
 
 type HistoryData = {

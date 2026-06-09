@@ -6,6 +6,18 @@ import { use, useEffect, useRef } from "react";
 import { notFound } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 
+function maskName(name: string): string {
+  if (!name) return "";
+  return name
+    .split(" ")
+    .map((word) => {
+      if (word.length <= 2) return word; // Keep small words like "de", "da", "do"
+      const keepLen = Math.min(3, Math.ceil(word.length / 2));
+      return word.slice(0, keepLen) + "*".repeat(Math.max(3, word.length - keepLen));
+    })
+    .join(" ");
+}
+
 type Transaction = {
   date: string;
   time: string;
@@ -143,7 +155,7 @@ export default function PublicExtratoPage({ params }: PageProps) {
               Unidade: <strong className="text-slate-200">{associate?.unit ?? "Não informada"}</strong>
             </p>
             <p className="text-xs text-slate-400 mt-0.5">
-              Titular: <strong className="text-slate-200">{associate?.name}</strong>
+              Titular: <strong className="text-slate-200">{maskName(associate?.name ?? "")}</strong>
             </p>
           </div>
           <div className="flex gap-4 sm:text-right">

@@ -87,7 +87,6 @@ type Maintenance = { status: string; deletedAt?: number };
 type Associate = { _id: string; name: string; payerNames?: string[] };
 
 const EXPENSE_COLORS = ["#f59e0b", "#ef4444", "#3b82f6", "#14b8a6", "#a855f7", "#84cc16"];
-const PAYMENT_LINK = "https://loja.infinitepay.io/amrts/mlr1645-mensalidade-amtrs";
 const PIX_KEY = "pix@santorini.org.br";
 
 function monthLabel(monthKey: string) {
