@@ -46,17 +46,32 @@ export default function PublicExtratoPage({ params }: PageProps) {
     !cpfPrefix
   );
 
-  // Alerta no Telegram quando a rota for acessada com sucesso
+  // Alerta no Telegram sempre que a rota de 4 dígitos for acessada (sucesso ou falha)
   useEffect(() => {
-    if (data?.success && data.associate && !alertSent.current) {
+    if ((data || error) && !alertSent.current) {
       alertSent.current = true;
+      
+      let name = "Erro ao carregar";
+      let unit = "";
+      
+      if (data) {
+        if (data.success && data.associate) {
+          name = data.associate.name;
+          unit = data.associate.unit || "Sem unidade";
+        } else {
+          name = data.error || "CPF não cadastrado";
+        }
+      } else if (error) {
+        name = `Erro de conexão: ${error}`;
+      }
+      
       convexMutation("telegram:logPublicAccess", {
-        associateName: data.associate.name,
-        unit: data.associate.unit || "",
+        associateName: name,
+        unit: unit,
         cpfPrefix4: cpfPrefix,
       }).catch((err) => console.error("Falha ao registrar acesso público:", err));
     }
-  }, [data, cpfPrefix]);
+  }, [data, error, cpfPrefix]);
 
   if (loading) {
     return (
