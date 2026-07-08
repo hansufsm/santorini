@@ -423,8 +423,8 @@ export const getAssociateHistory = query({
     const total = userTxs.reduce((acc, t) => acc + t.value, 0);
     const months = new Set(userTxs.map((t) => t.date.slice(0, 7))).size;
 
-    // Lógica cumulativa para paidThisMonth baseada em R$ 50,00/mês
-    const MONTHLY_FEE = 50;
+    // Lógica cumulativa para paidThisMonth baseada no valor de mensalidade da associação
+    const MONTHLY_FEE = associate.monthlyFee ?? 50;
     const currentMonthKey = new Date().toISOString().slice(0, 7);
     const [currYear, currMonth] = currentMonthKey.split("-").map(Number);
     
@@ -459,6 +459,7 @@ export const getAssociateHistory = query({
       lastDate: userTxs[0]?.date ?? "",
       paidThisMonth,
       transactions: userTxs,
+      monthlyFee: associate.monthlyFee ?? 50,
     };
   },
 });
@@ -487,10 +488,10 @@ export const getDefaulters = query({
     const lastDayOfMonth = new Date(refYear, refMonth, 0).getDate();
     const endOfReferenceMonthStr = `${monthKey}-${String(lastDayOfMonth).padStart(2, "0")}`;
 
-    const MONTHLY_FEE = 50;
     const defaulters = [];
 
     for (const assoc of candidates) {
+      const MONTHLY_FEE = assoc.monthlyFee ?? 50;
       const paymentNames = getAssociatePaymentNames(assoc);
       
       let startMonthKey = assoc.joinedAt ? assoc.joinedAt.slice(0, 7) : null;

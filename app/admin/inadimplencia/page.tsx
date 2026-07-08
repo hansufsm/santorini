@@ -53,6 +53,7 @@ type AssociateHistory = {
   lastDate: string;
   paidThisMonth: boolean;
   transactions: Transaction[];
+  monthlyFee: number;
 } | null;
 
 function CardShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -358,7 +359,7 @@ function DrawerAuditoria({
     { search: "", associateId, sessionToken }
   );
 
-  const MONTHLY_FEE = 50;
+  const MONTHLY_FEE = history?.monthlyFee ?? 50;
 
   // Lógica de cálculo cumulativo mês a mês para renderizar o histórico
   const statement = useMemo(() => {

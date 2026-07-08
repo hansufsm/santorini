@@ -74,6 +74,7 @@ export default defineSchema({
     joinedAt: v.optional(v.string()),   // data de adesão (formato ISO: YYYY-MM-DD)
     leftAt: v.optional(v.string()),     // data de desligamento (formato ISO)
     notes: v.optional(v.string()),
+    monthlyFee: v.optional(v.number()), // Valor da contribuição mensal customizada (padrão R$ 50,00)
     // Nomes alternativos que aparecem no extrato bancário para esta unidade.
     // Ex: ["Amilton Silva", "Macpela dos Santos"] — contribuições de qualquer
     // desses nomes são contabilizadas como pertencentes a este associado.
