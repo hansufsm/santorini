@@ -57,6 +57,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
+  const { isEnabled } = useFeatureFlags();
 
   useEffect(() => {
     if (loading) return;
@@ -85,7 +86,6 @@ export default function AdminLayout({
     return null;
   }
 
-  const { isEnabled } = useFeatureFlags();
 
   const visibleNavItems = NAV_ITEMS.filter((item) => {
     const flag = ROUTE_FLAGS[item.href];
