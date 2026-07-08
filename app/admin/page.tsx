@@ -278,6 +278,12 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
+  // Novos filtros e ordenação
+  const [selectedAssociateId, setSelectedAssociateId] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
+  const [sortField, setSortField] = useState<"date" | "name" | "value" | "type">("date");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
   const { data: txSummary } = useConvexQuery<TxSummary>("transactions:getSummary");
   const { data: assocSummary } = useConvexQuery<AssocSummary>("associates:getAssociatesSummary");
   const { data: reservas } = useConvexQuery<Reservation[]>("reservations:getAllReservations");
@@ -285,7 +291,7 @@ export default function AdminPage() {
   const { data: txList, loading: txLoading } = useConvexQuery<Transaction[]>("transactions:getAllTransactions");
   const { data: monthlyFlow } = useConvexQuery<MonthlyFlow[]>("transactions:getMonthlyFlow", { months: 12 });
   const { data: topContributors } = useConvexQuery<TopContributor[]>("transactions:getTopContributors", { limit: 6 });
-  // Carrega associados com seus apelidos de pagamento para a busca expandida
+  // Carrega associados com seus apelidos de pagamento para a busca expandida e combobox
   const { data: associates } = useConvexQuery<Associate[]>("associates:getAllAssociates");
 
   const pendingReservations = reservas?.filter((r) => r.status === "pendente").length ?? 0;
@@ -311,18 +317,53 @@ export default function AdminPage() {
     return names;
   }, [associates, search]);
 
+  const selectedAssociate = useMemo(() => {
+    if (!selectedAssociateId || !associates) return null;
+    return associates.find((a) => a._id === selectedAssociateId) || null;
+  }, [associates, selectedAssociateId]);
+
+  const associateNamesToFilter = useMemo(() => {
+    if (!selectedAssociate) return null;
+    return new Set([
+      selectedAssociate.name.toLowerCase(),
+      ...(selectedAssociate.payerNames ?? []).map((n) => n.toLowerCase()),
+    ]);
+  }, [selectedAssociate]);
+
   const filteredTransactions = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (txList ?? [])
       .filter((tx) => selectedMonth === "all" || tx.date?.startsWith(selectedMonth))
+      .filter((tx) => {
+        if (filterType === "all") return true;
+        if (filterType === "income") return tx.value >= 0;
+        if (filterType === "expense") return tx.value < 0;
+        return true;
+      })
+      .filter((tx) => {
+        if (!associateNamesToFilter) return true;
+        return associateNamesToFilter.has((tx.name ?? "").toLowerCase());
+      })
       .filter((tx) => {
         if (!term) return true;
         // Se o nome bate com algum apelido do associado, inclui todas as transações do grupo
         if (expandedNames.size > 0 && expandedNames.has((tx.name ?? "").toLowerCase())) return true;
         return Object.values(tx).some((value) => String(value ?? "").toLowerCase().includes(term));
       })
-      .sort((a, b) => b.date.localeCompare(a.date) || String(b.time ?? "").localeCompare(String(a.time ?? "")));
-  }, [txList, selectedMonth, search, expandedNames]);
+      .sort((a, b) => {
+        let comparison = 0;
+        if (sortField === "date") {
+          comparison = a.date.localeCompare(b.date) || String(a.time ?? "").localeCompare(String(b.time ?? ""));
+        } else if (sortField === "name") {
+          comparison = (a.name ?? "").localeCompare(b.name ?? "");
+        } else if (sortField === "value") {
+          comparison = a.value - b.value;
+        } else if (sortField === "type") {
+          comparison = (a.type ?? "").localeCompare(b.type ?? "");
+        }
+        return sortDirection === "asc" ? comparison : -comparison;
+      });
+  }, [txList, selectedMonth, search, expandedNames, filterType, associateNamesToFilter, sortField, sortDirection]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -393,6 +434,47 @@ export default function AdminPage() {
     setPage(1);
   }
 
+  function handleSort(field: "date" | "name" | "value" | "type") {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+    setPage(1);
+  }
+
+  function handleExportCSV() {
+    if (!filteredTransactions.length) return;
+
+    const headers = ["Data", "Hora", "Nome/Associado", "Tipo", "Detalhe", "Valor (R$)"];
+    const rows = filteredTransactions.map((tx) => [
+      formatDate(tx.date),
+      tx.time?.slice(0, 5) || "",
+      tx.name || "",
+      tx.type || "",
+      tx.detail || "",
+      tx.value.toFixed(2),
+    ]);
+
+    const csvContent = [
+      headers.join(";"),
+      ...rows.map((row) => row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(";")),
+    ].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `transacoes_${selectedMonth === "all" ? "todos" : selectedMonth}_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <div className="page-fade space-y-6 pb-8">
       <PaymentVerificationCard session={session} />
@@ -404,33 +486,74 @@ export default function AdminPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300/80">Diretoria</p>
               <h2 className="mt-2 text-2xl font-black text-white">Gerenciador do histórico de transações</h2>
               <p className="mt-1 text-sm text-emerald-200/55">
-                Gráficos, subtotais, busca em qualquer campo, seleção mensal e tabela paginada para análise financeira.
+                Gráficos, subtotais, busca avançada, seleção por associado e filtros detalhados para análise financeira.
               </p>
               <DesktopRecommendedNotice className="mt-4 lg:hidden" />
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300/60" />
-                <input
-                  value={search}
-                  onChange={(event) => handleSearch(event.target.value)}
-                  placeholder="Buscar em qualquer campo..."
-                  className="w-full sm:w-72 rounded-xl border border-emerald-800/60 bg-emerald-950/50 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-emerald-200/35 outline-none transition-colors focus:border-emerald-400"
-                />
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-300/60" />
+                  <input
+                    value={search}
+                    onChange={(event) => handleSearch(event.target.value)}
+                    placeholder="Buscar em qualquer campo..."
+                    className="w-full sm:w-72 rounded-xl border border-emerald-800/60 bg-emerald-950/50 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-emerald-200/35 outline-none transition-colors focus:border-emerald-400"
+                  />
+                </div>
+                <select
+                  value={selectedAssociateId}
+                  onChange={(event) => {
+                    setSelectedAssociateId(event.target.value);
+                    setPage(1);
+                  }}
+                  className="rounded-xl border border-emerald-800/60 bg-emerald-950/50 px-3 py-2.5 text-sm text-emerald-50 outline-none transition-colors focus:border-emerald-400 w-full sm:w-64"
+                >
+                  <option value="">Todos os associados</option>
+                  {associates?.map((assoc) => (
+                    <option key={assoc._id} value={assoc._id}>
+                      {assoc.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <select
-                value={selectedMonth}
-                onChange={(event) => handleMonth(event.target.value)}
-                className="rounded-xl border border-emerald-800/60 bg-emerald-950/50 px-3 py-2.5 text-sm text-emerald-50 outline-none transition-colors focus:border-emerald-400"
-              >
-                <option value="all">Todos os meses</option>
-                {months.map((month) => (
-                  <option key={month} value={month}>{monthLabel(month)}</option>
-                ))}
-              </select>
-              <Link href="/admin/transacoes" className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500">
-                Importar CSV
-              </Link>
+              
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                <select
+                  value={selectedMonth}
+                  onChange={(event) => handleMonth(event.target.value)}
+                  className="rounded-xl border border-emerald-800/60 bg-emerald-950/50 px-3 py-2.5 text-sm text-emerald-50 outline-none transition-colors focus:border-emerald-400"
+                >
+                  <option value="all">Todos os meses</option>
+                  {months.map((month) => (
+                    <option key={month} value={month}>{monthLabel(month)}</option>
+                  ))}
+                </select>
+                <select
+                  value={filterType}
+                  onChange={(event) => {
+                    setFilterType(event.target.value as "all" | "income" | "expense");
+                    setPage(1);
+                  }}
+                  className="rounded-xl border border-emerald-800/60 bg-emerald-950/50 px-3 py-2.5 text-sm text-emerald-50 outline-none transition-colors focus:border-emerald-400"
+                >
+                  <option value="all">Todas as transações</option>
+                  <option value="income">Apenas Entradas (Receitas)</option>
+                  <option value="expense">Apenas Saídas (Despesas)</option>
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExportCSV}
+                    disabled={!filteredTransactions.length}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-xl border border-emerald-700 bg-emerald-950/40 px-4 py-2.5 text-sm font-bold text-emerald-100 transition-colors hover:bg-emerald-900/60 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Exportar CSV
+                  </button>
+                  <Link href="/admin/transacoes" className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500">
+                    Importar CSV
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -502,12 +625,32 @@ export default function AdminPage() {
               <table className="w-full min-w-[920px] border-separate border-spacing-0 text-sm">
                 <thead className="sticky top-0 z-10 bg-emerald-950/90 text-xs uppercase tracking-widest text-emerald-200/60 backdrop-blur">
                   <tr>
-                    <th className="px-4 py-4 text-left font-semibold">Data</th>
+                    <th
+                      onClick={() => handleSort("date")}
+                      className="px-4 py-4 text-left font-semibold cursor-pointer select-none hover:text-white transition-colors"
+                    >
+                      Data {sortField === "date" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                    </th>
                     <th className="px-4 py-4 text-left font-semibold">Hora</th>
-                    <th className="px-4 py-4 text-left font-semibold">Nome</th>
-                    <th className="px-4 py-4 text-left font-semibold">Tipo</th>
+                    <th
+                      onClick={() => handleSort("name")}
+                      className="px-4 py-4 text-left font-semibold cursor-pointer select-none hover:text-white transition-colors"
+                    >
+                      Nome/Associado {sortField === "name" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                    </th>
+                    <th
+                      onClick={() => handleSort("type")}
+                      className="px-4 py-4 text-left font-semibold cursor-pointer select-none hover:text-white transition-colors"
+                    >
+                      Tipo {sortField === "type" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                    </th>
                     <th className="px-4 py-4 text-left font-semibold">Detalhe</th>
-                    <th className="px-4 py-4 text-right font-semibold">Valor</th>
+                    <th
+                      onClick={() => handleSort("value")}
+                      className="px-4 py-4 text-right font-semibold cursor-pointer select-none hover:text-white transition-colors"
+                    >
+                      Valor {sortField === "value" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

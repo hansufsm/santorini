@@ -14,6 +14,7 @@ import { AppFooter } from "@/components/app-footer";
 import { TrilhaVivaGuideCard } from "@/components/trilha-viva-guide";
 import { useFeatureFlags } from "@/lib/convex";
 import { FeatureFlagGuard } from "@/components/feature-flag-guard";
+import { PreferencesDrawer } from "@/components/preferences-drawer";
 
 type PortalNavItem = {
   href: string;
@@ -79,6 +80,7 @@ export default function PortalLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [prefOpen, setPrefOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -137,7 +139,7 @@ export default function PortalLayout({
         ))}
       </nav>
 
-      <div className="mt-6 border-t pt-4" style={{ borderColor: "var(--border-main)" }}>
+      <div className="mt-6 border-t pt-4 space-y-1" style={{ borderColor: "var(--border-main)" }}>
         <p className="truncate px-1 text-xs text-emerald-200/70">{session.name}</p>
         {session.unit && <p className="px-1 text-xs text-emerald-200/45">Unidade {session.unit}</p>}
         <div className="mt-2 px-1"><RoleBadge role={session.role} /></div>
@@ -145,8 +147,14 @@ export default function PortalLayout({
           Página inicial pública
         </Link>
         <button
+          onClick={() => { setPrefOpen(true); if (onClick) onClick(); }}
+          className="w-full px-1 py-1 text-left text-xs text-emerald-200/60 transition-colors hover:text-white cursor-pointer"
+        >
+          Preferências
+        </button>
+        <button
           onClick={() => { logout(); router.push("/login"); }}
-          className="w-full px-1 py-1 text-left text-xs text-emerald-200/60 transition-colors hover:text-white"
+          className="w-full px-1 py-1 text-left text-xs text-emerald-200/60 transition-colors hover:text-white cursor-pointer"
         >
           Sair
         </button>
@@ -195,10 +203,10 @@ export default function PortalLayout({
             </div>
           </div>
           <button
-            onClick={() => { logout(); router.push("/login"); }}
-            className="text-sm text-emerald-200/70 hover:text-white transition-colors"
+            onClick={() => setPrefOpen(true)}
+            className="rounded-xl border border-emerald-800/65 bg-emerald-950/20 px-3 py-2 text-xs font-bold text-emerald-200/80 hover:text-white transition hover:bg-emerald-900/45 cursor-pointer"
           >
-            Sair
+            Preferências
           </button>
         </header>
 
@@ -214,6 +222,7 @@ export default function PortalLayout({
           <AppFooter />
         </main>
       </div>
+      <PreferencesDrawer isOpen={prefOpen} onClose={() => setPrefOpen(false)} />
     </div>
   );
 }

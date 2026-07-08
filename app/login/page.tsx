@@ -119,7 +119,10 @@ export default function LoginPage() {
       setSessionCookie(session);
 
       // Redirecionar conforme papel
-      router.push("/portal/inicio");
+      const destination = session.role === "sysadmin" || session.role === "diretoria"
+        ? "/admin"
+        : "/portal/inicio";
+      router.push(destination);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);

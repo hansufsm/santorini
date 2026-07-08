@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
-import { SiteIntroVideo } from "@/components/site-intro-video";
+import { PublicSplashHero } from "@/components/public-splash-hero";
 // ─── Ícones SVG ───────────────────────────────────────────────────────────────
 
 function Icon({ d, className = "h-5 w-5" }: { d: string | string[]; className?: string }) {
@@ -112,7 +112,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col page-fade"
       style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
-      <SiteIntroVideo />
 
       {/* ─── Overlay do drawer ───────────────────────────────────────────── */}
       {drawerOpen && (
@@ -295,41 +294,8 @@ export default function HomePage() {
       {/* ─── Conteúdo ────────────────────────────────────────────────────── */}
       <main className={`flex-1 ${maxW} mx-auto w-full px-4 sm:px-6 py-6 md:py-8`}>
 
-        {/* Hero */}
-        <div className="relative h-40 sm:h-52 md:h-72 rounded-3xl overflow-hidden mb-6 md:mb-8
-          shadow-2xl group border"
-          style={{ borderColor: "var(--border-main)" }}>
-          {/* Imagem real do empreendimento com zoom suave no hover */}
-          <img
-            src="/santorini.webp"
-            alt="Vista aérea do Residencial Santorini"
-            className="absolute inset-0 h-full w-full object-cover object-center
-              transition-transform duration-700 ease-in-out group-hover:scale-105"
-          />
-          {/* Overlay gradiente esmeralda sobre a foto */}
-          <div className="absolute inset-0 bg-gradient-to-br
-            from-[#022c22]/85 via-[#064e3b]/75 to-[#065f46]/60" />
-          {/* Brilhos decorativos */}
-          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-emerald-500/15
-            blur-3xl group-hover:bg-emerald-400/20 transition-all duration-700" />
-          <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full bg-emerald-400/10 blur-2xl" />
-          <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-7 md:p-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-              <div>
-                <span className="bg-emerald-600 text-white text-[10px] font-bold uppercase
-                  tracking-widest px-3 py-1 rounded-full mb-2 md:mb-3 inline-block">
-                  Painel Financeiro
-                </span>
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                  Residencial Santorini
-                </h2>
-                <p className="text-emerald-100/70 mt-1 md:mt-2 max-w-xl text-sm leading-relaxed hidden sm:block">
-                  Gestão de contribuições e acompanhamento financeiro do residencial.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Hero Splash Híbrido */}
+        <PublicSplashHero appHref={appHref} appCtaLabel={appCtaLabel} />
 
         {/* Cards públicos sem dados financeiros ou pessoais */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">

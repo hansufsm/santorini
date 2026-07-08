@@ -26,6 +26,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className="h-full">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const savedTheme = localStorage.getItem('snt-theme');
+                  if (savedTheme === 'light') {
+                    document.documentElement.classList.add('theme-light');
+                  }
+                } catch (e) {}
+              })();
+            `
+          }}
+        />
+      </head>
       <body className={`${geist.className} min-h-screen antialiased`} style={{ backgroundColor: "var(--bg-page)", color: "var(--text-primary)" }}>
         {/* ConvexClientProvider: conecta ao banco Convex em tempo real */}
         <ConvexClientProvider>

@@ -238,20 +238,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Rotas e assets públicos que nunca precisam de autenticação.
-  const isPublic =
-    pathname === "/" ||
-    pathname === "/login" ||
-    isCpfRoute || // Libera a rota de 4 dígitos do CPF na raiz (ex: /1234)
-    pathname.startsWith("/_next/") ||
-    pathname.startsWith("/api/") ||
-    pathname === "/favicon.ico" ||
-    PUBLIC_FILE.test(pathname);
-
-  if (isPublic) {
-    return NextResponse.next();
-  }
-
   // Tentar ler o cookie de sessão
   const cookieValue = request.cookies.get(COOKIE_NAME)?.value;
 
@@ -262,6 +248,27 @@ export async function proxy(request: NextRequest) {
     } catch {
       session = null;
     }
+  }
+
+  // Redirecionamento inteligente: se autenticado tentar ir para /login, manda para a área correspondente
+  if (pathname === "/login" && session) {
+    const destination = session.role === "sysadmin" || session.role === "diretoria"
+      ? "/admin"
+      : "/portal/inicio";
+    return NextResponse.redirect(new URL(destination, request.url));
+  }
+
+  // Rotas e assets públicos que nunca precisam de autenticação.
+  const isPublic =
+    pathname === "/" ||
+    isCpfRoute || // Libera a rota de 4 dígitos do CPF na raiz (ex: /1234)
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/api/") ||
+    pathname === "/favicon.ico" ||
+    PUBLIC_FILE.test(pathname);
+
+  if (isPublic || pathname === "/login") {
+    return NextResponse.next();
   }
 
   // Sem sessão válida → redirecionar para login

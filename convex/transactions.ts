@@ -413,43 +413,127 @@ export const getAssociateHistory = query({
     const received = [
       ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect()),
       ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Depósito InfinitePay")).collect())
-    ];
+    ].filter((t) => !t.deletedAt);
+    
     // Combina nome principal + aliases hardcoded + payerNames do banco
     const userTxs = received
       .filter((t) => matchesAssociateName(t.name, getAssociatePaymentNames(associate)))
       .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
-    if (!userTxs.length) return null;
+    
     const total = userTxs.reduce((acc, t) => acc + t.value, 0);
     const months = new Set(userTxs.map((t) => t.date.slice(0, 7))).size;
+
+    // Lógica cumulativa para paidThisMonth baseada em R$ 50,00/mês
+    const MONTHLY_FEE = 50;
+    const currentMonthKey = new Date().toISOString().slice(0, 7);
+    const [currYear, currMonth] = currentMonthKey.split("-").map(Number);
+    
+    let startMonthKey = associate.joinedAt ? associate.joinedAt.slice(0, 7) : null;
+    if (!startMonthKey && userTxs.length > 0) {
+      const oldestTx = [...userTxs].sort((a, b) => a.date.localeCompare(b.date))[0];
+      startMonthKey = oldestTx.date.slice(0, 7);
+    }
+
+    let paidThisMonth = false;
+    if (startMonthKey) {
+      const [startYear, startMonth] = startMonthKey.split("-").map(Number);
+      const monthsActive = (currYear - startYear) * 12 + (currMonth - startMonth) + 1;
+      const expectedCumulative = Math.max(0, monthsActive) * MONTHLY_FEE;
+      const paidCumulative = userTxs.reduce((acc, t) => acc + t.value, 0);
+      paidThisMonth = paidCumulative >= expectedCumulative;
+    } else {
+      // Se não há histórico nenhum nem data de adesão, assume não pago
+      paidThisMonth = false;
+    }
+
     return {
       name: associate.name,
       unit: associate.unit ?? null,
       total,
       monthsActive: months,
-      lastDate: userTxs[0].date,
-      paidThisMonth: userTxs.some((t) => t.date.startsWith(new Date().toISOString().slice(0, 7))),
+      lastDate: userTxs[0]?.date ?? "",
+      paidThisMonth,
       transactions: userTxs,
     };
   },
 });
 
 export const getDefaulters = query({
-  args: { monthKey: v.string() },
-  handler: async (ctx, { monthKey }) => {
-    const activeAssociates = await ctx.db.query("associates").withIndex("by_status", (q) => q.eq("status", "ativo")).collect();
+  args: {
+    sessionToken: v.string(),
+    monthKey: v.string(), // formato "YYYY-MM"
+  },
+  handler: async (ctx, { sessionToken, monthKey }) => {
+    // Exige papel diretoria ou superior
+    await requireRole(ctx.db, sessionToken, "diretoria");
+
+    const activeAssociates = await ctx.db
+      .query("associates")
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .collect();
+    const candidates = activeAssociates.filter((a) => a.status === "ativo");
+
     const allReceived = [
       ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Recebido")).collect()),
       ...(await ctx.db.query("transactions").withIndex("by_detail", (q) => q.eq("detail", "Depósito InfinitePay")).collect())
-    ];
-    const monthTxs = allReceived.filter((t) => t.date.startsWith(monthKey));
-    return activeAssociates.filter((a) => {
-      const paymentNames = getAssociatePaymentNames(a);
-      return !monthTxs.some((t) => matchesAssociateName(t.name, paymentNames));
-    }).map((a) => {
-      const paymentNames = getAssociatePaymentNames(a);
-      const lastPayment = allReceived.filter((t) => matchesAssociateName(t.name, paymentNames)).sort((x, y) => y.date.localeCompare(x.date))[0];
-      return { id: a._id, name: a.name, unit: a.unit, status: a.status, lastPaymentDate: lastPayment?.date ?? null };
-    }).sort((a, b) => (a.unit ?? "").localeCompare(b.unit ?? ""));
+    ].filter((t) => !t.deletedAt);
+
+    const [refYear, refMonth] = monthKey.split("-").map(Number);
+    const lastDayOfMonth = new Date(refYear, refMonth, 0).getDate();
+    const endOfReferenceMonthStr = `${monthKey}-${String(lastDayOfMonth).padStart(2, "0")}`;
+
+    const MONTHLY_FEE = 50;
+    const defaulters = [];
+
+    for (const assoc of candidates) {
+      const paymentNames = getAssociatePaymentNames(assoc);
+      
+      let startMonthKey = assoc.joinedAt ? assoc.joinedAt.slice(0, 7) : null;
+      const assocTxs = allReceived.filter((t) => matchesAssociateName(t.name, paymentNames));
+      
+      if (!startMonthKey) {
+        if (assocTxs.length > 0) {
+          const oldestTx = [...assocTxs].sort((a, b) => a.date.localeCompare(b.date))[0];
+          startMonthKey = oldestTx.date.slice(0, 7);
+        } else {
+          startMonthKey = monthKey;
+        }
+      }
+
+      // Se o associado aderiu após o mês selecionado, ignora
+      if (startMonthKey.localeCompare(monthKey) > 0) {
+        continue;
+      }
+
+      const [startYear, startMonth] = startMonthKey.split("-").map(Number);
+      const monthsActive = (refYear - startYear) * 12 + (refMonth - startMonth) + 1;
+      const expectedCumulative = Math.max(0, monthsActive) * MONTHLY_FEE;
+
+      const paidCumulative = assocTxs
+        .filter((t) => t.date.localeCompare(endOfReferenceMonthStr) <= 0)
+        .reduce((acc, t) => acc + t.value, 0);
+
+      const balance = paidCumulative - expectedCumulative;
+      const lastPayment = [...assocTxs].sort((a, b) => b.date.localeCompare(a.date))[0];
+
+      if (balance < 0) {
+        const totalOverdueValue = Math.abs(balance);
+        const monthsOverdue = Math.ceil(totalOverdueValue / MONTHLY_FEE);
+        
+        defaulters.push({
+          associateId: assoc._id,
+          name: assoc.name,
+          unit: assoc.unit ?? "Sem Unidade",
+          monthsOverdue,
+          totalOverdueValue,
+          lastPaymentDate: lastPayment?.date ?? null,
+          joinedAt: assoc.joinedAt ?? startMonthKey + "-01",
+        });
+      }
+    }
+
+    // Ordenar por meses em atraso DESC, depois por unidade ASC
+    return defaulters.sort((a, b) => b.monthsOverdue - a.monthsOverdue || a.unit.localeCompare(b.unit));
   },
 });
 

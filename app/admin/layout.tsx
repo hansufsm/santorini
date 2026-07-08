@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { AppFooter } from "@/components/app-footer";
 import { useFeatureFlags } from "@/lib/convex";
 import { FeatureFlagGuard } from "@/components/feature-flag-guard";
+import { PreferencesDrawer } from "@/components/preferences-drawer";
 
 type NavItem = {
   href: string;
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/transacoes", label: "Transações", sysadminOnly: true },
   { href: "/admin/associados", label: "Associados" },
+  { href: "/admin/inadimplencia", label: "Inadimplência" },
   { href: "/admin/diretoria", label: "Gestão da Diretoria", sysadminOnly: true },
   { href: "/admin/auditoria-diretoria", label: "Auditoria da Diretoria", sysadminOnly: true },
   { href: "/admin/reservas", label: "Reservas" },
@@ -54,6 +56,7 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [prefOpen, setPrefOpen] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -127,7 +130,7 @@ export default function AdminLayout({
         ))}
       </nav>
 
-      <div className="border-t pt-4 mt-4" style={{ borderColor: "var(--border-main)" }}>
+      <div className="border-t pt-4 mt-4 space-y-1" style={{ borderColor: "var(--border-main)" }}>
         <p className="text-xs text-emerald-200/70 truncate px-1">{session.name}</p>
         <p className="text-xs text-emerald-500 capitalize px-1 mb-2">{session.role}</p>
         <Link
@@ -138,8 +141,14 @@ export default function AdminLayout({
           Página inicial pública
         </Link>
         <button
+          onClick={() => { setPrefOpen(true); if (onClick) onClick(); }}
+          className="w-full text-left text-xs text-emerald-200/60 hover:text-white px-1 py-1 transition-colors cursor-pointer"
+        >
+          Preferências
+        </button>
+        <button
           onClick={() => { logout(); router.push("/login"); }}
-          className="w-full text-left text-xs text-emerald-200/60 hover:text-white px-1 py-1 transition-colors"
+          className="w-full text-left text-xs text-emerald-200/60 hover:text-white px-1 py-1 transition-colors cursor-pointer"
         >
           Sair
         </button>
@@ -185,10 +194,10 @@ export default function AdminLayout({
             Santorini Admin
           </span>
           <button
-            onClick={() => { logout(); router.push("/login"); }}
-            className="text-sm text-emerald-200/70 hover:text-white"
+            onClick={() => setPrefOpen(true)}
+            className="rounded-xl border border-emerald-800/65 bg-emerald-950/20 px-3 py-2 text-xs font-bold text-emerald-200/80 hover:text-white transition hover:bg-emerald-900/45 cursor-pointer"
           >
-            Sair
+            Preferências
           </button>
         </header>
 
@@ -203,6 +212,7 @@ export default function AdminLayout({
           <AppFooter />
         </main>
       </div>
+      <PreferencesDrawer isOpen={prefOpen} onClose={() => setPrefOpen(false)} />
     </div>
   );
 }
