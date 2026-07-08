@@ -372,6 +372,11 @@ function DrawerAuditoria({
       startMonthKey = selectedMonth;
     }
 
+    // Regra: Considerar cobranças apenas a partir de Março de 2026 ("2026-03")
+    if (startMonthKey.localeCompare("2026-03") < 0) {
+      startMonthKey = "2026-03";
+    }
+
     // Gerar meses de startMonthKey até selectedMonth
     const [startYear, startMonth] = startMonthKey.split("-").map(Number);
     const [endYear, endMonth] = selectedMonth.split("-").map(Number);

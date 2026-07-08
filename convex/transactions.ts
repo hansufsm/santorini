@@ -434,6 +434,11 @@ export const getAssociateHistory = query({
       startMonthKey = oldestTx.date.slice(0, 7);
     }
 
+    // Regra: Considerar cobranças apenas a partir de Março de 2026 ("2026-03")
+    if (startMonthKey && startMonthKey.localeCompare("2026-03") < 0) {
+      startMonthKey = "2026-03";
+    }
+
     let paidThisMonth = false;
     if (startMonthKey) {
       const [startYear, startMonth] = startMonthKey.split("-").map(Number);
@@ -498,6 +503,11 @@ export const getDefaulters = query({
         } else {
           startMonthKey = monthKey;
         }
+      }
+
+      // Regra: Considerar cobranças apenas a partir de Março de 2026 ("2026-03")
+      if (startMonthKey.localeCompare("2026-03") < 0) {
+        startMonthKey = "2026-03";
       }
 
       // Se o associado aderiu após o mês selecionado, ignora
