@@ -93,10 +93,11 @@ export default function PublicExtratoPage({ params }: PageProps) {
         isBot = botPattern.test(userAgent) || !!navigator.webdriver;
       }
 
-      convexMutation("telegram:logPublicAccess", {
+      convexMutation("telegram:logStatementAccess", {
         associateName: name,
-        unit: unit,
-        publicCode: cpfPrefix,
+        unit: unit || "Sem Unidade",
+        url: typeof window !== "undefined" ? window.location.href : "",
+        type: "Público",
         viewerUserId: viewerUserId || undefined,
         viewerName: viewerName || undefined,
         isBot,
@@ -231,6 +232,36 @@ export default function PublicExtratoPage({ params }: PageProps) {
             })
           )}
         </div>
+
+        {/* Banner de Pagamento Amigável (Caso inadimplente/pendente) */}
+        {associate && !associate.paidThisMonth && (
+          <div className="bg-amber-950/20 border border-amber-500/20 rounded-2xl p-5 md:p-6 space-y-3 shadow-lg animate-fade-in">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl shrink-0" role="img" aria-label="Aperto de mão amigável">🤝</span>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-amber-200">Sua contribuição fortalece nossa comunidade!</h4>
+                <p className="text-xs text-amber-200/70 leading-relaxed">
+                  Identificamos que há pendências no acumulado desta unidade para o exercício de 2026. Regularize sua situação realizando uma transferência PIX para a chave oficial da associação:
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-2 pt-1">
+                  <span
+                    onClick={() => {
+                      if (typeof navigator !== "undefined") {
+                        navigator.clipboard.writeText("pix@santorini.org.br");
+                        alert("Chave PIX copiada!");
+                      }
+                    }}
+                    className="bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-xs px-2.5 py-1.5 rounded-lg select-all cursor-pointer hover:bg-amber-500/20 transition-colors"
+                    title="Clique para copiar"
+                  >
+                    pix@santorini.org.br
+                  </span>
+                  <span className="text-[10px] text-amber-500/60 font-semibold">Chave PIX Oficial (E-mail)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Rodapé da página pública */}
         <div className="text-center text-[10px] text-slate-500 mt-8">

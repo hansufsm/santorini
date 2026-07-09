@@ -4,8 +4,9 @@
  */
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
-import { useConvexQuery } from "@/lib/convex";
+import { useConvexQuery, convexMutation } from "@/lib/convex";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Transaction = {
@@ -36,6 +37,36 @@ export default function ExtratoPage() {
     { search: "", associateId: canViewFinancialData ? session?.associateId : undefined, sessionToken: session?.token ?? "" },
     !session || !canViewFinancialData
   );
+
+  const alertSent = useRef(false);
+
+  useEffect(() => {
+    if (data && !alertSent.current) {
+      alertSent.current = true;
+      
+      const viewerUserId = session?._id || "";
+      const viewerName = session?.name || "";
+
+      let isBot = false;
+      let userAgent = "";
+      if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+        userAgent = navigator.userAgent || "";
+        const botPattern = /bot|google|baidu|bing|msn|duckduckbot|teoma|slurp|yandex|crawler|spider|robot|crawling|lighthouse/i;
+        isBot = botPattern.test(userAgent) || !!navigator.webdriver;
+      }
+
+      convexMutation("telegram:logStatementAccess", {
+        associateName: data.name || session?.name || "Desconhecido",
+        unit: session?.unit || "Sem Unidade",
+        url: typeof window !== "undefined" ? window.location.href : "",
+        type: "Portal",
+        viewerUserId: viewerUserId || undefined,
+        viewerName: viewerName || undefined,
+        isBot,
+        userAgent: userAgent || undefined,
+      }).catch((err) => console.error("Falha ao registrar acesso ao portal:", err));
+    }
+  }, [data, session]);
 
   if (!session) return null;
 

@@ -207,11 +207,12 @@ export const sendAlertAction = action({
   },
 });
 
-export const logPublicAccess = mutation({
+export const logStatementAccess = mutation({
   args: {
     associateName: v.string(),
     unit: v.string(),
-    publicCode: v.string(),
+    url: v.string(),
+    type: v.string(), // "Público" ou "Portal"
     viewerUserId: v.optional(v.string()),
     viewerName: v.optional(v.string()),
     isBot: v.optional(v.boolean()),
@@ -219,8 +220,9 @@ export const logPublicAccess = mutation({
   },
   handler: async (ctx, args) => {
     const escapedName = escapeMarkdown(args.associateName);
-    const escapedUnit = args.unit ? escapeMarkdown(args.unit) : "";
-    const unitStr = escapedUnit ? ` (Unidade ${escapedUnit})` : "";
+    const escapedUnit = args.unit ? escapeMarkdown(args.unit) : "Sem Unidade";
+    const typeStr = escapeMarkdown(args.type);
+    const escapedUrl = escapeMarkdown(args.url);
     
     let viewerStr = "👋 Visitante Humano (Não-Logado)";
     if (args.viewerUserId) {
@@ -236,9 +238,10 @@ export const logPublicAccess = mutation({
       deviceDetail = `\n*Navegador/User-Agent:* ${escapeMarkdown(shortUA)}...`;
     }
 
-    const alertText = `👁️ *Acesso ao Extrato Público*
-*Associado:* ${escapedName}${unitStr}
-*Código Consultado:* ${escapeMarkdown(args.publicCode)}
+    const alertText = `👁️ *Acesso ao Extrato (${typeStr})*
+*Associado:* ${escapedName}
+*Unidade:* ${escapedUnit}
+*URL:* ${escapedUrl}
 *Origem do Acesso:* ${viewerStr}${deviceDetail}`;
 
     await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });

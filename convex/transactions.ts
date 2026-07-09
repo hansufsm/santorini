@@ -603,6 +603,30 @@ export const getPublicAssociateHistory = query({
       yearlyTotals[year] = (yearlyTotals[year] || 0) + t.value;
     }
 
+    // Lógica de adimplência cumulativa para paidThisMonth
+    const MONTHLY_FEE = matched.monthlyFee ?? 50;
+    const currentMonthKey = new Date().toISOString().slice(0, 7);
+    const [currYear, currMonth] = currentMonthKey.split("-").map(Number);
+
+    let startMonthKey = matched.joinedAt ? matched.joinedAt.slice(0, 7) : null;
+    if (!startMonthKey && userTxs.length > 0) {
+      const oldestTx = [...userTxs].sort((a, b) => a.date.localeCompare(b.date))[0];
+      startMonthKey = oldestTx.date.slice(0, 7);
+    }
+
+    if (startMonthKey && startMonthKey.localeCompare("2026-03") < 0) {
+      startMonthKey = "2026-03";
+    }
+
+    let paidThisMonth = false;
+    if (startMonthKey) {
+      const [startYear, startMonth] = startMonthKey.split("-").map(Number);
+      const monthsActive = (currYear - startYear) * 12 + (currMonth - startMonth) + 1;
+      const expectedCumulative = Math.max(0, monthsActive) * MONTHLY_FEE;
+      const paidCumulative = userTxs.reduce((acc, t) => acc + t.value, 0);
+      paidThisMonth = paidCumulative >= expectedCumulative;
+    }
+
     return {
       success: true,
       associate: {
@@ -611,7 +635,7 @@ export const getPublicAssociateHistory = query({
         total,
         monthsActive: months,
         lastDate: userTxs[0]?.date ?? null,
-        paidThisMonth: userTxs.some((t) => t.date.startsWith(new Date().toISOString().slice(0, 7))),
+        paidThisMonth,
         yearlyTotals,
         transactions: userTxs.map((t) => ({
           _id: t._id,
