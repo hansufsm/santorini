@@ -148,6 +148,7 @@ export const createAssociate = mutation({
     joinedAt: v.optional(v.string()),
     leftAt: v.optional(v.string()),
     notes: v.optional(v.string()),
+    payerNames: v.optional(v.array(v.string())),
   },
   handler: async (ctx, { sessionToken, ...args }) => {
     // Apenas diretoria ou sysadmin podem cadastrar associados

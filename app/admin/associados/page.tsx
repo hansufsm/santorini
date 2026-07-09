@@ -149,13 +149,12 @@ export default function AssociadosPage() {
         .map((n) => n.trim())
         .filter((n) => n.length > 0);
 
-      await convexMutation("associates:updateAssociate", {
-        id: editingId,
+      const params = {
         sessionToken: session.token,
         name: form.name.trim(),
         unit: optional(form.unit),
         cpf: optional(form.cpf),
-        cpfPrefix: optional(form.cpfPrefix),
+        cpfPrefix: optional(form.cpfPrefix) || (form.cpf ? form.cpf.replace(/\D/g, "").slice(0, 5) : undefined),
         phone: optional(form.phone),
         email: optional(form.email),
         status: form.status,
@@ -163,8 +162,18 @@ export default function AssociadosPage() {
         leftAt: optional(form.leftAt),
         notes: optional(form.notes),
         payerNames: payerNames.length > 0 ? payerNames : [],
-      });
-      setMsg("Dados do associado atualizados com sucesso.");
+      };
+
+      if (editingId === "new") {
+        await convexMutation("associates:createAssociate", params);
+        setMsg("Novo associado cadastrado com sucesso.");
+      } else {
+        await convexMutation("associates:updateAssociate", {
+          id: editingId,
+          ...params,
+        });
+        setMsg("Dados do associado atualizados com sucesso.");
+      }
       cancelEdit();
       reload();
     } catch (err: unknown) {
@@ -176,11 +185,26 @@ export default function AssociadosPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-bold text-white">Associados</h2>
-        <p className="text-sm text-gray-400 mt-1">
-          {associados?.length ?? 0} associado(s) cadastrado(s).
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-white">Associados</h2>
+          <p className="text-sm text-gray-400 mt-1">
+            {associados?.length ?? 0} associado(s) cadastrado(s).
+          </p>
+        </div>
+        {canEditAssociates && !editingId && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId("new");
+              setForm(emptyForm);
+              setMsg(null);
+            }}
+            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+          >
+            + Novo Associado
+          </button>
+        )}
       </div>
 
       <input
@@ -202,8 +226,12 @@ export default function AssociadosPage() {
         <div className="rounded-2xl border border-emerald-800/70 bg-gray-900/80 p-4 shadow-xl shadow-black/20">
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white">Editar associado</h3>
-              <p className="text-sm text-gray-400">Revise os dados e salve.</p>
+              <h3 className="text-lg font-bold text-white">
+                {editingId === "new" ? "Cadastrar novo associado" : "Editar associado"}
+              </h3>
+              <p className="text-sm text-gray-400">
+                {editingId === "new" ? "Preencha os dados abaixo e clique em Cadastrar." : "Revise os dados e salve."}
+              </p>
             </div>
             <button type="button" onClick={cancelEdit}
               className="rounded-lg border border-gray-700 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800">
@@ -291,7 +319,7 @@ export default function AssociadosPage() {
             </button>
             <button type="button" onClick={saveAssociate} disabled={updating === editingId}
               className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50">
-              {updating === editingId ? "Salvando…" : "Salvar alterações"}
+              {updating === editingId ? "Salvando…" : editingId === "new" ? "Cadastrar" : "Salvar alterações"}
             </button>
           </div>
         </div>
