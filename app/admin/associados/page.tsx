@@ -246,7 +246,7 @@ export default function AssociadosPage() {
                 className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-emerald-500" />
             </label>
             <label className="space-y-1 text-sm">
-              <span className="text-gray-300">Unidade</span>
+              <span className="text-gray-300">Unidade (Número da casa/lote)</span>
               <input value={form.unit} onChange={(e) => updateForm("unit", e.target.value)}
                 className="w-full rounded-lg border border-gray-700 bg-gray-950 px-3 py-2 text-white outline-none focus:border-emerald-500" />
             </label>

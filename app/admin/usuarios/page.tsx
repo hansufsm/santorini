@@ -512,7 +512,7 @@ export default function UsuariosPage() {
 
         <div>
           <label className="block text-xs text-gray-400 mb-1">
-            {hasFinancialLink ? "Unidade derivada ou informada" : residenceLabel(state.role)}
+            {hasFinancialLink ? "Unidade (Número da casa/lote)" : `${residenceLabel(state.role)} (Número da casa/lote)`}
           </label>
           <input
             type="text"
