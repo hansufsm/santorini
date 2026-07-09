@@ -592,7 +592,7 @@ export default function UsuariosPage() {
                   onClick={() => fillFormFromAssociate(assoc)}
                   className="ml-4 flex-shrink-0 bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-lg font-medium border border-emerald-500/20 transition-all text-xs"
                 >
-                  Criar acesso
+                  Configurar acesso
                 </button>
               </div>
             ))}
@@ -603,6 +603,18 @@ export default function UsuariosPage() {
       {/* Formulário de criação */}
       <form id="new-user-form" onSubmit={handleCreate} className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-medium text-gray-300">➕ Novo Usuário</h3>
+
+        {form.residenceAssociateId && (
+          <div className="text-xs text-amber-300 bg-amber-950/20 border border-amber-800/30 rounded-lg p-3 flex items-start gap-2.5">
+            <span className="text-base leading-none">💡</span>
+            <div>
+              <p className="font-semibold mb-0.5">Formulário preenchido com dados de associado pendente</p>
+              <p className="text-gray-400">
+                Os dados de <strong>{form.name}</strong> foram copiados. Preencha o e-mail (caso esteja em branco) e clique no botão verde <strong>"Criar Usuário"</strong> ao final do formulário para finalizar a criação da conta.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
