@@ -29,6 +29,7 @@ const NAV_ITEMS: PortalNavItem[] = [
   { href: "/portal/cadastro", label: "Meu cadastro" },
   { href: "/portal/reservas", label: "Reservas" },
   { href: "/portal/comunicados", label: "Comunicados" },
+  { href: "/portal/guia", label: "Guia de indicações" },
   { href: "/portal/suporte", label: "Suporte" },
   { href: "/portal/ajuda", label: "Ajuda e manuais" },
 ];

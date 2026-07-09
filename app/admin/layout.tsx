@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/reservas", label: "Reservas" },
   { href: "/admin/comunicados", label: "Comunicados" },
   { href: "/admin/manutencao", label: "Manutenção" },
+  { href: "/admin/guia", label: "Guia de Indicações" },
   { href: "/admin/feedbacks", label: "Feedbacks" },
   { href: "/admin/trilha-viva", label: "Trilha Viva" },
   { href: "/admin/ajuda", label: "Ajuda" },
