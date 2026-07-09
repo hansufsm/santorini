@@ -49,15 +49,17 @@ export default function PublicExtratoPage({ params }: PageProps) {
   const { session } = useAuth();
   const alertSent = useRef(false);
 
-  // Valida se o parâmetro possui pelo menos 5 dígitos numéricos, caso contrário exibe 404
-  if (!/^\d{5,}$/.test(cpfPrefix)) {
+  const cleanCode = cpfPrefix.replace(/\D/g, "");
+
+  // Valida se o parâmetro contém apenas dígitos, pontos ou traços, e possui pelo menos 5 dígitos numéricos
+  if (!/^[0-9.-]+$/.test(cpfPrefix) || cleanCode.length < 5) {
     notFound();
   }
 
   const { data, loading, error } = useConvexQuery<PublicHistoryData>(
     "transactions:getPublicAssociateHistory",
-    { publicCode: cpfPrefix },
-    !cpfPrefix
+    { publicCode: cleanCode },
+    !cleanCode
   );
 
   // Alerta no Telegram sempre que a rota pública for acessada (sucesso ou falha)
