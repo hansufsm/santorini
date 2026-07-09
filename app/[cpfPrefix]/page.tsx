@@ -204,7 +204,7 @@ export default function PublicExtratoPage({ params }: PageProps) {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-slate-800 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
-                          <th className="text-left p-4">Data de Crédito</th>
+                          <th className="text-left p-4">Data da Contribuição</th>
                           <th className="text-left p-4">Hora</th>
                           <th className="text-left p-4">Tipo</th>
                           <th className="text-right p-4">Valor</th>
