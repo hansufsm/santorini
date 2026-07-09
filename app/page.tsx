@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { PublicSplashHero } from "@/components/public-splash-hero";
+
 // ─── Ícones SVG ───────────────────────────────────────────────────────────────
 
 function Icon({ d, className = "h-5 w-5" }: { d: string | string[]; className?: string }) {
@@ -30,13 +31,11 @@ const IC = {
   wrench:   ["M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z", "M15 12a3 3 0 11-6 0 3 3 0 016 0z"],
   shield:   "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
   book:     ["M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.582.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"],
-  sun:      "M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z",
-  moon:     "M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z",
-  arrow:    "M17 8l4 4m0 0l-4 4m4-4H3",
   cog:      ["M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z", "M15 12a3 3 0 11-6 0 3 3 0 016 0z"],
+  arrow:    "M17 8l4 4m0 0l-4 4m4-4H3",
 };
 
-// ─── Módulos de navegação ─────────────────────────────────────────────────────
+// ─── Módulos de navegação (Visíveis apenas após login) ───────────────────────────
 
 const MODULOS = [
   { key: "financeiro",   label: "Financeiro",       icon: IC.finance },
@@ -52,56 +51,10 @@ const OPERACIONAL = [
   { key: "visitantes",   label: "Visitantes",          icon: IC.shield  },
 ];
 
-// ─── StatCard ─────────────────────────────────────────────────────────────────
-
-function StatCard({ label, value, sub, gradient, subColor = "text-white/60" }:
-  { label: string; value: string; sub: string; gradient: string; subColor?: string }) {
-  return (
-    <div className={`${gradient} rounded-2xl p-4 md:p-6 shadow-xl
-      transition-transform duration-200 hover:-translate-y-1`}>
-      <p className="text-white/80 text-xs md:text-sm font-medium mb-1">{label}</p>
-      <h3 className="text-xl md:text-3xl font-bold text-white">{value}</h3>
-      <p className={`text-xs mt-2 ${subColor}`}>{sub}</p>
-    </div>
-  );
-}
-
-// ─── Página principal ─────────────────────────────────────────────────────────
-
 export default function HomePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [isLight, setIsLight]       = useState(false);
-  const [isWide, setIsWide]         = useState(false);
   const { session } = useAuth();
 
-  // Carregar preferências salvas
-  useEffect(() => {
-    const savedTheme  = localStorage.getItem("snt-theme");
-    const savedLayout = localStorage.getItem("snt-layout");
-    const light = savedTheme === "light";
-    const wide  = savedLayout === "wide";
-    setIsLight(light);
-    setIsWide(wide);
-    if (light) document.documentElement.classList.add("theme-light");
-  }, []);
-
-  function toggleTheme() {
-    const next = !isLight;
-    setIsLight(next);
-    document.documentElement.classList.toggle("theme-light", next);
-    localStorage.setItem("snt-theme", next ? "light" : "dark");
-  }
-
-  function toggleLayout() {
-    const next = !isWide;
-    setIsWide(next);
-    localStorage.setItem("snt-layout", next ? "wide" : "boxed");
-  }
-
-  // Página pública: não consulta nem exibe valores financeiros, dados pessoais
-  // ou histórico de moradores. Informações detalhadas ficam atrás do login.
-
-  const maxW = isWide ? "max-w-[1400px]" : "max-w-7xl";
   const appHref = session
     ? session.role === "sysadmin" || session.role === "diretoria"
       ? "/admin"
@@ -140,15 +93,14 @@ export default function HomePage() {
             <p className="text-[10px] mt-0.5" style={{ color: "var(--text-very-dim)" }}>Gestão Residencial</p>
           </div>
           <button onClick={() => setDrawerOpen(false)}
-            className="p-1.5 rounded-lg transition-colors shrink-0 hover:bg-black/10"
+            className="p-1.5 rounded-lg transition-colors shrink-0 hover:bg-black/10 cursor-pointer"
             style={{ color: "var(--text-muted)" }} title="Fechar">
             <Icon d={IC.close} className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Nav items */}
+        {/* Nav items (redirecionam para área restrita) */}
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {/* Seção Módulos */}
           <p className="text-[10px] font-bold uppercase tracking-widest px-3 py-2"
             style={{ color: "var(--text-very-dim)" }}>Módulos</p>
           {MODULOS.map(m => (
@@ -161,7 +113,6 @@ export default function HomePage() {
             </Link>
           ))}
 
-          {/* Seção Operacional */}
           <p className="text-[10px] font-bold uppercase tracking-widest px-3 py-2 pt-3"
             style={{ color: "var(--text-very-dim)" }}>Operacional</p>
           {OPERACIONAL.map(m => (
@@ -186,7 +137,6 @@ export default function HomePage() {
             <Icon d={IC.book} className="h-4 w-4 shrink-0" />
             Documentação
           </a>
-          {/* Acesso admin — discreto */}
           <Link href={appHref}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
               font-medium transition-all hover:bg-black/5"
@@ -201,14 +151,14 @@ export default function HomePage() {
       </aside>
 
       {/* ─── Navbar ──────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md border-b"
+      <nav className="sticky top-0 z-50 backdrop-blur-md border-b animate-none"
         style={{ backgroundColor: "var(--bg-nav)", borderColor: "var(--border-nav)" }}>
-        <div className={`${maxW} mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2`}>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
 
           {/* Esquerda: hamburguer + brand */}
           <div className="flex items-center gap-2">
             <button onClick={() => setDrawerOpen(true)}
-              className="p-2 rounded-lg transition-colors hover:bg-black/10 shrink-0"
+              className="p-2 rounded-lg transition-colors hover:bg-black/10 shrink-0 cursor-pointer"
               style={{ color: "var(--text-accent)" }}
               title="Menu" aria-label="Abrir menu">
               <Icon d={IC.menu} className="h-5 w-5" />
@@ -227,177 +177,97 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* Direita: layout toggle + tema toggle + CTA */}
+          {/* Direita: CTA principal (Entrar / Meu painel) */}
           <div className="flex items-center gap-1.5 md:gap-2">
-
-            {/* Toggle Boxed / Wide — pill otimizado para desktop */}
-            <div
-              className="hidden md:flex items-center gap-1 rounded-full border p-1 text-[11px] font-semibold shadow-sm"
-              style={{
-                backgroundColor: "var(--bg-toggle)",
-                borderColor: "var(--border-main)",
-              }}
-              aria-label="Alternar largura de visualização"
-            >
-              <button
-                type="button"
-                onClick={() => isWide && toggleLayout()}
-                aria-pressed={!isWide}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
-                  !isWide
-                    ? "bg-emerald-600 text-white shadow shadow-emerald-900/20"
-                    : "hover:bg-black/10"
-                }`}
-                style={isWide ? { color: "var(--text-muted)" } : {}}
-                title="Usar largura padrão para leitura confortável"
-              >
-                <span className="h-3.5 w-3 rounded-[4px] border border-current opacity-80" />
-                Boxed
-              </button>
-              <button
-                type="button"
-                onClick={() => !isWide && toggleLayout()}
-                aria-pressed={isWide}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all ${
-                  isWide
-                    ? "bg-emerald-600 text-white shadow shadow-emerald-900/20"
-                    : "hover:bg-black/10"
-                }`}
-                style={!isWide ? { color: "var(--text-muted)" } : {}}
-                title="Usar largura ampliada para aproveitar monitores maiores"
-              >
-                <span className="h-3.5 w-5 rounded-[4px] border border-current opacity-80" />
-                Wide
-              </button>
-            </div>
-
-            {/* Toggle Tema */}
-            <button onClick={toggleTheme}
-              className="p-2 rounded-lg transition-colors hover:bg-black/10"
-              style={{ color: "var(--text-accent)" }}
-              title={isLight ? "Modo escuro" : "Modo claro"}>
-              <Icon d={isLight ? IC.moon : IC.sun} className="h-5 w-5" />
-            </button>
-
-            {/* CTA principal */}
             <Link href={appHref}
               className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500
-                text-white font-bold px-3 md:px-4 py-2 rounded-xl text-sm transition-colors
-                shadow-lg shadow-emerald-900/30">
-              <span className="hidden sm:inline">{appCtaLabel}</span>
+                text-white font-bold px-4 py-2 rounded-xl text-sm transition-all
+                shadow-lg shadow-emerald-900/30 hover:scale-[1.02] active:scale-[0.98]">
+              <span>{appCtaLabel}</span>
               <Icon d={IC.arrow} className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ─── Conteúdo ────────────────────────────────────────────────────── */}
-      <main className={`flex-1 ${maxW} mx-auto w-full px-4 sm:px-6 py-6 md:py-8`}>
-
+      {/* ─── Conteúdo Principal ───────────────────────────────────────────── */}
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-6 md:py-8 space-y-8">
+        
         {/* Hero Splash Híbrido */}
         <PublicSplashHero appHref={appHref} appCtaLabel={appCtaLabel} />
 
-        {/* Cards públicos sem dados financeiros ou pessoais */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
-          <StatCard label="Financeiro"
-            value="Privado"
-            sub="Acesso apenas para usuários autorizados"
-            gradient="bg-gradient-to-br from-[#065f46] to-[#10b981]"
-            subColor="text-emerald-200/70" />
-          <StatCard label="Contribuições"
-            value="Seguro"
-            sub="Dados individuais protegidos por login"
-            gradient="bg-gradient-to-br from-[#064e3b] to-[#059669]"
-            subColor="text-emerald-200/70" />
-          <StatCard label="Transparência"
-            value="Controlada"
-            sub="Relatórios detalhados só na área autenticada"
-            gradient="bg-gradient-to-br from-[#065f46] to-[#047857]"
-            subColor="text-emerald-200/70" />
-          <div className="rounded-2xl p-4 md:p-6 shadow-xl border
-            transition-transform duration-200 hover:-translate-y-1"
-            style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-main)" }}>
-            <p className="text-xs md:text-sm font-medium mb-1" style={{ color: "var(--text-accent)" }}>
-              Comunidade
-            </p>
-            <h3 className="text-xl md:text-3xl font-bold" style={{ color: "var(--text-primary)" }}>
-              Protegida
+        {/* Banner de Boas-Vindas e Acesso Restrito */}
+        <section
+          className="rounded-3xl border p-6 md:p-8 backdrop-blur-sm flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-300"
+          style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}
+        >
+          <div className="space-y-2 text-center md:text-left">
+            <h3 className="text-xl font-extrabold text-white tracking-tight">
+              Área Restrita aos Associados
             </h3>
-            <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>Sem exposição pública de moradores</p>
-          </div>
-        </div>
-
-        {/* Banner de transparência */}
-        <div className="rounded-2xl p-4 md:p-6 mb-6 md:mb-8 backdrop-blur-sm border
-          flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between"
-          style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
-          <div>
-            <h4 className="font-semibold mb-1 text-sm" style={{ color: "var(--text-primary)" }}>
-              Transparência financeira
-            </h4>
-            <p className="text-sm max-w-lg" style={{ color: "var(--text-muted)" }}>
-              Por segurança, esta página não exibe valores financeiros nem dados de moradores.
-              Associados autorizados acessam apenas suas próprias informações após login.
+            <p className="text-sm leading-relaxed text-emerald-100/70 max-w-xl">
+              Para preservar a segurança financeira e a privacidade dos moradores do Residencial Santorini, os demonstrativos, comunicados, reservas e atas estão protegidos.
             </p>
           </div>
-          <Link href={appHref}
-            className="shrink-0 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500
-              text-white font-bold px-5 py-2.5 rounded-xl transition-colors text-sm
-              whitespace-nowrap shadow-lg shadow-emerald-900/30">
-            Acessar minha área
+          <Link
+            href={appHref}
+            className="w-full md:w-auto shrink-0 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3.5 rounded-xl transition-all text-sm shadow-xl shadow-emerald-950/45 hover:scale-[1.02]"
+          >
+            Acessar o Portal
             <Icon d={IC.arrow} className="h-4 w-4" />
           </Link>
-        </div>
+        </section>
 
-        {/* Grade de módulos */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {[
-            { icon: IC.finance,  label: "Financeiro",       desc: "Extrato e contribuições"    },
-            { icon: IC.bell,     label: "Comunicados",      desc: "Avisos do residencial"       },
-            { icon: IC.cal,      label: "Reservas",         desc: "Áreas comuns"                },
-            { icon: IC.wrench,   label: "Manutenção",       desc: "Chamados de suporte"         },
-            { icon: IC.people,   label: "Assembleias",      desc: "Votações e atas"             },
-            { icon: IC.doc,      label: "Documentos",       desc: "Regulamentos e contratos"    },
-            { icon: IC.bag,      label: "Fornecedores",     desc: "Prestadores de serviço"      },
-            { icon: IC.shield,   label: "Visitantes",       desc: "Controle de acesso"          },
-          ].map(item => (
-            <Link key={item.label} href={appHref}
-              className="rounded-2xl p-4 border backdrop-blur-sm transition-all group"
-              style={{ backgroundColor: "var(--bg-module)", borderColor: "var(--border-main)" }}>
-              <Icon d={item.icon} className="h-6 w-6 mb-2 transition-colors"
-                style={{ color: "var(--text-muted)" }} />
-              <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
-                {item.label}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
-                {item.desc}
-              </p>
-            </Link>
-          ))}
-        </div>
+        {/* Recursos do Portal (Showcase Estático para Informar, sem falsos links) */}
+        <section className="space-y-4">
+          <div className="text-center md:text-left">
+            <h3 className="text-lg font-bold text-white uppercase tracking-wider">Módulos do Santorini</h3>
+            <p className="text-xs text-emerald-200/50">Conheça as ferramentas que você terá acesso após realizar o login</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { icon: IC.finance,  label: "Painel Financeiro",   desc: "Demonstrativos de caixa, extratos, receitas e inadimplência gerencial." },
+              { icon: IC.bell,     label: "Comunicados Internos", desc: "Canal oficial de avisos, comunicados urgentes e deliberações." },
+              { icon: IC.cal,      label: "Reservas de Áreas",    desc: "Agendamento rápido e inteligente das áreas comuns e churrasqueira." },
+              { icon: IC.wrench,   label: "Suporte e Manutenção", desc: "Abertura e acompanhamento de ordens de serviço de infraestrutura." },
+              { icon: IC.people,   label: "Assembleias & Atas",   desc: "Histórico de assembleias, atas assinadas e votações da associação." },
+              { icon: IC.doc,      label: "Documentos Oficiais",  desc: "Consulta ao estatuto, regulamento interno e demais arquivos legais." },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl p-5 border backdrop-blur-sm hover:scale-[1.01] transition-transform duration-300"
+                style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border-main)" }}
+              >
+                <div className="rounded-xl bg-emerald-700/10 p-2.5 w-fit text-emerald-400 mb-3 border border-emerald-500/10">
+                  <Icon d={item.icon} className="h-5 w-5" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1">
+                  {item.label}
+                </h4>
+                <p className="text-xs leading-relaxed text-emerald-200/55">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
       </main>
 
       {/* ─── Rodapé ──────────────────────────────────────────────────────── */}
-      <footer className="border-t mt-4"
+      <footer className="border-t mt-8"
         style={{ borderColor: "var(--border-main)" }}>
-        <div className={`${maxW} mx-auto px-4 sm:px-6 pt-5 pb-3 flex flex-col sm:flex-row
-          items-center justify-between gap-3 text-xs`}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-5 flex flex-col sm:flex-row
+          items-center justify-between gap-3 text-xs"
           style={{ color: "var(--text-dim)" }}>
           <p>AMRTS Santorini &copy; {new Date().getFullYear()} — Gestão Residencial</p>
           <div className="flex items-center gap-4">
             <Link href={appHref} className="transition-colors hover:opacity-80">{appCtaLabel}</Link>
             <span style={{ color: "var(--text-very-dim)" }}>·</span>
-            {/* Documentação temporariamente desabilitada */}
             <span className="opacity-30 cursor-not-allowed">Documentação</span>
           </div>
         </div>
-        {/* Linha de versão — só aparece em produção (Vercel injeta o hash do commit) */}
-        {process.env.NEXT_PUBLIC_GIT_COMMIT && (
-          <p className={`${maxW} mx-auto px-4 sm:px-6 pb-4 text-center font-mono`}
-            style={{ color: "var(--text-very-dim)", fontSize: "0.7rem" }}>
-            v{process.env.NEXT_PUBLIC_GIT_COMMIT}&nbsp;&nbsp;—&nbsp;&nbsp;{process.env.NEXT_PUBLIC_BUILD_TIME}
-          </p>
-        )}
       </footer>
     </div>
   );
