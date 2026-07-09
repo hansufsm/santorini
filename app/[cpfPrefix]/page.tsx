@@ -49,18 +49,18 @@ export default function PublicExtratoPage({ params }: PageProps) {
   const { session } = useAuth();
   const alertSent = useRef(false);
 
-  // Valida se o parâmetro possui exatamente 4 dígitos numéricos, caso contrário exibe 404
-  if (!/^\d{4}$/.test(cpfPrefix)) {
+  // Valida se o parâmetro possui pelo menos 5 dígitos numéricos, caso contrário exibe 404
+  if (!/^\d{5,}$/.test(cpfPrefix)) {
     notFound();
   }
 
   const { data, loading, error } = useConvexQuery<PublicHistoryData>(
     "transactions:getPublicAssociateHistory",
-    { cpfPrefix4: cpfPrefix },
+    { publicCode: cpfPrefix },
     !cpfPrefix
   );
 
-  // Alerta no Telegram sempre que a rota de 4 dígitos for acessada (sucesso ou falha)
+  // Alerta no Telegram sempre que a rota pública for acessada (sucesso ou falha)
   useEffect(() => {
     if ((data || error) && !alertSent.current) {
       alertSent.current = true;
@@ -94,7 +94,7 @@ export default function PublicExtratoPage({ params }: PageProps) {
       convexMutation("telegram:logPublicAccess", {
         associateName: name,
         unit: unit,
-        cpfPrefix4: cpfPrefix,
+        publicCode: cpfPrefix,
         viewerUserId: viewerUserId || undefined,
         viewerName: viewerName || undefined,
         isBot,

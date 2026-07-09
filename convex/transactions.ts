@@ -550,9 +550,9 @@ export const getDefaulters = query({
 
 export const getPublicAssociateHistory = query({
   args: {
-    cpfPrefix4: v.string(),
+    publicCode: v.string(),
   },
-  handler: async (ctx, { cpfPrefix4 }) => {
+  handler: async (ctx, { publicCode }) => {
     // Verificar se o recurso de extrato público está ativo
     const setting = await ctx.db
       .query("systemSettings")
@@ -563,20 +563,23 @@ export const getPublicAssociateHistory = query({
       return { success: false, error: "A consulta pública de extrato está temporariamente desativada por motivos de segurança." };
     }
 
-    const prefix = cpfPrefix4.replace(/\D/g, "");
-    if (prefix.length < 4) {
-      return { success: false, error: "O prefixo/código deve ter pelo menos 4 dígitos." };
+    const code = publicCode.replace(/\D/g, "");
+    if (code.length < 5) {
+      return { success: false, error: "O código de consulta deve ter pelo menos 5 dígitos." };
     }
 
     // Buscar todos os associados não deletados
     const associates = await ctx.db.query("associates").collect();
     const activeAssociates = associates.filter((a) => a.deletedAt === undefined && a.status === "ativo");
 
-    // Encontrar o associado que corresponde aos 4 primeiros dígitos do CPF
+    // Encontrar o associado correspondente: 5 dígitos do CPF justapostos ao número da unidade
     const matched = activeAssociates.find((a) => {
-      const cleanedCpf = a.cpf ? a.cpf.replace(/\D/g, "") : "";
-      const cleanedPrefix = a.cpfPrefix ? a.cpfPrefix.replace(/\D/g, "") : "";
-      return cleanedCpf.startsWith(prefix) || cleanedPrefix.startsWith(prefix);
+      const cpfClean = a.cpf ? a.cpf.replace(/\D/g, "") : "";
+      const cpf5 = cpfClean.slice(0, 5) || (a.cpfPrefix ? a.cpfPrefix.replace(/\D/g, "").slice(0, 5) : "");
+      if (cpf5.length < 5) return false;
+      const unitDigits = a.unit ? a.unit.replace(/\D/g, "") : "";
+      const expectedCode = cpf5 + unitDigits;
+      return expectedCode === code;
     });
 
     if (!matched) {

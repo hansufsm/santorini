@@ -211,7 +211,7 @@ export const logPublicAccess = mutation({
   args: {
     associateName: v.string(),
     unit: v.string(),
-    cpfPrefix4: v.string(),
+    publicCode: v.string(),
     viewerUserId: v.optional(v.string()),
     viewerName: v.optional(v.string()),
     isBot: v.optional(v.boolean()),
@@ -238,7 +238,7 @@ export const logPublicAccess = mutation({
 
     const alertText = `👁️ *Acesso ao Extrato Público*
 *Associado:* ${escapedName}${unitStr}
-*Prefixo Consultado:* ${escapeMarkdown(args.cpfPrefix4)}...
+*Código Consultado:* ${escapeMarkdown(args.publicCode)}
 *Origem do Acesso:* ${viewerStr}${deviceDetail}`;
 
     await ctx.scheduler.runAfter(0, api.telegram.sendAlertAction, { text: alertText });
