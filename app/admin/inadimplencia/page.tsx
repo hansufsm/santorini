@@ -575,8 +575,8 @@ function DrawerAuditoria({
                                 key={idx}
                                 className="flex justify-between items-center text-[10px] bg-emerald-900/15 rounded px-2 py-1"
                               >
-                                <span className="text-emerald-200/60 truncate max-w-[13rem]">
-                                  {tx.detail} ({formatDate(tx.date)})
+                                <span className="text-emerald-200/60 truncate max-w-[18rem]" title={tx.name ? `Recebido de: ${tx.name} (${formatDate(tx.date)})` : `${tx.detail} (${formatDate(tx.date)})`}>
+                                  {tx.name ? `Recebido de: ${tx.name}` : tx.detail} ({formatDate(tx.date)})
                                 </span>
                                 <span className="font-bold text-emerald-100">
                                   {formatCurrency(tx.value)}
